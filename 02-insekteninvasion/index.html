@@ -57,7 +57,7 @@ const STEP_X = 2, STEP_DOWN = 8, STEP_SLOW = 0.6, STEP_FAST = 0.02;
 const PLAYER_Y = 216, PLAYER_SPEED = 90, START_LIVES = 3, DEATH_TIME = 1.5;
 const SHOT_SPEED = 240, BOMB_SPEED = 90, MAX_BOMBS = 3, AIM_CHANCE = 0.4;
 const SHIELD_Y = 186, SHIELD_COUNT = 4, GROUND_Y = 240;
-const COCKROACH_Y = 32, COCKROACH_SPEED = 40, COCKROACH_MIN_TIME = 15, COCKROACH_MAX_TIME = 25, COCKROACH_POINTS = [50, 100, 150, 300];
+const COCKROACH_Y = 32, COCKROACH_SPEED = 40, COCKROACH_MIN_TIME = 15, COCKROACH_MAX_TIME = 25, COCKROACH_POINTS = [100,050,050,100,150,100,100,050,300,100,100,100,050,150,100,050];
 const MARCH_NOTES = [98, 87, 78, 73];   // die vier tiefen Marsch-Töne
 const GREEN = '#40ff40', RED = '#ff4040', WHITE = '#ffffff';
 const YELLOW = '#ffff00', ORANGE = '#ffa500', PINK = '#ff69b4', BLUE = '#1e90ff'
@@ -229,6 +229,7 @@ let shot = null, cockroach = null;
 let formation = { dir: 1, timer: 0, frame: 0, note: 0 };
 let bombTimer = 0, cockroachTimer = 0, stateTimer = 0;
 let bonusGiven = 0;
+let shotsFired = 0;
 
 // ---------- Sound ----------
 // Alle Geräusche an einer Stelle: So lassen sie sich später leicht gegen echte
@@ -382,6 +383,7 @@ function fire() {
   if (shot) return;
   shot = { x: Math.round(player.x) + Math.floor(player.w / 2), y: PLAYER_Y - 4, w: 1, h: 4 };
   laser.play();
+  shotsFired++;
 }
 
 function stepShot(h) {
@@ -516,7 +518,7 @@ function updateCockroach(dt) {
 }
 
 function hitCockroach() {
-  const points = COCKROACH_POINTS[Math.floor(Math.random() * COCKROACH_POINTS.length)];
+  const points = COCKROACH_POINTS[shotsFired % COCKROACH_POINTS.length];
   score += points;
   checkEL(score);
   popups.push({ x: cockroach.x + cockroach.w / 2, y: cockroach.y + 6, text: String(points), t: 1.2 });
