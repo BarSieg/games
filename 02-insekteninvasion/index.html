@@ -57,16 +57,18 @@ const STEP_X = 2, STEP_DOWN = 8, STEP_SLOW = 0.6, STEP_FAST = 0.02;
 const PLAYER_Y = 216, PLAYER_SPEED = 90, START_LIVES = 3, DEATH_TIME = 1.5;
 const SHOT_SPEED = 240, BOMB_SPEED = 90, MAX_BOMBS = 3, AIM_CHANCE = 0.4;
 const SHIELD_Y = 186, SHIELD_COUNT = 4, GROUND_Y = 240;
-const COCKROACH_Y = 32, COCKROACH_SPEED = 40, COCKROACH_MIN_TIME = 15, COCKROACH_MAX_TIME = 25, COCKROACH_POINTS = [100,050,050,100,150,100,100,050,300,100,100,100,050,150,100,050];
+const COCKROACH_Y = 32, COCKROACH_SPEED = 40, COCKROACH_MIN_TIME = 15, COCKROACH_MAX_TIME = 25;
+const COCKROACH_POINTS = [100, 50, 50, 100, 150, 100, 100, 50, 300, 100, 100, 100, 50, 150, 100, 50];
 const MARCH_NOTES = [98, 87, 78, 73];   // die vier tiefen Marsch-Töne
 const GREEN = '#40ff40', RED = '#ff4040', WHITE = '#ffffff';
-const YELLOW = '#ffff00', ORANGE = '#ffa500', PINK = '#ff69b4', BLUE = '#1e90ff'
+const YELLOW = '#ffff00', ORANGE = '#ffa500', PINK = '#ff69b4', BLUE = '#1e90ff';
 
-const player_img = new Image();
-player_img.src = "player.png";
+// ---------- Bild und Sound aus Dateien ----------
+const playerImg = new Image();
+playerImg.src = 'player.png';
 
-var laser = document.createElement("audio");
-laser.src = "shoot.wav";
+const laser = document.createElement('audio');
+laser.src = 'shoot.wav';
 
 // ---------- Sprites als Daten ----------
 // Jedes Sprite ist ein kleines Pixelbild: 'X' = Pixel an, '.' = durchsichtig.
@@ -224,11 +226,11 @@ let pausedFrom = 'play';
 let score = 0, lives = START_LIVES, wave = 1;
 let highscore = loadHighscore(), newRecord = false;
 let invaders = [], shields = [], bombs = [], popups = [];
-let player = { x: 0, y: PLAYER_Y, w: player_img.width, h: player_img.height };
+let player = { x: 0, y: PLAYER_Y, w: playerImg.width, h: playerImg.height };
 let shot = null, cockroach = null;
 let formation = { dir: 1, timer: 0, frame: 0, note: 0 };
 let bombTimer = 0, cockroachTimer = 0, stateTimer = 0;
-let bonusGiven = 0;
+let bonusGiven = false;
 let shotsFired = 0;
 
 // ---------- Sound ----------
@@ -267,6 +269,11 @@ function noise(dur, vol = 0.12) {
   src.start(t);
 }
 const sfx = {
+  shoot:  () => {
+    if (muted) return;       // M = Ton aus gilt auch für die Datei
+    laser.currentTime = 0;   // an den Anfang zurückspulen, falls er noch spielt
+    laser.play();
+  },
   kill:   () => noise(0.15, 0.1),
   march:  n => beep(MARCH_NOTES[n], 0.08, 'square', 0.12),
   cockroach: () => beep(Math.random() < 0.5 ? 520 : 640, 0.1, 'sawtooth', 0.025),
@@ -293,10 +300,14 @@ function saveHighscore() {
 
 // ---------- Spielablauf ----------
 function newGame() {
+  player.w = playerImg.width;   // erst hier: jetzt ist das Bild geladen
+  player.h = playerImg.height;
   score = 0;
   lives = START_LIVES;
   wave = 1;
   newRecord = false;
+  bonusGiven = false;
+  shotsFired = 0;
   startWave();
 }
 
@@ -382,7 +393,7 @@ function movePlayer(dt) {
 function fire() {
   if (shot) return;
   shot = { x: Math.round(player.x) + Math.floor(player.w / 2), y: PLAYER_Y - 4, w: 1, h: 4 };
-  laser.play();
+  sfx.shoot();
   shotsFired++;
 }
 
@@ -415,13 +426,13 @@ function stepShot(h) {
   }
 }
 
-function checkEL(score) {
-    if (!bonusGiven) {
-        if (score >= 1500) {
-            lives++;
-            bonusGiven = 1
-        }
+function checkExtraLife() {
+  if (!bonusGiven) {
+    if (score >= 1500) {
+      lives++;
+      bonusGiven = true;
     }
+  }
 }
 
 // ---------- Invader ----------
@@ -429,7 +440,7 @@ function killInvader(inv) {
   inv.alive = false;
   inv.dying = 0.25;   // so lange wird die Explosion gezeigt
   score += inv.points;
-  checkEL(score);
+  checkExtraLife();
   sfx.kill();
 }
 
@@ -520,7 +531,7 @@ function updateCockroach(dt) {
 function hitCockroach() {
   const points = COCKROACH_POINTS[shotsFired % COCKROACH_POINTS.length];
   score += points;
-  checkEL(score);
+  checkExtraLife();
   popups.push({ x: cockroach.x + cockroach.w / 2, y: cockroach.y + 6, text: String(points), t: 1.2 });
   cockroach = null;
   cockroachTimer = randomBetween(COCKROACH_MIN_TIME, COCKROACH_MAX_TIME);
@@ -715,7 +726,7 @@ function draw() {
   if (state === 'dying') {
     if (blinkOn(10)) drawSprite(IMG.playerBoom[0], player.x, player.y);
   } else if (state !== 'gameover') {
-    drawSprite(player_img, player.x, player.y);
+    drawSprite(playerImg, player.x, player.y);
   }
 
   if (shot) {
@@ -731,7 +742,7 @@ function draw() {
   ctx.fillStyle = GREEN;
   ctx.fillRect(0, GROUND_Y, W, 1);
   drawText(String(lives), 8, 249, 8, WHITE, 'left');
-  for (let i = 0; i < lives - 1; i++) drawSprite(player_img, 20 + i * 16, 245);
+  for (let i = 0; i < lives - 1; i++) drawSprite(playerImg, 20 + i * 16, 245);
 
   // Meldungen je nach Zustand
   if (state === 'paused') drawOverlay([['PAUSE', WHITE], ['P: WEITER', GREEN]]);
