@@ -232,6 +232,7 @@ let player = { x: 0, y: PLAYER_Y, w: IMG.player[0].width, h: IMG.player[0].heigh
 let shot = null, cockroach = null;
 let formation = { dir: 1, timer: 0, frame: 0, note: 0 };
 let bombTimer = 0, cockroachTimer = 0, stateTimer = 0;
+let bonusGiven = 0;
 
 // ---------- Sound ----------
 // Alle Geräusche an einer Stelle: So lassen sie sich später leicht gegen echte
@@ -417,11 +418,21 @@ function stepShot(h) {
   }
 }
 
+function checkEL(score) {
+    if (!bonusGiven) {
+        if (score >= 1500) {
+            lives++;
+            bonusGiven = 1
+        }
+    }
+}
+
 // ---------- Invader ----------
 function killInvader(inv) {
   inv.alive = false;
   inv.dying = 0.25;   // so lange wird die Explosion gezeigt
   score += inv.points;
+  checkEL(score);
   sfx.kill();
 }
 
@@ -512,6 +523,7 @@ function updateCockroach(dt) {
 function hitCockroach() {
   const points = COCKROACH_POINTS[Math.floor(Math.random() * COCKROACH_POINTS.length)];
   score += points;
+  checkEL(score);
   popups.push({ x: cockroach.x + cockroach.w / 2, y: cockroach.y + 6, text: String(points), t: 1.2 });
   cockroach = null;
   cockroachTimer = randomBetween(COCKROACH_MIN_TIME, COCKROACH_MAX_TIME);
