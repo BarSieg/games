@@ -155,7 +155,7 @@ function beep(freq, dur, type = 'square') {
 // dann einen Fehler. try/catch fängt ihn ab: Das Spiel läuft weiter, nur ohne gespeicherten Highscore.
 function loadHighscore() {
   try {
-    return Number(localStorage.getItem('hs')) || 0;
+    return Number(localStorage.getItem('ziegelbrecher-highscore')) || 0;
   } catch (e) {
     return 0;
   }
@@ -164,7 +164,7 @@ function loadHighscore() {
 function saveHighscore() {
   if (score > highscore) {
     highscore = score;
-    try { localStorage.setItem('hs', highscore); } catch (e) {}
+    try { localStorage.setItem('ziegelbrecher-highscore', highscore); } catch (e) {}
   }
 }
 
