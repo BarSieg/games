@@ -26,3 +26,4 @@ Klein anfangen, nach jeder Aufgabe testen und mit Git committen:
 
 ## Notizen
 _(Was war schwer? Was würde ich anders machen?)_
+1. TURN_SPEED = 3.3, THRUST = 200, DRAG = 0.3, MAX_SPEED = 450
