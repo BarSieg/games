@@ -27,3 +27,5 @@ Klein anfangen, nach jeder Aufgabe testen und mit Git committen:
 ## Notizen
 _(Was war schwer? Was würde ich anders machen?)_
 1. TURN_SPEED = 3.3, THRUST = 200, DRAG = 0.3, MAX_SPEED = 450
+5. (c,d) -> (x,y)
+\left(c\cdot\cos\left(a\right)-d\cdot\sin\left(a\right),c\cdot\sin\left(a\right)+d\cdot\cos\left(a\right)\right)
