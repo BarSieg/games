@@ -45,15 +45,16 @@ const W = canvas.width, H = canvas.height;
 // ---------- Einstellungen ----------
 const SHIP_R = 10, TURN_SPEED = 3.3, THRUST = 200, DRAG = 0.3, MAX_SPEED = 450;
 const START_LIVES = 3, RESPAWN_TIME = 2, INVULN_TIME = 3, EXTRA_LIFE_EVERY = 10000;
-const BULLET_SPEED = 520, BULLET_LIFE = 0.9, MAX_BULLETS = 4;
+const BULLET_SPEED = 520, BULLET_LIFE = 0.9, MAX_BULLETS = 5;
 const START_ASTEROIDS = 4, MAX_ASTEROIDS = 11, SAFE_DISTANCE = 200, WAVE_DELAY = 2;
 const BEAT_SLOW = 1.0, BEAT_FAST = 0.3, BEAT_SPEEDUP = 0.02;
+const GREEN = '#40ff40', RED = '#ff4040', YELLOW = '#ffff00', WHITE = '#fff';
 
 // Die Asteroiden-Größen als Tabelle: Radius, Punkte und Tempo (von–bis in Pixel pro Sekunde)
 const ASTEROID_SIZES = {
-  3: { r: 44, points: 20,  speed: [30, 70] },     // groß
-  2: { r: 22, points: 50,  speed: [60, 110] },    // mittel
-  1: { r: 11, points: 100, speed: [90, 150] },    // klein
+  3: { r: 44, points: 20,  speed: [30, 70], color: GREEN},     // groß
+  2: { r: 22, points: 50,  speed: [60, 110], color: YELLOW },    // mittel
+  1: { r: 11, points: 100, speed: [90, 150], color: RED },    // klein
 };
 
 // Das Schiff als Liste von Punkten. (0, 0) ist die Mitte, die Nase zeigt nach rechts (Winkel 0).
@@ -524,13 +525,15 @@ function draw() {
   // leichtes Leuchten wie auf einem alten Vektor-Bildschirm
   ctx.shadowColor = '#fff';
   ctx.shadowBlur = 6;
-  ctx.strokeStyle = '#fff';
+  ctx.strokeStyle = WHITE;
   ctx.lineWidth = 1.5;
   ctx.lineJoin = 'round';
 
   for (const a of asteroids) {
+    ctx.strokeStyle = ASTEROID_SIZES[a.size].color;
     drawWrapped(a, a.r * 1.1, (x, y) => drawShape(a.points, x, y, a.angle));
   }
+  ctx.strokeStyle = WHITE;
 
   for (const p of particles) {
     ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, p.t * 2)})`;
