@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Insekteninvasion</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #111;
+    color: #eee;
+    font-family: "Courier New", monospace;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  canvas {
+    display: block;
+    width: min(672px, 96vw, calc(86vh * 0.875));
+    aspect-ratio: 224 / 256;
+    background: #000;
+    border: 2px solid #444;
+    box-sizing: border-box;
+    image-rendering: pixelated;   /* beim Vergrößern keine verschwommenen Pixel */
+  }
+  .hint { margin-top: 12px; color: #888; font-size: 14px; text-align: center; padding: 0 16px; }
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+<div class="hint">
+  ← / → (A / D): bewegen · Leertaste: schießen · P: Pause · M: Ton an/aus
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+// ---------- Pixel-Auflösung ----------
+// Der Automat von 1978 hatte nur 224 × 256 Pixel. Wir rechnen in genau dieser kleinen
+// Auflösung und lassen den Canvas alles 3-fach groß zeichnen (ctx.scale).
+// imageSmoothingEnabled = false hält die Pixel dabei scharf statt verschwommen.
+const W = 224, H = 256, SCALE = 3;
+canvas.width = W * SCALE;
+canvas.height = H * SCALE;
+ctx.scale(SCALE, SCALE);
+ctx.imageSmoothingEnabled = false;
+
+// ---------- Einstellungen ----------
+const COLS = 11, CELL_W = 16, CELL_H = 16, FORMATION_TOP = 56, WAVE_DROP = 8, MAX_WAVE_DROP = 32;
+const STEP_X = 2, STEP_DOWN = 8, STEP_SLOW = 0.6, STEP_FAST = 0.02;
+const PLAYER_Y = 216, PLAYER_SPEED = 90, START_LIVES = 3, DEATH_TIME = 1.5;
+const SHOT_SPEED = 240, BOMB_SPEED = 90, MAX_BOMBS = 3, AIM_CHANCE = 0.4;
+const SHIELD_Y = 186, SHIELD_COUNT = 4, GROUND_Y = 240;
+const COCKROACH_Y = 32, COCKROACH_SPEED = 40, COCKROACH_MIN_TIME = 15, COCKROACH_MAX_TIME = 25, COCKROACH_POINTS = [50, 100, 150, 300];
+const MARCH_NOTES = [98, 87, 78, 73];   // die vier tiefen Marsch-Töne
+const GREEN = '#40ff40', RED = '#ff4040', WHITE = '#ffffff';
+
+// ---------- Sprites als Daten ----------
+// Jedes Sprite ist ein kleines Pixelbild: 'X' = Pixel an, '.' = durchsichtig.
+// Zwei Bilder (frames) im Wechsel ergeben die Lauf-Animation der Invader.
+const BOOM = [
+  '....X...X....',
+  '.X...X.X...X.',
+  '..X.......X..',
+  '...X.....X...',
+  'XX.........XX',
+  '...X.....X...',
+  '..X..X.X..X..',
+  '.X..X...X..X.',
+];
+
+const SPRITES = {
+  wasp: { color: WHITE, frames: [[
+    '.X....X.',
+    '..XXXX..',
+    'XXXXXXXX',
+    'XX.XX.XX',
+    '..XXXX..',
+    '..X..X..',
+    '...XX...',
+    '...XX...',
+  ], [
+    'X......X',
+    '..XXXX..',
+    '..XXXX..',
+    'XXXXXXXX',
+    'XX.XX.XX',
+    '..X..X..',
+    '...XX...',
+    '...XX...',
+  ]]},
+  ant: { color: WHITE, frames: [[
+    '....XXX....',
+    'X..XXXXX..X',
+    '.X.XXXXX.X.',
+    '..X.XXX.X..',
+    'XXX..X..XXX',
+    '...XXXXX...',
+    '..X.XXX.X..',
+    '.X..X.X..X.',
+  ], [
+    '....XXX....',
+    '...XXXXX...',
+    'XX.XXXXX.XX',
+    '..X.XXX.X..',
+    '.XX..X..XX.',
+    'X..XXXXX..X',
+    '...XXXXX...',
+    '..X.X.X.X..',
+  ]]},
+  spider: { color: WHITE, frames: [[
+    'X..X....X..X',
+    '.X..X..X..X.',
+    '..XXXXXXXX..',
+    'XXXX.XX.XXXX',
+    '..XXXXXXXX..',
+    '.X.XXXXXX.X.',
+    'X..X....X..X',
+    '..X......X..',
+  ], [
+    '.X.X....X.X.',
+    'X..X....X..X',
+    '..XXXXXXXX..',
+    'XXXX.XX.XXXX',
+    '..XXXXXXXX..',
+    'X..XXXXXX..X',
+    '.X.X....X.X.',
+    '.X........X.',
+  ]]},
+  player: { color: GREEN, frames: [[
+    '......X......',
+    '.....XXX.....',
+    '.....XXX.....',
+    '.XXXXXXXXXXX.',
+    'XXXXXXXXXXXXX',
+    'XXXXXXXXXXXXX',
+    'XXXXXXXXXXXXX',
+    'XXXXXXXXXXXXX',
+  ]]},
+  cockroach: { color: RED, frames: [[
+    '..X...X...X.....',
+    '.X.XXXXXXXX..XX.',
+    '..XXXXXXXXXXX..X',
+    'XXXXXXXXXXXXXX..',
+    '..XXXXXXXXXXX..X',
+    '.X.XXXXXXXX..XX.',
+    '..X...X...X.....',
+  ]]},
+  bomb: { color: WHITE, frames: [[
+    'X..',
+    '.X.',
+    '..X',
+    '.X.',
+    'X..',
+    '.X.',
+    '..X',
+  ], [
+    '..X',
+    '.X.',
+    'X..',
+    '.X.',
+    '..X',
+    '.X.',
+    'X..',
+  ]]},
+  boom:       { color: WHITE, frames: [BOOM] },
+  playerBoom: { color: GREEN, frames: [BOOM] },
+};
+
+const SHIELD_SHAPE = [
+  '....XXXXXXXXXXXXXX....',
+  '...XXXXXXXXXXXXXXXX...',
+  '..XXXXXXXXXXXXXXXXXX..',
+  '.XXXXXXXXXXXXXXXXXXXX.',
+  'XXXXXXXXXXXXXXXXXXXXXX',
+  'XXXXXXXXXXXXXXXXXXXXXX',
+  'XXXXXXXXXXXXXXXXXXXXXX',
+  'XXXXXXXXXXXXXXXXXXXXXX',
+  'XXXXXXXXXXXXXXXXXXXXXX',
+  'XXXXXXXXXXXXXXXXXXXXXX',
+  'XXXXXXXXXXXXXXXXXXXXXX',
+  'XXXXXXXXXXXXXXXXXXXXXX',
+  'XXXXXX..........XXXXXX',
+  'XXXXX............XXXXX',
+  'XXXXX............XXXXX',
+  'XXXXX............XXXXX',
+];
+
+// Die Formation von oben nach unten: eine Zeile pro Reihe
+const FORMATION = [
+  { sprite: 'wasp',   points: 30 },
+  { sprite: 'ant',    points: 20 },
+  { sprite: 'ant',    points: 20 },
+  { sprite: 'spider', points: 10 },
+  { sprite: 'spider', points: 10 },
+];
+
+// Wandelt Textzeilen in ein kleines Bild (einen eigenen, unsichtbaren Canvas) um.
+// Das passiert nur einmal beim Start; danach wird das fertige Bild nur noch kopiert (drawImage).
+function makeSprite(rows, color) {
+  const c = document.createElement('canvas');
+  c.width = rows[0].length;
+  c.height = rows.length;
+  const g = c.getContext('2d');
+  g.fillStyle = color;
+  rows.forEach((row, y) => {
+    [...row].forEach((ch, x) => { if (ch === 'X') g.fillRect(x, y, 1, 1); });
+  });
+  return c;
+}
+
+const IMG = {};
+for (const [name, def] of Object.entries(SPRITES)) {
+  IMG[name] = def.frames.map(rows => makeSprite(rows, def.color));
+}
+
+// ---------- Spielzustand ----------
+let state = 'title';   // title, play, dying, cleared, paused, gameover
+let pausedFrom = 'play';
+let score = 0, lives = START_LIVES, wave = 1;
+let highscore = loadHighscore(), newRecord = false;
+let invaders = [], shields = [], bombs = [], popups = [];
+let player = { x: 0, y: PLAYER_Y, w: IMG.player[0].width, h: IMG.player[0].height };
+let shot = null, cockroach = null;
+let formation = { dir: 1, timer: 0, frame: 0, note: 0 };
+let bombTimer = 0, cockroachTimer = 0, stateTimer = 0;
+
+// ---------- Sound ----------
+// Alle Geräusche an einer Stelle: So lassen sie sich später leicht gegen echte
+// Sounddateien (z. B. aus jsfxr) austauschen.
+let audio = null, muted = false;
+function ensureAudio() {
+  if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+  if (audio.state === 'suspended') audio.resume();
+}
+function beep(freq, dur, type = 'square', vol = 0.06, slideTo = null) {
+  if (!audio || muted) return;
+  const t = audio.currentTime;
+  const osc = audio.createOscillator(), gain = audio.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t);
+  if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(gain).connect(audio.destination);
+  osc.start(t);
+  osc.stop(t + dur);
+}
+// Rauschen (Zufallszahlen als Ton) klingt wie eine Explosion
+function noise(dur, vol = 0.12) {
+  if (!audio || muted) return;
+  const t = audio.currentTime;
+  const buffer = audio.createBuffer(1, Math.floor(audio.sampleRate * dur), audio.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  const src = audio.createBufferSource(), gain = audio.createGain();
+  src.buffer = buffer;
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(gain).connect(audio.destination);
+  src.start(t);
+}
+const sfx = {
+  shoot:  () => beep(1200, 0.12, 'square', 0.04, 300),
+  kill:   () => noise(0.15, 0.1),
+  march:  n => beep(MARCH_NOTES[n], 0.08, 'square', 0.12),
+  cockroach: () => beep(Math.random() < 0.5 ? 520 : 640, 0.1, 'sawtooth', 0.025),
+  cockroachHit: () => beep(200, 0.5, 'square', 0.08, 1200),
+  death:  () => noise(0.9, 0.18),
+};
+
+// ---------- Highscore ----------
+// Wie bei Ziegelbrecher: localStorage kann gesperrt sein, darum try/catch.
+function loadHighscore() {
+  try {
+    return Number(localStorage.getItem('insekteninvasion-highscore')) || 0;
+  } catch (e) {
+    return 0;
+  }
+}
+function saveHighscore() {
+  if (score <= highscore) return;
+  highscore = score;
+  try {
+    localStorage.setItem('insekteninvasion-highscore', highscore);
+  } catch (e) { /* dann eben ohne Speichern */ }
+}
+
+// ---------- Spielablauf ----------
+function newGame() {
+  score = 0;
+  lives = START_LIVES;
+  wave = 1;
+  newRecord = false;
+  startWave();
+}
+
+function startWave() {
+  // Jede neue Welle startet etwas weiter unten – das macht sie schwerer
+  const top = FORMATION_TOP + Math.min((wave - 1) * WAVE_DROP, MAX_WAVE_DROP);
+  const left = (W - COLS * CELL_W) / 2;
+  invaders = [];
+  FORMATION.forEach((type, row) => {
+    const img = IMG[type.sprite][0];
+    for (let col = 0; col < COLS; col++) {
+      invaders.push({
+        x: left + col * CELL_W + (CELL_W - img.width) / 2,
+        y: top + row * CELL_H,
+        w: img.width, h: img.height,
+        col, sprite: type.sprite, points: type.points,
+        alive: true, dying: 0,
+      });
+    }
+  });
+  formation = { dir: 1, timer: STEP_SLOW, frame: 0, note: 0 };
+  makeShields();
+  player.x = (W - player.w) / 2;
+  shot = null;
+  cockroach = null;
+  bombs = [];
+  popups = [];
+  bombTimer = 1.5;
+  cockroachTimer = randomBetween(COCKROACH_MIN_TIME, COCKROACH_MAX_TIME);
+  state = 'play';
+}
+
+function playerHit() {
+  lives--;
+  state = 'dying';
+  stateTimer = DEATH_TIME;
+  shot = null;
+  bombs = [];
+  sfx.death();
+}
+
+function gameOver() {
+  state = 'gameover';
+  stateTimer = 1;   // kurz warten, damit man nicht aus Versehen sofort neu startet
+  newRecord = score > highscore;
+  saveHighscore();
+  sfx.death();
+}
+
+// Leertaste: macht je nach Zustand etwas anderes
+function action() {
+  if (state === 'title') newGame();
+  else if (state === 'gameover' && stateTimer <= 0) newGame();
+  else if (state === 'play') fire();
+}
+
+function togglePause() {
+  if (state === 'paused') state = pausedFrom;
+  else if (state === 'play' || state === 'dying') { pausedFrom = state; state = 'paused'; }
+}
+
+function randomBetween(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+// ---------- Hilfsfunktionen für Kollision ----------
+function pointIn(px, py, r) {
+  return px >= r.x && px < r.x + r.w && py >= r.y && py < r.y + r.h;
+}
+function overlaps(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+// ---------- Spieler und Schuss ----------
+function movePlayer(dt) {
+  let dir = 0;
+  if (keys.ArrowLeft || keys.KeyA) dir -= 1;
+  if (keys.ArrowRight || keys.KeyD) dir += 1;
+  player.x = Math.max(8, Math.min(W - 8 - player.w, player.x + dir * PLAYER_SPEED * dt));
+}
+
+// Wie im Original: Es darf immer nur EIN Schuss des Spielers unterwegs sein
+function fire() {
+  if (shot) return;
+  shot = { x: Math.round(player.x) + Math.floor(player.w / 2), y: PLAYER_Y - 4, w: 1, h: 4 };
+  sfx.shoot();
+}
+
+function stepShot(h) {
+  if (!shot) return;
+  shot.y -= SHOT_SPEED * h;
+  if (shot.y < 24) { shot = null; return; }
+
+  for (const inv of invaders) {
+    if (inv.alive && pointIn(shot.x, shot.y, inv)) {
+      killInvader(inv);
+      shot = null;
+      return;
+    }
+  }
+  if (cockroach && pointIn(shot.x, shot.y, cockroach)) {
+    hitCockroach();
+    shot = null;
+    return;
+  }
+  if (hitShield(shot.x, shot.y)) {
+    shot = null;
+    return;
+  }
+  // Schuss trifft Bombe: beide verschwinden
+  const bomb = bombs.find(b => pointIn(shot.x, shot.y, b));
+  if (bomb) {
+    bombs = bombs.filter(b => b !== bomb);
+    shot = null;
+  }
+}
+
+// ---------- Invader ----------
+function killInvader(inv) {
+  inv.alive = false;
+  inv.dying = 0.25;   // so lange wird die Explosion gezeigt
+  score += inv.points;
+  sfx.kill();
+}
+
+// Die ganze Formation macht einen Schritt. Je weniger Invader leben, desto öfter passiert das.
+function stepFormation() {
+  const alive = invaders.filter(inv => inv.alive);
+  const dx = formation.dir * STEP_X;
+  const hitsEdge = alive.some(inv => inv.x + dx < 4 || inv.x + inv.w + dx > W - 4);
+  if (hitsEdge) {
+    // Am Rand: eine Reihe nach unten und umdrehen
+    alive.forEach(inv => inv.y += STEP_DOWN);
+    formation.dir *= -1;
+  } else {
+    alive.forEach(inv => inv.x += dx);
+  }
+  formation.frame = 1 - formation.frame;   // Animationsbild wechseln: 0 → 1 → 0 …
+  sfx.march(formation.note);
+  formation.note = (formation.note + 1) % MARCH_NOTES.length;
+
+  alive.forEach(eraseShieldUnder);
+  if (alive.some(inv => inv.y + inv.h >= PLAYER_Y)) {
+    lives = 0;
+    gameOver();
+  }
+}
+
+function stepInterval() {
+  const ratio = invaders.filter(inv => inv.alive).length / invaders.length;
+  return STEP_FAST + (STEP_SLOW - STEP_FAST) * ratio;
+}
+
+function enemyFire() {
+  // Nur der unterste lebende Invader jeder Spalte darf schießen
+  const shooters = [];
+  for (const inv of invaders) {
+    if (inv.alive && (!shooters[inv.col] || inv.y > shooters[inv.col].y)) shooters[inv.col] = inv;
+  }
+  const list = shooters.filter(Boolean);
+  if (list.length === 0) return;
+
+  let s;
+  if (Math.random() < AIM_CHANCE) {
+    // „Zielen“: der Invader, der am nächsten über dem Spieler ist
+    const px = player.x + player.w / 2;
+    s = list.reduce((best, inv) =>
+      Math.abs(inv.x + inv.w / 2 - px) < Math.abs(best.x + best.w / 2 - px) ? inv : best);
+  } else {
+    s = list[Math.floor(Math.random() * list.length)];
+  }
+  bombs.push({ x: Math.round(s.x + s.w / 2) - 1, y: s.y + s.h, w: 3, h: 7 });
+}
+
+function stepBombs(h) {
+  for (const b of bombs) {
+    b.y += BOMB_SPEED * h;
+    const tipX = b.x + 1, tipY = b.y + b.h;
+    if (tipY >= GROUND_Y) b.dead = true;
+    else if (hitShield(tipX, tipY)) b.dead = true;
+    else if (state === 'play' && overlaps(b, player)) {
+      b.dead = true;
+      playerHit();
+    }
+  }
+  bombs = bombs.filter(b => !b.dead);
+}
+
+// ---------- Kakerlake ----------
+function updateCockroach(dt) {
+  if (!cockroach) {
+    cockroachTimer -= dt;
+    const aliveCount = invaders.filter(inv => inv.alive).length;
+    if (cockroachTimer <= 0 && aliveCount >= 8) {
+      const dir = Math.random() < 0.5 ? 1 : -1;
+      const w = IMG.cockroach[0].width;
+      cockroach = { x: dir > 0 ? -w : W, y: COCKROACH_Y, w, h: IMG.cockroach[0].height, dir, soundTimer: 0 };
+    }
+    return;
+  }
+  cockroach.x += cockroach.dir * COCKROACH_SPEED * dt;
+  cockroach.soundTimer -= dt;
+  if (cockroach.soundTimer <= 0) { sfx.cockroach(); cockroach.soundTimer = 0.12; }
+  if (cockroach.x > W || cockroach.x + cockroach.w < 0) {
+    cockroach = null;
+    cockroachTimer = randomBetween(COCKROACH_MIN_TIME, COCKROACH_MAX_TIME);
+  }
+}
+
+function hitCockroach() {
+  const points = COCKROACH_POINTS[Math.floor(Math.random() * COCKROACH_POINTS.length)];
+  score += points;
+  popups.push({ x: cockroach.x + cockroach.w / 2, y: cockroach.y + 6, text: String(points), t: 1.2 });
+  cockroach = null;
+  cockroachTimer = randomBetween(COCKROACH_MIN_TIME, COCKROACH_MAX_TIME);
+  sfx.cockroachHit();
+}
+
+// ---------- Deckung (zerstörbar, Pixel für Pixel) ----------
+// Jede Deckung ist ein Raster aus true/false: true = Pixel noch da.
+function makeShields() {
+  const w = SHIELD_SHAPE[0].length, h = SHIELD_SHAPE.length;
+  const gap = (W - SHIELD_COUNT * w) / (SHIELD_COUNT + 1);
+  shields = [];
+  for (let i = 0; i < SHIELD_COUNT; i++) {
+    shields.push({
+      x: Math.round(gap + i * (w + gap)), y: SHIELD_Y, w, h,
+      px: SHIELD_SHAPE.map(row => [...row].map(ch => ch === 'X')),
+    });
+  }
+}
+
+// Liegt an der Stelle (x, y) ein Deckungs-Pixel? Dann Loch hineinschießen und true melden.
+function hitShield(x, y) {
+  for (const s of shields) {
+    const lx = Math.floor(x - s.x), ly = Math.floor(y - s.y);
+    if (lx >= 0 && lx < s.w && ly >= 0 && ly < s.h && s.px[ly][lx]) {
+      damageShield(s, lx, ly);
+      return true;
+    }
+  }
+  return false;
+}
+
+// Ein Treffer frisst ein kleines, zufällig ausgefranstes Loch
+function damageShield(s, cx, cy) {
+  for (let dy = -3; dy <= 3; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      const x = cx + dx, y = cy + dy;
+      if (x < 0 || x >= s.w || y < 0 || y >= s.h) continue;
+      if (dx * dx + dy * dy <= 8 && Math.random() < 0.7) s.px[y][x] = false;
+    }
+  }
+}
+
+// Invader, die über die Deckung laufen, radieren sie weg
+function eraseShieldUnder(inv) {
+  for (const s of shields) {
+    if (!overlaps(inv, s)) continue;
+    for (let y = 0; y < s.h; y++) {
+      for (let x = 0; x < s.w; x++) {
+        if (pointIn(s.x + x, s.y + y, inv)) s.px[y][x] = false;
+      }
+    }
+  }
+}
+
+// ---------- Hauptschleife ----------
+function update(dt) {
+  if (state === 'title' || state === 'paused') return;
+
+  // Effekte laufen in jedem Zustand weiter
+  invaders.forEach(inv => { if (inv.dying > 0) inv.dying -= dt; });
+  popups.forEach(p => p.t -= dt);
+  popups = popups.filter(p => p.t > 0);
+
+  if (state === 'gameover') { stateTimer -= dt; return; }
+  if (state === 'cleared') {
+    stateTimer -= dt;
+    if (stateTimer <= 0) { wave++; startWave(); }
+    return;
+  }
+  if (state === 'dying') {
+    stateTimer -= dt;
+    if (stateTimer <= 0) {
+      if (lives <= 0) gameOver();
+      else { state = 'play'; player.x = (W - player.w) / 2; }
+    }
+    return;
+  }
+
+  // ab hier: state === 'play'
+  movePlayer(dt);
+  if (keys.Space) fire();   // gedrückt halten geht auch
+
+  formation.timer -= dt;
+  if (formation.timer <= 0) {
+    stepFormation();
+    formation.timer = stepInterval();
+  }
+
+  bombTimer -= dt;
+  if (bombTimer <= 0) {
+    if (bombs.length < MAX_BOMBS) enemyFire();
+    bombTimer = randomBetween(0.5, 1.5) / (1 + (wave - 1) * 0.2);
+  }
+
+  updateCockroach(dt);
+
+  // kleine Teilschritte, damit schnelle Schüsse nicht durch Invader „tunneln“
+  let t = dt;
+  while (t > 0 && state === 'play') {
+    const h = Math.min(t, 1 / 240);
+    stepShot(h);
+    stepBombs(h);
+    t -= h;
+  }
+
+  if (state === 'play' && !invaders.some(inv => inv.alive)) {
+    state = 'cleared';
+    stateTimer = 2.5;
+    shot = null;
+    bombs = [];
+    cockroach = null;
+  }
+}
+
+function drawText(text, x, y, size = 8, color = WHITE, align = 'center') {
+  ctx.fillStyle = color;
+  ctx.font = `bold ${size}px "Courier New", monospace`;
+  ctx.textAlign = align;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x, y);
+}
+
+function drawSprite(img, x, y) {
+  ctx.drawImage(img, Math.round(x), Math.round(y));
+}
+
+function blinkOn(perSecond = 2) {
+  return Math.floor(performance.now() / 1000 * perSecond) % 2 === 0;
+}
+
+function drawTitle() {
+  drawText('INSEKTENINVASION', W / 2, 70, 16, GREEN);
+  drawText('PUNKTE-TABELLE', W / 2, 104);
+  const rows = [
+    ['cockroach', '= ? PUNKTE'],
+    ['wasp', '= 30 PUNKTE'],
+    ['ant', '= 20 PUNKTE'],
+    ['spider', '= 10 PUNKTE'],
+  ];
+  rows.forEach(([name, text], i) => {
+    const img = IMG[name][0], y = 124 + i * 16;
+    drawSprite(img, 72 - img.width / 2, y - img.height / 2);
+    drawText(text, 88, y, 8, WHITE, 'left');
+  });
+  if (blinkOn()) drawText('LEERTASTE ZUM STARTEN', W / 2, 206, 8, GREEN);
+}
+
+function drawOverlay(lines) {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+  ctx.fillRect(0, 100, W, 16 + lines.length * 14);
+  lines.forEach(([text, color], i) => drawText(text, W / 2, 114 + i * 14, 8, color));
+}
+
+function draw() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  // HUD
+  drawText('PUNKTE', 8, 8, 8, WHITE, 'left');
+  drawText(String(score).padStart(4, '0'), 8, 18, 8, WHITE, 'left');
+  drawText('REKORD', W - 8, 8, 8, WHITE, 'right');
+  drawText(String(highscore).padStart(4, '0'), W - 8, 18, 8, WHITE, 'right');
+
+  if (state === 'title') { drawTitle(); return; }
+
+  drawText('WELLE ' + wave, W / 2, 13);
+
+  // Deckungen
+  ctx.fillStyle = GREEN;
+  for (const s of shields) {
+    for (let y = 0; y < s.h; y++) {
+      for (let x = 0; x < s.w; x++) {
+        if (s.px[y][x]) ctx.fillRect(s.x + x, s.y + y, 1, 1);
+      }
+    }
+  }
+
+  // Invader (oder ihre Explosion)
+  for (const inv of invaders) {
+    if (inv.alive) {
+      drawSprite(IMG[inv.sprite][formation.frame], inv.x, inv.y);
+    } else if (inv.dying > 0) {
+      const boom = IMG.boom[0];
+      drawSprite(boom, inv.x + inv.w / 2 - boom.width / 2, inv.y);
+    }
+  }
+
+  if (cockroach) drawSprite(IMG.cockroach[0], cockroach.x, cockroach.y);
+
+  // Spieler: beim Sterben flackert die Explosion
+  if (state === 'dying') {
+    if (blinkOn(10)) drawSprite(IMG.playerBoom[0], player.x, player.y);
+  } else if (state !== 'gameover') {
+    drawSprite(IMG.player[0], player.x, player.y);
+  }
+
+  if (shot) {
+    ctx.fillStyle = WHITE;
+    ctx.fillRect(shot.x, Math.round(shot.y), shot.w, shot.h);
+  }
+  for (const b of bombs) {
+    drawSprite(IMG.bomb[Math.floor(b.y / 4) % 2], b.x, b.y);
+  }
+  for (const p of popups) drawText(p.text, p.x, p.y, 8, RED);
+
+  // Boden und Leben
+  ctx.fillStyle = GREEN;
+  ctx.fillRect(0, GROUND_Y, W, 1);
+  drawText(String(lives), 8, 249, 8, WHITE, 'left');
+  for (let i = 0; i < lives - 1; i++) drawSprite(IMG.player[0], 20 + i * 16, 245);
+
+  // Meldungen je nach Zustand
+  if (state === 'paused') drawOverlay([['PAUSE', WHITE], ['P: WEITER', GREEN]]);
+  if (state === 'cleared') drawOverlay([['WELLE ' + wave + ' GESCHAFFT!', GREEN], ['GLEICH KOMMT DIE NÄCHSTE …', WHITE]]);
+  if (state === 'gameover') {
+    const lines = [['GAME OVER', RED], ['PUNKTE ' + score, WHITE]];
+    if (newRecord) lines.push(['NEUER REKORD!', GREEN]);
+    if (stateTimer <= 0) lines.push(['LEERTASTE: NOCHMAL', GREEN]);
+    drawOverlay(lines);
+  }
+}
+
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// ---------- Eingaben ----------
+const keys = {};
+addEventListener('keydown', e => {
+  if (['ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
+  keys[e.code] = true;
+  ensureAudio();
+  if (e.repeat) return;
+  if (e.code === 'Space' || e.code === 'Enter') action();
+  if (e.code === 'KeyP') togglePause();
+  if (e.code === 'KeyM') muted = !muted;
+  // Entwickler-Abkürzung zum Testen: K besiegt alle Invader der Welle
+  if (e.code === 'KeyK' && state === 'play') invaders.forEach(inv => inv.alive = false);
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+</script>
+</body>
+</html>
