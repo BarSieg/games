@@ -47,9 +47,9 @@ const W = canvas.width, H = canvas.height;
 const HUD_H = 40;
 const COLS = 12, BRICK_H = 22, GAP = 4, SIDE = 20, TOP = HUD_H + 40;
 const BRICK_W = (W - 2 * SIDE - (COLS - 1) * GAP) / COLS;
-const PADDLE_W = 100, PADDLE_W_WIDE = 160, PADDLE_H = 14, PADDLE_Y = H - 40, PADDLE_SPEED = 600;
+const PADDLE_W = 100, PADDLE_W_WIDE = 160, PADDLE_H = 14, PADDLE_Y = H - 40, WIDE_TIME = 12, PADDLE_SPEED = 600;
 const R = 6, BALL_START = 360, BALL_MAX = 650, BALL_SPEEDUP = 1.015, MAX_ANGLE = Math.PI / 3;
-const START_LIVES = 3, DROP_CHANCE = 0.15, DROP_SPEED = 160, WIDE_TIME = 12, MAX_BALLS = 12;
+const START_LIVES = 3, DROP_CHANCE = 0.15, DROP_SPEED = 160, MAX_BALLS = 13, SLOW_TIME = 7, SLOW_FACTOR = 3, LIFE_BONUS = 100;
 
 // ---------- Level als Daten ----------
 // Jeder Buchstabe ist ein Stein, '.' ist eine Lücke. Ein neues Level braucht keinen neuen Code.
@@ -60,6 +60,7 @@ const BRICK_TYPES = {
   O: { color: '#e67e22', hits: 1, points: 40 },
   R: { color: '#e74c3c', hits: 1, points: 50 },
   S: { color: '#bdc3c7', hits: 2, points: 80 },        // Silber: zwei Treffer
+  D: { color: '#ffd700', hits: 3, points: 150 },       // Gold: drei Treffer
   X: { color: '#555555', hits: Infinity, points: 0 },  // unzerstörbar
 };
 
@@ -91,13 +92,33 @@ const LEVELS = [
     'YYYY.XX.YYYY',
     'OOOOXOOXOOOO',
     'RRRR....RRRR',
-    'XXX......XXX',
+    'BXX......XXB',
+  ]},
+  { name: 'Siegfried', rows: [
+    '.DDDD..RRRR.',
+    'D......O...O',
+    'D......O...O',
+    '.DDD...YYYY.',
+    '....D..G...G',
+    '....D..G...G',
+    'DDDD...BBBB.',
+  ]},
+  { name: 'Zum Lächeln', rows: [
+    '............',
+    '..GG....GG..',
+    '..GG....GG..',
+    '............',
+    '.B........B.',
+    '..B......B..',
+    '...BBBBBB...',
   ]},
 ];
 
 const POWERUPS = {
-  W: { color: '#2ecc71', name: 'Breiter Schläger!' },
-  M: { color: '#3498db', name: 'Multiball!' },
+  W: { color: '#2ecc71', name: 'Breiter Schläger!' , weight: 4},
+  M: { color: '#3498db', name: 'Multiball!' , weight: 3},
+  L: { color: '#ff033e', name: 'Extraleben!' , weight: 1},
+  S: { color: '#ffbf00', name: 'Langsam!' , weight: 1},
 };
 
 // ---------- Spielzustand ----------
@@ -107,6 +128,10 @@ let bricks = [], balls = [], drops = [], particles = [], toast = null;
 const paddle = { x: (W - PADDLE_W) / 2, w: PADDLE_W, wideTimer: 0 };
 const keys = {};
 let mouseX = null;
+let slowtime = 0;
+
+let highscore = loadHighscore();
+let lifeBonus = 0;   // damit der Sieg-Bildschirm den Bonus anzeigen kann
 
 // ---------- Sound ----------
 let actx = null;
@@ -123,6 +148,24 @@ function beep(freq, dur, type = 'square') {
   o.connect(g).connect(actx.destination);
   o.start();
   o.stop(actx.currentTime + dur);
+}
+
+// ---------- HiScore ----------
+// localStorage kann gesperrt sein (privater Modus, blockierte Cookies, data:-URLs) und wirft
+// dann einen Fehler. try/catch fängt ihn ab: Das Spiel läuft weiter, nur ohne gespeicherten Highscore.
+function loadHighscore() {
+  try {
+    return Number(localStorage.getItem('hs')) || 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function saveHighscore() {
+  if (score > highscore) {
+    highscore = score;
+    try { localStorage.setItem('hs', highscore); } catch (e) {}
+  }
 }
 
 // ---------- Spielablauf ----------
@@ -156,6 +199,7 @@ function resetRound() {
   balls = [{ x: 0, y: 0, vx: 0, vy: 0, speed: BALL_START }];
   drops = [];
   paddle.wideTimer = 0;
+  slowtime = 0;
   setPaddleWidth(PADDLE_W);
   state = 'ready';
 }
@@ -171,13 +215,33 @@ function launch() {
 function loseLife() {
   lives--;
   beep(110, 0.5, 'sawtooth');
-  if (lives <= 0) state = 'gameover';
-  else resetRound();
+  if (lives <= 0) {
+    state = 'gameover';
+    saveHighscore();
+  } else {
+    resetRound();
+  }
 }
 
 function levelCleared() {
   beep(660, 0.1); setTimeout(() => beep(880, 0.2), 100);
-  state = levelIndex === LEVELS.length - 1 ? 'won' : 'levelclear';
+  if (levelIndex === LEVELS.length - 1) {
+    lifeBonus = lives * LIFE_BONUS;
+    score += lifeBonus;
+    saveHighscore();
+    state = 'won';
+  } else {
+    state = 'levelclear';
+  }
+}
+
+function randomPowerup() {
+  const total = Object.values(POWERUPS).reduce((sum, p) => sum + p.weight, 0);
+  let r = Math.random() * total;            // z. B. 5.3
+  for (const [kind, p] of Object.entries(POWERUPS)) {
+    if (r < p.weight) return kind;           // liegt r in diesem Abschnitt?
+    r -= p.weight;                           // nein → Abschnitt abziehen, weiter
+  }
 }
 
 // Leertaste / Klick: macht je nach Zustand etwas anderes
@@ -235,8 +299,7 @@ function damageBrick(brick) {
   burst(brick.x + brick.w / 2, brick.y + brick.h / 2, type.color);
 
   if (Math.random() < DROP_CHANCE) {
-    const kinds = Object.keys(POWERUPS);
-    drops.push({ x: brick.x + brick.w / 2, y: brick.y + brick.h / 2, kind: kinds[Math.floor(Math.random() * kinds.length)] });
+    drops.push({ x: brick.x + brick.w / 2, y: brick.y + brick.h / 2, kind: randomPowerup() });
   }
 }
 
@@ -255,8 +318,10 @@ function bouncePaddle(b) {
 // so wissen wir, an welcher Seite ein Stein getroffen wurde.
 // Gibt false zurück, wenn der Ball unten herausgefallen ist.
 function stepBall(b, h) {
-  b.x += b.vx * h;
-  if (b.x - R < 0)      { b.x = R;     b.vx =  Math.abs(b.vx); beep(320, 0.03); }
+  const speedFactor = slowtime > 0 ? 1 / SLOW_FACTOR : 1;
+
+  b.x += b.vx * h * speedFactor;
+  if (b.x - R < 0)     { b.x = R;     b.vx =  Math.abs(b.vx); beep(320, 0.03); }
   else if (b.x + R > W) { b.x = W - R; b.vx = -Math.abs(b.vx); beep(320, 0.03); }
   let brick = hitBrick(b);
   if (brick) {
@@ -265,7 +330,7 @@ function stepBall(b, h) {
     damageBrick(brick);
   }
 
-  b.y += b.vy * h;
+  b.y += b.vy * h * speedFactor;
   if (b.y - R < HUD_H) { b.y = HUD_H + R; b.vy = Math.abs(b.vy); beep(320, 0.03); }
   brick = hitBrick(b);
   if (brick) {
@@ -285,6 +350,10 @@ function applyPowerup(kind) {
   if (kind === 'W') {
     setPaddleWidth(PADDLE_W_WIDE);
     paddle.wideTimer = WIDE_TIME;
+  } else if (kind === 'L') {
+    lives++;
+  } else if (kind === 'S') {
+    slowtime = SLOW_TIME;
   } else if (kind === 'M') {
     const extra = [];
     for (const b of balls) {
@@ -349,6 +418,7 @@ function update(dt) {
   }
 
   if (paddle.wideTimer > 0 && (paddle.wideTimer -= dt) <= 0) setPaddleWidth(PADDLE_W);
+  if (slowtime > 0) slowtime -= dt;
 
   // kleine Teilschritte gegen „Tunneln“ (wie bei Ballwechsel)
   const steps = Math.ceil(dt / (1 / 240));
@@ -359,6 +429,13 @@ function update(dt) {
 
   if (bricks.every(b => b.hits === Infinity)) levelCleared();
   else if (balls.length === 0) loseLife();
+}
+
+// Farbe für ein Power-up mit Timer: Power-up-Farbe, solange es wirkt,
+// in den letzten 2 Sekunden im Wechsel mit Weiß (8× pro Sekunde), danach Weiß
+function timerColor(timer, color) {
+  const blink = timer > 0 && timer < 2 && Math.floor(timer * 8) % 2 === 0;
+  return timer > 0 && !blink ? color : '#fff';
 }
 
 function drawText(text, x, y, size, color = '#fff') {
@@ -420,13 +497,12 @@ function draw() {
   }
 
   // Schläger: grün, solange er breit ist; blinkt kurz vor Ablauf
-  const blink = paddle.wideTimer > 0 && paddle.wideTimer < 2 && Math.floor(paddle.wideTimer * 8) % 2 === 0;
-  ctx.fillStyle = paddle.wideTimer > 0 && !blink ? POWERUPS.W.color : '#fff';
+  ctx.fillStyle = timerColor(paddle.wideTimer, POWERUPS.W.color);
   ctx.fillRect(paddle.x, PADDLE_Y, paddle.w, PADDLE_H);
 
-  // Bälle
+  // Bälle: in der Slow-Farbe, solange sie langsam sind; blinken kurz vor Ablauf
   if (state === 'ready' || state === 'play' || state === 'paused') {
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = timerColor(slowtime, POWERUPS.S.color);
     for (const b of balls) ctx.fillRect(b.x - R, b.y - R, R * 2, R * 2);
   }
 
@@ -448,8 +524,9 @@ function draw() {
   if (state === 'title') {
     drawOverlay([
       ['ZIEGELBRECHER', 64],
+      ['Beste Punktzahl ' + highscore , 32],
       ['Leertaste oder Klick zum Starten', 18, '#aaa'],
-      ['Power-ups:  W = breiter Schläger   M = Multiball', 16, '#888'],
+      ['Power-ups:  W = breiter Schläger   M = Multiball   L = extra Leben', 16, '#888'],
     ]);
   } else if (state === 'ready') {
     ctx.textAlign = 'center';
@@ -472,6 +549,7 @@ function draw() {
     drawOverlay([
       ['ALLE LEVEL GESCHAFFT!', 44],
       [`Punkte: ${score}  ·  Leben übrig: ${lives}`, 22],
+      [`Bonus: ${lives} Leben × ${LIFE_BONUS} = ${lifeBonus}`, 18, '#aaa'], 
       ['Leertaste / Klick: neues Spiel', 16, '#888'],
     ]);
   }
