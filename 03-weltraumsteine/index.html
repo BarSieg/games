@@ -319,6 +319,12 @@ function fire() {
   sfx.shoot();
 }
 
+function hyperJump() {
+  ship.x = Math.floor(Math.random() * W);
+  ship.y = Math.floor(Math.random() * H);
+  if (Math.random() < 0.16) explodeShip();
+}
+
 // Das Schiff zerfällt in seine einzelnen Linien, die davontrudeln
 function explodeShip() {
   ship.alive = false;
@@ -613,6 +619,7 @@ addEventListener('keydown', e => {
   if (e.repeat) return;
   if (e.code === 'Space' || e.code === 'Enter') action();
   if (e.code === 'KeyP') togglePause();
+  if (e.code === 'KeyH') hyperJump();
   if (e.code === 'KeyM') { muted = !muted; setThrustSound(false); }
   // Entwickler-Abkürzung zum Testen: K zerstört alle Asteroiden
   if (e.code === 'KeyK' && state === 'play') asteroids.forEach(a => a.dead = true);
