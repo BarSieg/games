@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ballwechsel</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #111;
+    color: #eee;
+    font-family: "Courier New", monospace;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  #wrap {
+    position: relative;
+    width: min(800px, 96vw, 128vh);
+    aspect-ratio: 8 / 5;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    border: 2px solid #444;
+    box-sizing: border-box;
+    touch-action: none;
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: rgba(0, 0, 0, 0.8);
+  }
+  .hidden { display: none; }
+  h1 { font-size: min(64px, 8vw); margin: 0 0 10px; letter-spacing: 0.15em; }
+  h2 { font-size: 36px; margin: 0 0 10px; }
+  button {
+    font: inherit;
+    font-size: 18px;
+    color: #eee;
+    background: transparent;
+    border: 2px solid #eee;
+    padding: 8px 20px;
+    cursor: pointer;
+    min-width: 260px;
+  }
+  button:hover, button:focus-visible { background: #eee; color: #000; outline: none; }
+  .diff { display: flex; gap: 6px; align-items: center; font-size: 14px; color: #aaa; }
+  .diff button { min-width: 0; font-size: 14px; padding: 4px 10px; border-color: #666; color: #aaa; }
+  .diff button.active { border-color: #eee; color: #eee; }
+  .diff button:hover { background: #eee; color: #000; }
+  .small { color: #888; font-size: 14px; margin: 6px 0 0; }
+  .hint { margin-top: 12px; color: #888; font-size: 14px; text-align: center; padding: 0 16px; }
+</style>
+</head>
+<body>
+
+<div id="wrap">
+  <canvas id="game" width="800" height="500"></canvas>
+
+  <div id="menu" class="overlay">
+    <h1>BALLWECHSEL</h1>
+    <button data-mode="cpu">1 Spieler (gegen CPU)</button>
+    <div class="diff">
+      CPU:
+      <button data-diff="leicht">Leicht</button>
+      <button data-diff="mittel" class="active">Mittel</button>
+      <button data-diff="schwer">Schwer</button>
+    </div>
+    <button data-mode="pvp">2 Spieler</button>
+    <p class="small">Wer zuerst 5 Punkte hat, gewinnt</p>
+  </div>
+
+  <div id="over" class="overlay hidden">
+    <h2 id="winner"></h2>
+    <button id="again">Nochmal (Enter)</button>
+    <button id="toMenu">Menü (Esc)</button>
+  </div>
+</div>
+
+<div class="hint" id="hint"></div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+const PW = 12, PH = 80, PSPEED = 440, R = 7, WIN_SCORE = 5;
+const START_SPEED = 340, MAX_SPEED = 950, SPEEDUP = 1.06, MAX_ANGLE = Math.PI / 3;
+
+// speed: Anteil der Schlägergeschwindigkeit, error: Zielungenauigkeit in px,
+// react: ab welchem Anteil des Feldes die CPU auf den Ball reagiert
+const DIFFICULTY = {
+  leicht: { speed: 0.5,  error: 45, react: 0.5, predict: false },
+  mittel: { speed: 0.75, error: 22, react: 0.3, predict: true },
+  schwer: { speed: 1.0,  error: 8,  react: 0.0, predict: true },
+};
+
+let mode = 'cpu', difficulty = 'mittel', state = 'menu', pausedFrom = null;
+let serveTimer = 0, serveDir = 1, cpuError = 0, muted = false;
+
+const left  = { x: 20,          y: (H - PH) / 2, score: 0, target: null };
+const right = { x: W - 20 - PW, y: (H - PH) / 2, score: 0, target: null };
+const ball  = { x: W / 2, y: H / 2, vx: 0, vy: 0, speed: START_SPEED };
+const keys = {};
+
+const menuEl = document.getElementById('menu');
+const overEl = document.getElementById('over');
+const hintEl = document.getElementById('hint');
+
+// ---------- Sound ----------
+let actx = null;
+function beep(freq, dur) {
+  if (!actx || muted) return;
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = 'square';
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(0.05, actx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+  o.connect(g).connect(actx.destination);
+  o.start();
+  o.stop(actx.currentTime + dur);
+}
+
+// ---------- Spielablauf ----------
+function startGame(m) {
+  mode = m;
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  left.score = right.score = 0;
+  left.y = right.y = (H - PH) / 2;
+  left.target = right.target = null;
+  menuEl.classList.add('hidden');
+  overEl.classList.add('hidden');
+  if (document.activeElement) document.activeElement.blur();
+  updateHint();
+  serve(Math.random() < 0.5 ? -1 : 1);
+}
+
+function serve(dir) {
+  ball.x = W / 2; ball.y = H / 2;
+  ball.vx = ball.vy = 0;
+  serveDir = dir;
+  serveTimer = 1.0;
+  state = 'serve';
+}
+
+function launch() {
+  const ang = (Math.random() * 2 - 1) * Math.PI / 6;
+  ball.speed = START_SPEED;
+  ball.vx = serveDir * ball.speed * Math.cos(ang);
+  ball.vy = ball.speed * Math.sin(ang);
+  newCpuError();
+  state = 'play';
+}
+
+function point(scorer, nextDir) {
+  scorer.score++;
+  beep(150, 0.3);
+  if (scorer.score >= WIN_SCORE) {
+    state = 'over';
+    const name = scorer === left ? 'Spieler 1' : (mode === 'cpu' ? 'Die CPU' : 'Spieler 2');
+    document.getElementById('winner').textContent = name + ' gewinnt!';
+    overEl.classList.remove('hidden');
+  } else {
+    serve(nextDir);
+  }
+}
+
+function showMenu() {
+  state = 'menu';
+  overEl.classList.add('hidden');
+  menuEl.classList.remove('hidden');
+  hintEl.textContent = 'Tasten: 1 = gegen CPU, 2 = zu zweit';
+}
+
+function togglePause() {
+  if (state === 'paused') { state = pausedFrom; }
+  else if (state === 'play' || state === 'serve') { pausedFrom = state; state = 'paused'; }
+}
+
+function updateHint() {
+  const controls = mode === 'cpu'
+    ? 'Steuerung: W / S oder ↑ / ↓ (oder Maus)'
+    : 'Spieler 1: W / S · Spieler 2: ↑ / ↓';
+  hintEl.textContent = controls + ' · Leertaste: Pause · M: Ton an/aus · Esc: Menü';
+}
+
+// ---------- Schläger ----------
+function clampPaddle(p) {
+  p.y = Math.max(0, Math.min(H - PH, p.y));
+}
+
+function moveToward(p, targetCenter, speed, dt) {
+  const diff = targetCenter - (p.y + PH / 2);
+  const step = speed * dt;
+  p.y += Math.abs(diff) <= step ? diff : Math.sign(diff) * step;
+  clampPaddle(p);
+}
+
+function controlHuman(p, upKeys, downKeys, dt) {
+  let dir = 0;
+  if (upKeys.some(k => keys[k])) dir -= 1;
+  if (downKeys.some(k => keys[k])) dir += 1;
+  if (dir !== 0) {
+    p.target = null;
+    p.y += dir * PSPEED * dt;
+    clampPaddle(p);
+  } else if (p.target !== null) {
+    moveToward(p, p.target, PSPEED, dt);
+  }
+}
+
+function newCpuError() {
+  cpuError = (Math.random() * 2 - 1) * DIFFICULTY[difficulty].error;
+}
+
+// Wo wird der Ball bei x ankommen? (inkl. Abprallen an Ober-/Unterkante)
+function predictY(x) {
+  const t = (x - ball.x) / ball.vx;
+  const min = R, span = H - 2 * R, period = 2 * span;
+  let y = ball.y + ball.vy * t - min;
+  y = ((y % period) + period) % period;
+  if (y > span) y = period - y;
+  return y + min;
+}
+
+function controlCpu(p, dt) {
+  const d = DIFFICULTY[difficulty];
+  let target = H / 2;
+  if (state === 'play' && ball.vx > 0 && ball.x > W * d.react) {
+    target = (d.predict ? predictY(p.x) : ball.y) + cpuError;
+  }
+  if (Math.abs(target - (p.y + PH / 2)) > 4) moveToward(p, target, PSPEED * d.speed, dt);
+}
+
+// ---------- Ball ----------
+function hits(p) {
+  return ball.x - R < p.x + PW && ball.x + R > p.x &&
+         ball.y + R > p.y && ball.y - R < p.y + PH;
+}
+
+function bounce(p, dir) {
+  const rel = Math.max(-1, Math.min(1, (ball.y - (p.y + PH / 2)) / (PH / 2 + R)));
+  const ang = rel * MAX_ANGLE;
+  ball.speed = Math.min(MAX_SPEED, ball.speed * SPEEDUP);
+  ball.vx = dir * ball.speed * Math.cos(ang);
+  ball.vy = ball.speed * Math.sin(ang);
+  ball.x = dir > 0 ? p.x + PW + R : p.x - R;
+  newCpuError();
+  beep(520, 0.05);
+}
+
+// gibt true zurück, wenn ein Punkt gefallen ist
+function stepBall(h) {
+  ball.x += ball.vx * h;
+  ball.y += ball.vy * h;
+
+  if (ball.y - R < 0)      { ball.y = R;     ball.vy =  Math.abs(ball.vy); beep(300, 0.04); }
+  else if (ball.y + R > H) { ball.y = H - R; ball.vy = -Math.abs(ball.vy); beep(300, 0.04); }
+
+  if (ball.vx < 0 && ball.x > left.x && hits(left)) bounce(left, 1);
+  else if (ball.vx > 0 && ball.x < right.x + PW && hits(right)) bounce(right, -1);
+
+  if (ball.x + R < 0) { point(right, -1); return true; }
+  if (ball.x - R > W) { point(left, 1);   return true; }
+  return false;
+}
+
+// ---------- Hauptschleife ----------
+function update(dt) {
+  if (state !== 'play' && state !== 'serve') return;
+
+  if (mode === 'cpu') {
+    controlHuman(left, ['KeyW', 'ArrowUp'], ['KeyS', 'ArrowDown'], dt);
+    controlCpu(right, dt);
+  } else {
+    controlHuman(left, ['KeyW'], ['KeyS'], dt);
+    controlHuman(right, ['ArrowUp'], ['ArrowDown'], dt);
+  }
+
+  if (state === 'serve') {
+    serveTimer -= dt;
+    if (serveTimer <= 0) launch();
+    return;
+  }
+
+  // kleine Teilschritte, damit der schnelle Ball nicht durch Schläger "tunnelt"
+  const steps = Math.ceil(dt / (1 / 240));
+  for (let i = 0; i < steps; i++) {
+    if (stepBall(dt / steps)) break;
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = '#444';
+  for (let y = 10; y < H; y += 30) ctx.fillRect(W / 2 - 2, y, 4, 16);
+
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.font = 'bold 64px "Courier New", monospace';
+  ctx.fillText(left.score, W / 4, 24);
+  ctx.fillText(right.score, W * 3 / 4, 24);
+
+  ctx.fillStyle = '#777';
+  ctx.font = '14px "Courier New", monospace';
+  ctx.fillText('Spieler 1', W / 4, 96);
+  ctx.fillText(mode === 'cpu' ? 'CPU (' + difficulty + ')' : 'Spieler 2', W * 3 / 4, 96);
+
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(left.x, left.y, PW, PH);
+  ctx.fillRect(right.x, right.y, PW, PH);
+  if (state !== 'menu') ctx.fillRect(ball.x - R, ball.y - R, R * 2, R * 2);
+
+  if (state === 'paused') {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#fff';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 48px "Courier New", monospace';
+    ctx.fillText('PAUSE', W / 2, H / 2);
+    ctx.font = '16px "Courier New", monospace';
+    ctx.fillText('Leertaste zum Weiterspielen', W / 2, H / 2 + 44);
+  }
+}
+
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// ---------- Eingaben ----------
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (['ArrowUp', 'ArrowDown', 'Space'].includes(e.code)) e.preventDefault();
+
+  if (state === 'menu') {
+    if (e.code === 'Digit1' || e.code === 'Numpad1') startGame('cpu');
+    if (e.code === 'Digit2' || e.code === 'Numpad2') startGame('pvp');
+  } else if (state === 'over') {
+    if (e.code === 'Enter') startGame(mode);
+    if (e.code === 'Escape') showMenu();
+  } else {
+    if (e.code === 'Space' || e.code === 'KeyP') togglePause();
+    if (e.code === 'Escape') showMenu();
+  }
+  if (e.code === 'KeyM') muted = !muted;
+});
+document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+window.addEventListener('blur', () => {
+  for (const k in keys) keys[k] = false;
+  if (state === 'play' || state === 'serve') togglePause();
+});
+
+// Maus (gegen CPU) bzw. Touch (links/rechts getrennt bei 2 Spielern)
+function onPointer(e) {
+  if (e.pointerType === 'mouse' && mode !== 'cpu') return;
+  const r = canvas.getBoundingClientRect();
+  const x = (e.clientX - r.left) * W / r.width;
+  const y = (e.clientY - r.top) * H / r.height;
+  if (mode === 'cpu' || x < W / 2) left.target = y;
+  else right.target = y;
+}
+canvas.addEventListener('pointermove', onPointer);
+canvas.addEventListener('pointerdown', onPointer);
+
+document.querySelectorAll('[data-mode]').forEach(b =>
+  b.addEventListener('click', () => startGame(b.dataset.mode)));
+
+document.querySelectorAll('[data-diff]').forEach(b =>
+  b.addEventListener('click', () => {
+    difficulty = b.dataset.diff;
+    document.querySelectorAll('[data-diff]').forEach(o => o.classList.toggle('active', o === b));
+  }));
+
+document.getElementById('again').addEventListener('click', () => startGame(mode));
+document.getElementById('toMenu').addEventListener('click', showMenu);
+
+showMenu();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

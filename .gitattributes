@@ -1,0 +1,11 @@
+# Zeilenenden vereinheitlichen
+* text=auto eol=lf
+
+# Binärdateien (Grafiken, Sound, 3D) nicht als Text behandeln
+*.png binary
+*.jpg binary
+*.wav binary
+*.ogg binary
+*.mp3 binary
+*.blend binary
+*.glb binary

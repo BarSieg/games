@@ -1,0 +1,18 @@
+# Betriebssystem
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editoren
+.vscode/
+*.swp
+
+# Godot (ab Projekt 04)
+.godot/
+*.import.tmp
+export/
+builds/
+
+# Blender-Sicherungsdateien
+*.blend1
+*.blend2
