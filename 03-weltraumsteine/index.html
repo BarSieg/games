@@ -49,6 +49,7 @@ const BULLET_SPEED = 520, BULLET_LIFE = 0.9, MAX_BULLETS = 5;
 const START_ASTEROIDS = 4, MAX_ASTEROIDS = 11, SAFE_DISTANCE = 200, WAVE_DELAY = 2;
 const BEAT_SLOW = 1.0, BEAT_FAST = 0.3, BEAT_SPEEDUP = 0.02;
 const GREEN = '#40ff40', RED = '#ff4040', YELLOW = '#ffff00', WHITE = '#fff';
+const FIREDELAY = 0.25;
 
 // Die Asteroiden-Größen als Tabelle: Radius, Punkte und Tempo (von–bis in Pixel pro Sekunde)
 const ASTEROID_SIZES = {
@@ -103,6 +104,7 @@ let highscore = loadHighscore(), newRecord = false;
 let ship = null, bullets = [], asteroids = [], particles = [], debris = [];
 let respawnTimer = 0, waveDelay = 0, stateTimer = 0;
 let beatTimer = 0, beatInterval = BEAT_SLOW, beatNote = 0;
+let fireTimer = 0; //kann schiessen falls null
 
 // ---------- Sound ----------
 let audio = null, muted = false, thrustGain = null, thrustOn = false;
@@ -199,6 +201,7 @@ function newGame() {
   waveDelay = 0;
   spawnShip();
   spawnWave();
+  fireTimer = 0;
   state = 'play';
 }
 
@@ -270,6 +273,9 @@ function updateShip(dt) {
   if (keys.ArrowLeft || keys.KeyA) turn -= 1;
   if (keys.ArrowRight || keys.KeyD) turn += 1;
   ship.angle += turn * TURN_SPEED * dt;
+  
+  fireTimer -= dt;
+  if (fireTimer <= 0 && keys.Space) fire(); 
 
   // Schub: ein kleiner Vektor in Blickrichtung wird zur Geschwindigkeit addiert.
   // Die Geschwindigkeit bleibt danach erhalten – das ist Trägheit.
@@ -309,6 +315,7 @@ function fire() {
     vx: ship.vx + v.x, vy: ship.vy + v.y,
     t: BULLET_LIFE,
   });
+  fireTimer = FIREDELAY;
   sfx.shoot();
 }
 
