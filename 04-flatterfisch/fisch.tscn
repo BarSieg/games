@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://wktgp8x8he1r"]
+
+[ext_resource type="Script" uid="uid://dkui6m22rcdor" path="res://fisch.gd" id="1_1nqed"]
+[ext_resource type="Texture2D" uid="uid://djcxfr6d4w2ot" path="res://icon.svg" id="1_emqxm"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_s017u"]
+radius = 23.021729
+
+[node name="Fisch" type="CharacterBody2D" unique_id=1674924419]
+script = ExtResource("1_1nqed")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1909801893]
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("1_emqxm")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=402835438]
+shape = SubResource("CircleShape2D_s017u")

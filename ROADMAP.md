@@ -35,7 +35,7 @@ Phase 1  Grundlagen im Browser (JS)
    └─ 03  Weltraumsteine               Vektoren, Rotation, Trägheit  ← Mathe für 3D!
    │
 Phase 2  Godot 2D
-   ├─ 04  Flappy Bird                  Godot kennenlernen: Szenen, Nodes, Signale
+   ├─ 04  Flatterfisch                 Godot kennenlernen: Szenen, Nodes, Signale
    ├─ 05  Super Mario Bros. – Level 1-1    Plattformer-Physik, Tilemaps, Kamera
    ├─ 06  Zelda – erster Dungeon       State Machines, Inventar, Räume, Speichern
    └─ 07  Vampire Survivors (light)    Hunderte Gegner, Performance, Upgrades
@@ -81,10 +81,11 @@ Kein Editor, keine Engine. Du siehst jede Zeile, die das Spiel ausmacht. Das ist
 
 Jetzt kommt die erste echte Engine. Du wirst merken, wie viel schneller es geht, und du verstehst trotzdem, was im Hintergrund passiert.
 
-### 04 · Flappy Bird (2–3 Abende)
+### 04 · Flatterfisch – nach Flappy Bird (2–3 Abende)
 - **Du lernst:** den Godot-Editor, **Szenen & Nodes** (Godots Baukasten-Prinzip), **Signale** (Objekte schicken sich Nachrichten), GDScript, Physik-Körper, Export als Web-Spiel
 - **Neue Tools:** 🆓 **Godot 4**
 - **Warum Flappy Bird:** Ein Spiel, das so klein ist, dass du dich ganz auf das Lernen der Engine konzentrieren kannst
+- **Eigene Variante:** Ein Fisch, der zwischen Korallen hindurchschwimmt. Gleiche Mechanik, eigene Optik.
 
 ### 05 · Super Mario Bros. – Level 1-1 (2–3 Wochen)
 - **Du lernst:** Plattformer-Physik, die sich *gut anfühlt* („Coyote Time“, „Jump Buffering“, variable Sprunghöhe), **Tilemaps**, Kamera, die dem Spieler folgt, Gegner, Animationen (AnimationPlayer), Blöcke und Items
