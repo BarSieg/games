@@ -48,8 +48,11 @@ const START_LIVES = 3, RESPAWN_TIME = 2, INVULN_TIME = 3, EXTRA_LIFE_EVERY = 100
 const BULLET_SPEED = 520, BULLET_LIFE = 0.9, MAX_BULLETS = 5;
 const START_ASTEROIDS = 4, MAX_ASTEROIDS = 11, SAFE_DISTANCE = 200, WAVE_DELAY = 2;
 const BEAT_SLOW = 1.0, BEAT_FAST = 0.3, BEAT_SPEEDUP = 0.02;
-const GREEN = '#40ff40', RED = '#ff4040', YELLOW = '#ffff00', WHITE = '#fff';
+const GREEN = '#40ff40', RED = '#ff4040', YELLOW = '#ffff00', PURPLE = '#9370db', WHITE = '#fff';
 const FIREDELAY = 0.25;
+const ALIENDELAYMIN = 20, ALIENDELAYMAX = 60, ALIENSWITCHDIRECTION = 0.5, ALIENFIREDELAY = 1.5, ALIENSPEED = 200, ALIEN_R = 9;
+const ALIEN_SCORE = { big: 200, small: 1000 };
+const RING_LIFE = 0.6;   // so lange (Sekunden) breitet sich die Druckwelle aus
 
 // Die Asteroiden-Größen als Tabelle: Radius, Punkte und Tempo (von–bis in Pixel pro Sekunde)
 const ASTEROID_SIZES = {
@@ -65,6 +68,35 @@ const SHIP_SHAPE = [
   { x: -6, y: 0 },
   { x: -10, y: 10 },
 ];
+
+const ALIEN_SHAPE = [
+  { x: 8.94, y: 0 },
+  { x: 4.46, y: 0 },
+  { x: 4, y: 2 },
+  { x: 8, y: 4 },
+  { x: 4, y: 8 },
+  { x: 2, y: 4 },
+  { x: 0, y: 4.46 },
+  { x: 0, y: 8.94 },
+  { x: -4, y: 8 },
+  { x: -2, y: 4 },
+  { x: -4, y: 2 },
+  { x: -8, y: 4 },
+  { x: -8.94, y: 0 },
+  { x: -4.46, y: 0 },
+  { x: -4, y: -2 },
+  { x: -8, y: -4 },
+  { x: -4, y: -8 },
+  { x: -2, y: -4 },
+  { x: 0, y: -4.46 },
+  { x: 0, y: -8.94 },
+  { x: 4, y: -8 },
+  { x: 2, y: -4 },
+  { x: 4, y: -2 },
+  { x: 8, y: -4 },
+];
+
+const ALIEN_SHAPE_BIG = ALIEN_SHAPE.map(p => ({ x: p.x * 2, y: p.y * 2 }));
 
 // ---------- Vektor-Helfer ----------
 // Ein Vektor ist ein Pfeil mit einem x- und einem y-Anteil. Position, Geschwindigkeit
@@ -101,10 +133,11 @@ function randomBetween(min, max) {
 let state = 'title';   // title, play, paused, gameover
 let score = 0, lives = START_LIVES, wave = 1, nextLifeAt = EXTRA_LIFE_EVERY;
 let highscore = loadHighscore(), newRecord = false;
-let ship = null, bullets = [], asteroids = [], particles = [], debris = [];
+let ship = null, bullets = [], asteroids = [], particles = [], debris = [], rings = [];
 let respawnTimer = 0, waveDelay = 0, stateTimer = 0;
 let beatTimer = 0, beatInterval = BEAT_SLOW, beatNote = 0;
 let fireTimer = 0; //kann schiessen falls null
+let alienShip = null, alienSpawn = 0, alienMove = 0, alienFire = 0, alienDir = 0, alienBullets = [];
 
 // ---------- Sound ----------
 let audio = null, muted = false, thrustGain = null, thrustOn = false;
@@ -169,6 +202,10 @@ const sfx = {
   beat:  n => beep(n === 0 ? 62 : 55, 0.12, 'square', 0.14),
   death: () => noise(1.2, 0.2),
   extra: () => beep(880, 0.4, 'square', 0.05, 1760),
+  alienBoom: () => {
+    noise(1.0, 0.2);
+    beep(700, 0.7, 'sawtooth', 0.05, 40);
+  },
 };
 
 // ---------- Highscore ----------
@@ -196,12 +233,16 @@ function newGame() {
   nextLifeAt = EXTRA_LIFE_EVERY;
   newRecord = false;
   bullets = [];
+  alienBullets = [];
   particles = [];
   debris = [];
+  rings = [];
   waveDelay = 0;
   spawnShip();
   spawnWave();
   fireTimer = 0;
+  alienSpawn = randomBetween(ALIENDELAYMIN, ALIENDELAYMAX);
+  alienShip = null;
   state = 'play';
 }
 
@@ -231,6 +272,7 @@ function difficulty() {
 
 function gameOver() {
   state = 'gameover';
+  alienShip = null;
   stateTimer = 1;
   newRecord = score > highscore;
   saveHighscore();
@@ -273,9 +315,9 @@ function updateShip(dt) {
   if (keys.ArrowLeft || keys.KeyA) turn -= 1;
   if (keys.ArrowRight || keys.KeyD) turn += 1;
   ship.angle += turn * TURN_SPEED * dt;
-  
+
   fireTimer -= dt;
-  if (fireTimer <= 0 && keys.Space) fire(); 
+  if (fireTimer <= 0 && keys.Space) fire();
 
   // Schub: ein kleiner Vektor in Blickrichtung wird zur Geschwindigkeit addiert.
   // Die Geschwindigkeit bleibt danach erhalten – das ist Trägheit.
@@ -320,12 +362,14 @@ function fire() {
 }
 
 function hyperJump() {
-  ship.x = Math.floor(Math.random() * W);
-  ship.y = Math.floor(Math.random() * H);
-  if (Math.random() < 0.16) explodeShip();
+  if (state === 'play' && ship && ship.alive) {
+    ship.x = Math.floor(Math.random() * W);
+    ship.y = Math.floor(Math.random() * H);
+    if (Math.random() < 0.16) explodeShip();
+  }
 }
 
-// Das Schiff zerfällt in seine einzelnen Linien, die davontrudeln
+// Das Schiff explodiert: Leben weg, Linien und Funken fliegen davon
 function explodeShip() {
   ship.alive = false;
   lives--;
@@ -333,18 +377,82 @@ function explodeShip() {
   setThrustSound(false);
   sfx.death();
 
-  const pts = SHIP_SHAPE.map(p => rotate(p, ship.angle));
-  pts.forEach((a, i) => {
-    const b = pts[(i + 1) % pts.length];
-    const v = fromAngle(Math.random() * Math.PI * 2, randomBetween(20, 60));
-    debris.push({
-      x: ship.x + (a.x + b.x) / 2, y: ship.y + (a.y + b.y) / 2,
-      vx: ship.vx * 0.3 + v.x, vy: ship.vy * 0.3 + v.y,
-      half: { x: (b.x - a.x) / 2, y: (b.y - a.y) / 2 },
-      angle: 0, spin: randomBetween(-3, 3), t: 2,
-    });
-  });
+  shatter(SHIP_SHAPE, ship, ship.angle);
   burst(ship.x, ship.y, 20);
+}
+
+// ---------- Alien ----------
+function spawnAlien() {
+  alienFire = ALIENFIREDELAY;
+  return { x: ship.x + W / 2, y: ship.y + H / 2, vx: 0, vy: 0, angle: 0, big: Math.random() > (0.1 + score * 0.9 / 40000) };
+}
+
+function updateAlien(dt) {
+  if (alienShip) {
+    alienMove -= dt;
+    alienFire -= dt;
+    if (alienMove <= 0) {
+      alienMove = ALIENSWITCHDIRECTION;
+      alienDir = Math.random() * Math.PI * 2;
+      alienShip.vx = ALIENSPEED * Math.cos(alienDir);
+      alienShip.vy = ALIENSPEED * Math.sin(alienDir);
+    }
+    if (alienFire <= 0 && alienBullets.length === 0) {
+      alienFire = ALIENFIREDELAY;
+      let bulletDir = 0, bulletVX = 0, bulletVY = 0;
+      if (alienShip.big || !ship.alive) {
+        bulletDir = Math.random() * Math.PI * 2;
+        bulletVX = BULLET_SPEED * Math.cos(bulletDir);
+        bulletVY = BULLET_SPEED * Math.sin(bulletDir);
+      } else {
+        bulletVX = ship.x - alienShip.x;
+        bulletVY = ship.y - alienShip.y;
+        bulletDir = BULLET_SPEED / Math.sqrt(bulletVX * bulletVX + bulletVY * bulletVY);
+        bulletVX *= bulletDir;
+        bulletVY *= bulletDir;
+      }
+      // Die Kugel bekommt NICHT die Geschwindigkeit des Alien-Schiffs
+      alienBullets.push({
+        x: alienShip.x, y: alienShip.y,
+        vx: bulletVX, vy: bulletVY,
+        t: BULLET_LIFE,
+      });
+    }
+    alienShip.x += alienShip.vx * dt;
+    alienShip.y += alienShip.vy * dt;
+    wrap(alienShip);
+    alienShip.angle += Math.PI / 6;
+  }
+}
+
+function hitRadiusAlien() {
+  let r = 0;
+  if (alienShip.big) r = ALIEN_R * 2; else r = ALIEN_R;
+  return r;
+}
+
+function destroyAlien(addPoints) {
+  if (addPoints) {
+    if (alienShip.big) {
+      addScore(ALIEN_SCORE.big);
+    } else {
+      addScore(ALIEN_SCORE.small);
+    }
+  }
+  explodeAlien();
+  alienSpawn = randomBetween(ALIENDELAYMIN, ALIENDELAYMAX) / difficulty();
+  alienShip = null;
+}
+
+// Das Alien geht mit einem großen Knall hoch: Funkenregen in zwei Farben,
+// seine Linien fliegen davon, und eine Druckwelle breitet sich als Ring aus.
+function explodeAlien() {
+  const a = alienShip, scale = a.big ? 2 : 1;
+  burst(a.x, a.y, 30 * scale, PURPLE, 260);
+  burst(a.x, a.y, 15 * scale, WHITE, 120);
+  shatter(a.big ? ALIEN_SHAPE_BIG : ALIEN_SHAPE, a, a.angle, PURPLE);
+  rings.push({ x: a.x, y: a.y, r: ALIEN_R * scale, grow: 160 * scale, t: RING_LIFE, color: PURPLE });
+  sfx.alienBoom();
 }
 
 // ---------- Asteroiden ----------
@@ -372,9 +480,9 @@ function updateAsteroids(dt) {
 }
 
 // Ein großer Asteroid zerfällt in zwei mittlere, ein mittlerer in zwei kleine
-function destroyAsteroid(a) {
+function destroyAsteroid(a, addPoints) {
   a.dead = true;
-  addScore(ASTEROID_SIZES[a.size].points);
+  if (addPoints) addScore(ASTEROID_SIZES[a.size].points);
   if (a.size > 1) {
     asteroids.push(makeAsteroid(a.x, a.y, a.size - 1));
     asteroids.push(makeAsteroid(a.x, a.y, a.size - 1));
@@ -395,24 +503,68 @@ function stepBullets(h) {
     b.y += b.vy * h;
     wrap(b);
     b.t -= h;
+    if (alienShip) {
+      if (distance(b, alienShip) < hitRadiusAlien()) {
+        destroyAlien(true);
+        b.t = 0;
+        continue;
+      }
+    }
     for (const a of asteroids) {
       if (!a.dead && distance(b, a) < hitRadius(a)) {
-        destroyAsteroid(a);
+        destroyAsteroid(a, true);
+        b.t = 0;
+        break;
+      }
+    }
+  }
+  for (const b of alienBullets) {
+    b.x += b.vx * h;
+    b.y += b.vy * h;
+    wrap(b);
+    b.t -= h;
+    if (ship.alive && ship.invuln <= 0) {
+      if (distance(b, ship) < SHIP_R) {
+        explodeShip();
+        b.t = 0;
+        break;
+      }
+    }
+    for (const a of asteroids) {
+      if (!a.dead && distance(b, a) < hitRadius(a)) {
+        destroyAsteroid(a, false);
         b.t = 0;
         break;
       }
     }
   }
   bullets = bullets.filter(b => b.t > 0);
+  alienBullets = alienBullets.filter(b => b.t > 0);
   asteroids = asteroids.filter(a => !a.dead);
 }
 
 // ---------- Partikel ----------
-function burst(x, y, count) {
+function burst(x, y, count, color = WHITE, maxSpeed = 160) {
   for (let i = 0; i < count; i++) {
-    const v = fromAngle(Math.random() * Math.PI * 2, randomBetween(30, 160));
-    particles.push({ x, y, vx: v.x, vy: v.y, t: randomBetween(0.4, 1) });
+    const v = fromAngle(Math.random() * Math.PI * 2, randomBetween(30, maxSpeed));
+    particles.push({ x, y, vx: v.x, vy: v.y, t: randomBetween(0.4, 1), color });
   }
+}
+
+// Eine Form zerfällt in ihre einzelnen Linien, die davontrudeln.
+// obj liefert Position und Geschwindigkeit (Schiff oder Alien).
+function shatter(shape, obj, angle, color = WHITE) {
+  const pts = shape.map(p => rotate(p, angle));
+  pts.forEach((a, i) => {
+    const b = pts[(i + 1) % pts.length];
+    const v = fromAngle(Math.random() * Math.PI * 2, randomBetween(20, 60));
+    debris.push({
+      x: obj.x + (a.x + b.x) / 2, y: obj.y + (a.y + b.y) / 2,
+      vx: obj.vx * 0.3 + v.x, vy: obj.vy * 0.3 + v.y,
+      half: { x: (b.x - a.x) / 2, y: (b.y - a.y) / 2 },
+      angle: 0, spin: randomBetween(-3, 3), t: 2, color,
+    });
+  });
 }
 
 function updateEffects(dt) {
@@ -429,6 +581,11 @@ function updateEffects(dt) {
     d.t -= dt;
   }
   debris = debris.filter(d => d.t > 0);
+  for (const r of rings) {
+    r.r += r.grow * dt;
+    r.t -= dt;
+  }
+  rings = rings.filter(r => r.t > 0);
 }
 
 // ---------- Hauptschleife ----------
@@ -438,6 +595,7 @@ function update(dt) {
   // Asteroiden und Effekte fliegen immer – auch im Titelbild als Hintergrund
   updateAsteroids(dt);
   updateEffects(dt);
+  updateAlien(dt);
 
   if (state === 'gameover') stateTimer -= dt;
   if (state !== 'play') return;
@@ -458,14 +616,37 @@ function update(dt) {
   if (ship.alive && ship.invuln <= 0) {
     const hit = asteroids.find(a => distance(ship, a) < hitRadius(a) + SHIP_R);
     if (hit) {
-      destroyAsteroid(hit);
+      destroyAsteroid(hit, false);
       asteroids = asteroids.filter(a => !a.dead);
       explodeShip();
     }
   }
 
+  // Alien gegen Asteroid
+  if (alienShip) {
+    const hit = asteroids.find(a => distance(alienShip, a) < hitRadius(a) + hitRadiusAlien());
+    if (hit) {
+      destroyAsteroid(hit, false);
+      asteroids = asteroids.filter(a => !a.dead);
+      destroyAlien(false);
+    }
+  }
+
+  // Alien gegen Player Kollision
+  if (alienShip && ship.alive) {
+    if (distance(alienShip, ship) < SHIP_R + hitRadiusAlien()) {
+      destroyAlien(false);
+      explodeShip();
+    }
+  }
+
+  alienSpawn -= dt;
+  if (alienSpawn <= 0 && !alienShip) {
+    alienShip = spawnAlien();
+  }
+
   // Welle geschafft? Kurz durchatmen, dann kommt die nächste
-  if (asteroids.length === 0 && waveDelay === 0) waveDelay = WAVE_DELAY;
+  if (asteroids.length === 0 && waveDelay === 0 && !alienShip) waveDelay = WAVE_DELAY;
   if (waveDelay > 0) {
     waveDelay -= dt;
     if (waveDelay <= 0) {
@@ -487,6 +668,7 @@ function update(dt) {
   }
 }
 
+// ---------- Zeichnen ----------
 // Zeichnet eine Form aus Punkten, gedreht um angle und verschoben nach (x, y)
 function drawShape(points, x, y, angle, closed = true) {
   ctx.beginPath();
@@ -507,6 +689,14 @@ function drawWrapped(obj, r, drawAt) {
       if (x + r < 0 || x - r > W || y + r < 0 || y - r > H) continue;
       drawAt(x, y);
     }
+  }
+}
+
+function drawAlienShip() {
+  if (alienShip.big) {
+    drawShape(ALIEN_SHAPE_BIG, alienShip.x, alienShip.y, alienShip.angle);
+  } else {
+    drawShape(ALIEN_SHAPE, alienShip.x, alienShip.y, alienShip.angle);
   }
 }
 
@@ -546,25 +736,43 @@ function draw() {
     ctx.strokeStyle = ASTEROID_SIZES[a.size].color;
     drawWrapped(a, a.r * 1.1, (x, y) => drawShape(a.points, x, y, a.angle));
   }
+  if (alienShip) {
+    ctx.strokeStyle = PURPLE;
+    drawAlienShip();
+  }
   ctx.strokeStyle = WHITE;
 
   for (const p of particles) {
-    ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, p.t * 2)})`;
+    ctx.globalAlpha = Math.min(1, p.t * 2);
+    ctx.fillStyle = p.color;
     ctx.fillRect(p.x - 1, p.y - 1, 2, 2);
   }
   for (const d of debris) {
     const e = rotate(d.half, d.angle);
     ctx.globalAlpha = Math.min(1, d.t);
+    ctx.strokeStyle = d.color;
     ctx.beginPath();
     ctx.moveTo(d.x - e.x, d.y - e.y);
     ctx.lineTo(d.x + e.x, d.y + e.y);
     ctx.stroke();
-    ctx.globalAlpha = 1;
   }
+  // Druckwelle: ein Ring, der wächst und dabei verblasst
+  for (const r of rings) {
+    ctx.globalAlpha = r.t / RING_LIFE;
+    ctx.strokeStyle = r.color;
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = WHITE;
 
   if (state !== 'title') {
     // Schiff: blinkt, solange es unverwundbar ist
     if (ship.alive && (ship.invuln <= 0 || blinkOn(8))) drawWrapped(ship, 20, drawShip);
+
+    ctx.fillStyle = '#adff2f';
+    for (const b of alienBullets) ctx.fillRect(b.x - 1.5, b.y - 1.5, 3, 3);
 
     ctx.fillStyle = '#fff';
     for (const b of bullets) ctx.fillRect(b.x - 1.5, b.y - 1.5, 3, 3);
