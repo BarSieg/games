@@ -13,4 +13,21 @@ position = Vector2(100, 320)
 wait_time = 1.5999999999999999
 autostart = true
 
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1942199865]
+
+[node name="GameOverLabel" type="Label" parent="CanvasLayer" unique_id=1810776408]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 32
+text = "GAME OVER
+
+Leertaste: nochmal"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[connection signal="gestorben" from="Fisch" to="." method="_on_fisch_gestorben"]
 [connection signal="timeout" from="KorallenTimer" to="." method="_on_korallen_timer_timeout"]

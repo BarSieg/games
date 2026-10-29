@@ -6,8 +6,8 @@ Szenen (`.tscn`) und Skripte (`.gd`) sind bei Godot normale Textdateien. Darum k
 
 **Geplante Kapitel:**
 1. Godot einrichten, der Fisch fällt und flattert ✅
-2. Korallen: Hindernisse, die von rechts kommen (dein erstes **Signal**) ← *du bist hier*
-3. Zusammenstoß und Game Over (eigene **Signale**)
+2. Korallen: Hindernisse, die von rechts kommen (dein erstes **Signal**) ✅
+3. Zusammenstoß und Game Over (eigene **Signale**) ← *du bist hier*
 4. Punkte, Anzeige und Highscore
 5. Eigene Grafik und Sound
 6. Export als Web-Spiel und Eintrag auf der Startseite
@@ -242,3 +242,140 @@ Fertig? Committen und Bescheid geben.
 2. **Abstand rechnen (leicht):** Wie viele Pixel liegen zwischen zwei Korallenpaaren? Rechne es aus `SPEED` und **Wait Time** aus. Ändere eins von beiden, bis dir der Abstand gefällt.
 3. **Weichere Höhen (mittel):** Manchmal liegt eine Lücke ganz oben und die nächste ganz unten. Das ist kaum zu schaffen. Sorge dafür, dass die nächste Lücke höchstens 150 Pixel von der vorigen entfernt ist. Tipp: Merke dir die letzte Höhe in einer Variable außerhalb der Funktion, und schau dir `clamp` an.
 4. **Wer liegt oben? (mittel):** Die Korallen werden über den Fisch gezeichnet, weil sie später hinzugefügt werden. Finde heraus, wie man das ändert. Stichwort: `z_index` im Inspector unter **Ordering**.
+
+---
+
+## Kapitel 3: Zusammenstoß und Game Over
+
+Bisher schwimmt der Fisch durch alles hindurch. Jetzt soll er sterben, wenn er eine Koralle berührt oder unten aus dem Bild fällt. Dann bleibt alles stehen, „GAME OVER“ erscheint, und mit Leertaste geht es von vorn los.
+
+Dabei lernst du das Herzstück von Godot richtig kennen: **Signale**. In Kapitel 2 hast du ein fertiges Signal benutzt (`timeout` vom Timer). Jetzt baust du ein eigenes.
+
+### 3.1 Die Idee: Wer muss was wissen?
+
+In Weltraumsteine stand die ganze Logik in einer großen `update`-Funktion. Die wusste alles über alle. In Godot verteilt man die Aufgaben:
+
+```
+Koralle merkt:   „Mich hat etwas berührt“  → sagt dem Ding: „Stirb!“
+Fisch merkt:     „Ich bin tot“             → sendet Signal  gestorben
+Main hört zu:    „Fisch ist tot“           → Timer aus, Korallen anhalten, GAME OVER zeigen
+```
+
+Der Fisch weiß nicht, wer ihm zuhört. Die Koralle weiß nicht, dass es ein Fisch ist. So kann man jedes Teil ändern, ohne die anderen anzufassen.
+
+### 3.2 Der Fisch kann sterben
+
+Ergänze `fisch.gd`. Oben unter `extends`:
+
+```gdscript
+signal gestorben  # Nachricht an alle, die zuhören
+
+var tot = false
+```
+
+Eine neue Funktion, z. B. ganz unten:
+
+```gdscript
+func sterben():
+	if tot:
+		return  # wer schon tot ist, stirbt nicht noch mal
+	tot = true
+	gestorben.emit()
+```
+
+Kommt dir `if tot: return` bekannt vor? Das ist die Lehre aus der Mehrfach-Explosion in Weltraumsteine.
+
+Und ganz am **Anfang** von `_physics_process` ein Block für den toten Fisch. Er fällt nur noch, dreht sich mit dem Bauch nach oben und reagiert auf keine Taste mehr:
+
+```gdscript
+	if tot:
+		velocity.y += gravity * delta
+		rotation = move_toward(rotation, PI / 2, 5 * delta)
+		move_and_slide()
+		return
+```
+
+Zuletzt, ebenfalls in `_physics_process` (nach dem `tot`-Block): Wer unten rausfällt, stirbt auch.
+
+```gdscript
+	if position.y > 660:
+		sterben()
+```
+
+### 3.3 Die Koralle meldet eine Berührung
+
+1. `korallen.tscn` öffnen, `Korallen` auswählen → Tab **Node** → **Signals**.
+2. Doppelklick auf `body_entered(body: Node2D)` → als Ziel **Korallen selbst** auswählen → **Connect**.
+   Eine `Area2D` sendet `body_entered`, wenn ein Physik-Körper (wie dein `CharacterBody2D`) sie berührt. `body` ist der Körper, der sie berührt hat.
+3. Fülle die neue Funktion in `korallen.gd`:
+
+```gdscript
+func _on_body_entered(body):
+	if body.has_method("sterben"):
+		body.sterben()
+```
+
+`has_method` fragt: „Kannst du sterben?“ Die Koralle muss nicht wissen, dass es ein Fisch ist. Kommt später etwas anderes dazu, das sterben kann (ein zweiter Fisch, ein Gegner …), funktioniert es sofort mit.
+
+### 3.4 Korallen in eine Gruppe stecken
+
+Main muss später *alle* Korallen auf einmal anhalten. Dafür gibt es **Gruppen**: ein Etikett, das man beliebig vielen Nodes geben kann.
+
+`korallen.tscn` → `Korallen` auswählen → Tab **Node** → **Groups** → `korallen` eintippen → **Add**. Speichern.
+
+Weil die Gruppe in der Szene steht, hat jede neu erzeugte Koralle sie automatisch.
+
+### 3.5 Die GAME-OVER-Anzeige
+
+1. In `main.tscn`: Rechtsklick auf `Main` → **Add Child Node** → `CanvasLayer`.
+   Ein `CanvasLayer` ist eine Ebene für Anzeigen, die immer über dem Spiel liegt. Das wird in Kapitel 4 für die Punkte wichtig.
+2. Rechtsklick auf `CanvasLayer` → **Add Child Node** → `Label` → umbenennen in `GameOverLabel`.
+3. Im Inspector:
+   - **Text:** `GAME OVER`, dann Enter, leere Zeile, `Leertaste: nochmal`
+   - **Horizontal Alignment** und **Vertical Alignment:** `Center`
+   - **Theme Overrides → Font Sizes → Font Size:** `32` (Häkchen davor setzen)
+4. Oben in der Werkzeugleiste über dem Bild erscheint bei ausgewähltem Label ein Symbol für **Anchor Presets** (ein kleines grünes Kreuz/Rechteck). Wähle **Full Rect**. Dann füllt das Label den ganzen Bildschirm, und der Text steht genau in der Mitte.
+5. Im Szenenbaum auf das **Auge** neben `GameOverLabel` klicken, damit es unsichtbar ist. Es soll erst beim Tod erscheinen.
+
+### 3.6 Main reagiert auf den Tod
+
+1. In `main.tscn` den `Fisch` auswählen → **Node** → **Signals**. Dort steht jetzt dein eigenes Signal `gestorben()`! (Falls nicht: `fisch.gd` speichern.)
+2. Doppelklick auf `gestorben()` → Ziel `Main` → **Connect**.
+3. Ergänze `main.gd`:
+
+```gdscript
+var kann_neustarten = false
+
+func _on_fisch_gestorben():
+	$KorallenTimer.stop()
+	get_tree().call_group("korallen", "set_process", false)
+	$CanvasLayer/GameOverLabel.show()
+	# kurz warten, damit ein hektischer Tastendruck nicht sofort neu startet
+	await get_tree().create_timer(0.8).timeout
+	kann_neustarten = true
+
+func _process(_delta):
+	if kann_neustarten and Input.is_action_just_pressed("flap"):
+		get_tree().reload_current_scene()
+```
+
+Was ist neu?
+
+| Code | Bedeutung |
+|---|---|
+| `$KorallenTimer` | Kurzform für „die Kind-Node mit diesem Namen“. Mit `/` geht es tiefer: `$CanvasLayer/GameOverLabel`. |
+| `call_group("korallen", "set_process", false)` | Ruft bei **jeder** Node der Gruppe `set_process(false)` auf. Dann läuft ihr `_process` nicht mehr, und sie bleiben stehen. |
+| `await ... .timeout` | Die Funktion **pausiert** hier und macht nach 0,8 Sekunden weiter. Das Spiel läuft währenddessen normal weiter. In JavaScript hättest du dafür einen eigenen Timer herunterzählen müssen. |
+| `_delta` | Der Unterstrich sagt Godot: „Diesen Parameter brauche ich absichtlich nicht.“ Ohne ihn zeigt Godot eine Warnung. |
+| `reload_current_scene()` | Lädt `main.tscn` komplett neu: Alles ist wieder wie beim Start. Ein `newGame()`, in dem man jede Variable einzeln zurücksetzt (und eine vergisst), braucht man so nicht. |
+
+4. **F5.** Gegen eine Koralle schwimmen → der Fisch kippt und fällt, die Korallen stehen, GAME OVER erscheint. Leertaste → neues Spiel.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 3
+
+1. **Aussehen (leicht):** Gib dem GAME-OVER-Text eine andere Farbe und einen Umriss, damit er sich vom Wasser abhebt. Schau unter **Theme Overrides → Colors** und **Constants**.
+2. **Signal per Code (mittel):** Verbinde `gestorben` nicht im Editor, sondern im Code. Lösche die Verbindung im Signals-Panel (Rechtsklick → Disconnect) und schreib in `main.gd` eine Funktion `_ready()`, die Godot beim Start einmal aufruft. Darin: `$Fisch.gestorben.connect(_on_fisch_gestorben)`. Beide Wege sind gleichwertig. Welcher gefällt dir besser?
+3. **Bereit? (mittel):** Im Original geht es erst los, wenn man das erste Mal tippt. Bis dahin schwebt der Vogel und es kommen keine Hindernisse. Baue das nach. Tipps: Beim Timer **Autostart** ausschalten und ihn per Code mit `$KorallenTimer.start()` starten. Der Fisch braucht ein eigenes Signal, z. B. `gestartet`.
+4. **Pause (schwer):** Mit P soll das Spiel anhalten. Godot hat dafür `get_tree().paused = true`. Probier es aus, und finde heraus, warum danach auch die Taste zum Weiterspielen nicht mehr reagiert. Stichwort: **Process → Mode** im Inspector.

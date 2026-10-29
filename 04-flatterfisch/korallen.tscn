@@ -32,3 +32,5 @@ shape = SubResource("RectangleShape2D_643jj")
 [node name="UntenForm" type="CollisionShape2D" parent="." unique_id=2106132941]
 position = Vector2(0, 380)
 shape = SubResource("RectangleShape2D_6ssy0")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

@@ -7,3 +7,8 @@ func _process(delta):
 	# ganz links raus? Dann weg damit
 	if position.x < -50:
 		queue_free()
+
+
+func _on_body_entered(body: Node2D) -> void:
+	if body.has_method("sterben"):
+		body.sterben()
