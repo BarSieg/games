@@ -8,7 +8,8 @@ size = Vector2(60, 600)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_6ssy0"]
 size = Vector2(60, 600)
 
-[node name="Korallen" type="Area2D" unique_id=2023023293]
+[node name="Korallen" type="Area2D" unique_id=2023023293 groups=["korallen"]]
+process_mode = 1
 script = ExtResource("1_6ssy0")
 
 [node name="ObenBild" type="ColorRect" parent="." unique_id=1400458336]

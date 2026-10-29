@@ -7,6 +7,7 @@
 radius = 23.021729
 
 [node name="Fisch" type="CharacterBody2D" unique_id=1674924419]
+process_mode = 1
 z_index = 1
 script = ExtResource("1_1nqed")
 

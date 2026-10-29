@@ -4,14 +4,16 @@
 [ext_resource type="PackedScene" uid="uid://wktgp8x8he1r" path="res://fisch.tscn" id="1_ig7tw"]
 
 [node name="Main" type="Node2D" unique_id=1979796185]
+process_mode = 3
 script = ExtResource("1_0xm2m")
 
 [node name="Fisch" parent="." unique_id=1674924419 instance=ExtResource("1_ig7tw")]
+process_mode = 1
 position = Vector2(100, 320)
 
 [node name="KorallenTimer" type="Timer" parent="." unique_id=734811245]
+process_mode = 1
 wait_time = 1.5999999999999999
-autostart = true
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1942199865]
 
@@ -22,6 +24,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.100000024, 0.100000024, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/line_spacing = 2
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 32
 text = "GAME OVER
 
@@ -29,5 +36,17 @@ Leertaste: nochmal"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[connection signal="gestorben" from="Fisch" to="." method="_on_fisch_gestorben"]
+[node name="PauseLabel" type="Label" parent="CanvasLayer" unique_id=1838470292]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.5983344, 0.23789233, 0.8441925, 1)
+theme_override_font_sizes/font_size = 32
+text = "         P A U S E"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[connection signal="gestartet" from="Fisch" to="." method="_on_fisch_gestartet"]
 [connection signal="timeout" from="KorallenTimer" to="." method="_on_korallen_timer_timeout"]
