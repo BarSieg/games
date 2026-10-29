@@ -7,8 +7,8 @@
 radius = 23.021729
 
 [node name="Fisch" type="CharacterBody2D" unique_id=1674924419]
+z_index = 1
 script = ExtResource("1_1nqed")
-gravity = 1350.0
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1909801893]
 scale = Vector2(0.5, 0.5)
