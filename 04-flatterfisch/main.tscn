@@ -1,8 +1,16 @@
 [gd_scene format=3 uid="uid://caw8871jo4qb2"]
 
+[ext_resource type="Script" uid="uid://1an2rtsrbf32" path="res://main.gd" id="1_0xm2m"]
 [ext_resource type="PackedScene" uid="uid://wktgp8x8he1r" path="res://fisch.tscn" id="1_ig7tw"]
 
 [node name="Main" type="Node2D" unique_id=1979796185]
+script = ExtResource("1_0xm2m")
 
 [node name="Fisch" parent="." unique_id=1674924419 instance=ExtResource("1_ig7tw")]
 position = Vector2(100, 320)
+
+[node name="KorallenTimer" type="Timer" parent="." unique_id=734811245]
+wait_time = 1.5999999999999999
+autostart = true
+
+[connection signal="timeout" from="KorallenTimer" to="." method="_on_korallen_timer_timeout"]
