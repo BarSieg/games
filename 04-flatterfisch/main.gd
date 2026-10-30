@@ -71,6 +71,7 @@ func _on_durchschwommen():
 	if $Fisch.tot:
 		return  # ein toter Fisch, der durch die Zone fällt, bekommt keine Punkte
 	punkte += 1
+	$PunktSound.play()
 	$CanvasLayer/PunkteLabel.text = str(punkte)
 
 func lade_highscore():

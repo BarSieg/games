@@ -30,6 +30,7 @@ func _physics_process(delta):
 		else:
 			velocity.y = 0
 	if Input.is_action_just_pressed("flap"):
+		$FlapSound.play()
 		velocity.y = FLAP_SPEED
 		rotation = -PI / 12
 	move_and_slide()
@@ -37,6 +38,7 @@ func _physics_process(delta):
 func sterben():
 	if tot:
 		return  # wer schon tot ist, stirbt nicht noch mal
+	$TotSound.play()
 	tot = true
 	los = false
 	gestorben.emit()

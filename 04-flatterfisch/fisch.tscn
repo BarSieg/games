@@ -1,19 +1,44 @@
 [gd_scene format=3 uid="uid://wktgp8x8he1r"]
 
 [ext_resource type="Script" uid="uid://dkui6m22rcdor" path="res://fisch.gd" id="1_1nqed"]
-[ext_resource type="Texture2D" uid="uid://djcxfr6d4w2ot" path="res://icon.svg" id="1_emqxm"]
+[ext_resource type="Texture2D" uid="uid://bi7obaibi1w72" path="res://fisch1.png" id="2_8r7os"]
+[ext_resource type="Texture2D" uid="uid://yrrp5kwqtgll" path="res://fisch2.png" id="3_ybetr"]
+[ext_resource type="AudioStream" uid="uid://bjyvkbkxx84gu" path="res://flap.wav" id="4_38dgd"]
+[ext_resource type="AudioStream" uid="uid://c2ij35cw0m7l6" path="res://tot.wav" id="5_roigw"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_s017u"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_8r7os")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_ybetr")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 8.0
+}]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_s017u"]
-radius = 23.021729
+radius = 22.022715
 
 [node name="Fisch" type="CharacterBody2D" unique_id=1674924419]
 process_mode = 1
 z_index = 1
 script = ExtResource("1_1nqed")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1909801893]
-scale = Vector2(0.5, 0.5)
-texture = ExtResource("1_emqxm")
+[node name="Bild" type="AnimatedSprite2D" parent="." unique_id=862161515]
+scale = Vector2(2, 2)
+sprite_frames = SubResource("SpriteFrames_s017u")
+autoplay = "default"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=402835438]
 shape = SubResource("CircleShape2D_s017u")
+
+[node name="FlapSound" type="AudioStreamPlayer" parent="." unique_id=2030880088]
+stream = ExtResource("4_38dgd")
+volume_db = -15.438
+
+[node name="TotSound" type="AudioStreamPlayer" parent="." unique_id=1207055510]
+stream = ExtResource("5_roigw")
