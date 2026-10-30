@@ -506,3 +506,6 @@ Fertig? Committen und Bescheid geben.
 2. **In die Datei schauen (leicht):** *Project → Open User Data Folder* öffnet den `user://`-Ordner. Öffne `highscore.cfg` mit einem Texteditor, schau dir den Aufbau an und schummle dir einen Rekord von 999. Was lernst du daraus über gespeicherte Spielstände?
 3. **Medaillen (mittel):** Ab 10 Punkten Bronze, ab 20 Silber, ab 40 Gold. Zeig die Medaille im GAME-OVER-Text an. Google mal `GDScript match`. Funktioniert es dafür, oder ist eine `if`/`elif`-Kette hier besser?
 4. **Es wird schneller (mittel):** Alle 10 Punkte sollen neue Korallen etwas schneller schwimmen. Tipp: Mach in `korallen.gd` aus `const SPEED` eine `var speed`. Main kann den Wert dann direkt nach `instantiate()` setzen, genau wie `korallen.position`.
+
+### Antworten zu Kapitel 4
+2. Keine Sicherung gegen Manipulation. Am einfachsten einen Hashwert über alle gespeicherten Werte (zurzeit nur Highscore) in diesselbe Datei schreiben.
