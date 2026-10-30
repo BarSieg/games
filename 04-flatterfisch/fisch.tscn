@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://bi7obaibi1w72" path="res://fisch1.png" id="2_8r7os"]
 [ext_resource type="Texture2D" uid="uid://yrrp5kwqtgll" path="res://fisch2.png" id="3_ybetr"]
 [ext_resource type="AudioStream" uid="uid://bjyvkbkxx84gu" path="res://flap.wav" id="4_38dgd"]
+[ext_resource type="Texture2D" uid="uid://dgkrwwh55up3x" path="res://fisch_tot.png" id="4_roigw"]
 [ext_resource type="AudioStream" uid="uid://c2ij35cw0m7l6" path="res://tot.wav" id="5_roigw"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_s017u"]
@@ -18,6 +19,14 @@ animations = [{
 "loop": 1,
 "name": &"default",
 "speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_roigw")
+}],
+"loop": 1,
+"name": &"tot",
+"speed": 5.0
 }]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_s017u"]
@@ -31,6 +40,7 @@ script = ExtResource("1_1nqed")
 [node name="Bild" type="AnimatedSprite2D" parent="." unique_id=862161515]
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_s017u")
+animation = &"tot"
 autoplay = "default"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=402835438]
@@ -42,3 +52,16 @@ volume_db = -15.438
 
 [node name="TotSound" type="AudioStreamPlayer" parent="." unique_id=1207055510]
 stream = ExtResource("5_roigw")
+
+[node name="Blasen" type="CPUParticles2D" parent="." unique_id=424832134]
+position = Vector2(31, -1)
+emitting = false
+lifetime = 4.37
+one_shot = true
+randomness = 0.27
+emission_shape = 1
+emission_sphere_radius = 4.0
+direction = Vector2(0, 1)
+gravity = Vector2(0, -200)
+initial_velocity_min = 24.29
+initial_velocity_max = 24.29
