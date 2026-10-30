@@ -16,7 +16,7 @@ func _physics_process(delta):
 		rotation = move_toward(rotation, PI / 2, 5 * delta)
 		move_and_slide()
 		return
-	if position.y > 660:
+	if position.y > 620:
 		sterben()
 	if (position.y < TOP_BORDER):
 		position.y = TOP_BORDER

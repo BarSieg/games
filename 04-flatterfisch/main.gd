@@ -3,6 +3,7 @@ extends Node2D
 const KORALLEN = preload("res://korallen.tscn")
 const GAP_MIN_Y = 150.0  # höchste Lage der Lücke
 const GAP_MAX_Y = 490.0  # tiefste Lage der Lücke
+const GAP_MAX_Y_DIFF = 175.0  # maximaler Abstand zwei Lücken
 const PAUSE_BLINKS_PER_SECOND = 5
 const SAVE_PATH = "user://highscore.cfg"
 const KORALLEN_SPEED = 150.0
@@ -18,7 +19,9 @@ var highscore = 0
 func _on_korallen_timer_timeout():
 	var korallen = KORALLEN.instantiate()
 	korallen.speed = clamp(KORALLEN_SPEED + (punkte / 10) * KORALLEN_SPEED_DELTA, 0, KORALLEN_SPEED_MAX)
-	var newHeight = clamp(randf_range(GAP_MIN_Y, GAP_MAX_Y), lastHeight - 150, lastHeight + 150)
+	$Sand.autoscroll.x = -korallen.speed
+	$Steine.autoscroll.x = $Sand.autoscroll.x / 3
+	var newHeight = clamp(randf_range(GAP_MIN_Y, GAP_MAX_Y), lastHeight - GAP_MAX_Y_DIFF, lastHeight + GAP_MAX_Y_DIFF)
 	korallen.position = Vector2(400, newHeight)
 	lastHeight = newHeight
 	add_child(korallen)
@@ -41,6 +44,8 @@ func getMedal():
 
 func _on_fisch_gestorben() -> void:
 	$KorallenTimer.stop()
+	$Sand.autoscroll.x = 0.0
+	$Steine.autoscroll.x = 0.0
 	get_tree().call_group("korallen", "set_process", false)
 	if punkte > highscore:
 		highscore = punkte
@@ -66,6 +71,8 @@ func _process(_delta):
 
 func _on_fisch_gestartet() -> void:
 	$KorallenTimer.start()
+	$Sand.autoscroll.x = -150.0
+	$Steine.autoscroll.x = $Sand.autoscroll.x / 3
 
 func _on_durchschwommen():
 	if $Fisch.tot:

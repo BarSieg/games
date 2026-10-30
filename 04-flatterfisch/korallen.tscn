@@ -15,6 +15,7 @@ size = Vector2(8, 160)
 [node name="Korallen" type="Area2D" unique_id=2023023293 groups=["korallen"]]
 process_mode = 1
 script = ExtResource("1_6ssy0")
+metadata/_edit_horizontal_guides_ = [1056.0]
 
 [node name="ObenBild" type="TextureRect" parent="." unique_id=656211954]
 offset_left = -30.0
@@ -34,6 +35,7 @@ offset_bottom = 680.0
 texture = ExtResource("2_4hmkg")
 expand_mode = 1
 stretch_mode = 1
+metadata/_edit_use_anchors_ = true
 
 [node name="ObenForm" type="CollisionShape2D" parent="." unique_id=713536539]
 position = Vector2(0, -380)
