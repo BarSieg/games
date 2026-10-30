@@ -7,8 +7,8 @@ Szenen (`.tscn`) und Skripte (`.gd`) sind bei Godot normale Textdateien. Darum k
 **Geplante Kapitel:**
 1. Godot einrichten, der Fisch fällt und flattert ✅
 2. Korallen: Hindernisse, die von rechts kommen (dein erstes **Signal**) ✅
-3. Zusammenstoß und Game Over (eigene **Signale**) ← *du bist hier*
-4. Punkte, Anzeige und Highscore
+3. Zusammenstoß und Game Over (eigene **Signale**) ✅
+4. Punkte, Anzeige und Highscore ← *du bist hier*
 5. Eigene Grafik und Sound
 6. Export als Web-Spiel und Eintrag auf der Startseite
 
@@ -379,3 +379,130 @@ Fertig? Committen und Bescheid geben.
 2. **Signal per Code (mittel):** Verbinde `gestorben` nicht im Editor, sondern im Code. Lösche die Verbindung im Signals-Panel (Rechtsklick → Disconnect) und schreib in `main.gd` eine Funktion `_ready()`, die Godot beim Start einmal aufruft. Darin: `$Fisch.gestorben.connect(_on_fisch_gestorben)`. Beide Wege sind gleichwertig. Welcher gefällt dir besser?
 3. **Bereit? (mittel):** Im Original geht es erst los, wenn man das erste Mal tippt. Bis dahin schwebt der Vogel und es kommen keine Hindernisse. Baue das nach. Tipps: Beim Timer **Autostart** ausschalten und ihn per Code mit `$KorallenTimer.start()` starten. Der Fisch braucht ein eigenes Signal, z. B. `gestartet`.
 4. **Pause (schwer):** Mit P soll das Spiel anhalten. Godot hat dafür `get_tree().paused = true`. Probier es aus, und finde heraus, warum danach auch die Taste zum Weiterspielen nicht mehr reagiert. Stichwort: **Process → Mode** im Inspector.
+
+---
+
+## Kapitel 4: Punkte, Anzeige und Highscore
+
+Für jedes Korallenpaar, durch das der Fisch schwimmt, gibt es einen Punkt. Die Punkte stehen oben im Bild, und der Rekord wird gespeichert, auch wenn man das Spiel schließt.
+
+### 4.1 Eine unsichtbare Punktzone
+
+Wie merkt das Spiel, dass der Fisch durch die Lücke geschwommen ist? Mit einer unsichtbaren `Area2D` direkt hinter der Lücke. Berührt der Fisch sie, gibt es einen Punkt.
+
+1. `korallen.tscn` öffnen. Rechtsklick auf `Korallen` → **Add Child Node** → `Area2D` → umbenennen in `Punktzone`.
+2. Rechtsklick auf `Punktzone` → **Add Child Node** → `CollisionShape2D`. **Shape** → **New RectangleShape2D**, aufklappen, **Size** = `10, 160`. **Position** der CollisionShape2D = `35, 0`.
+   Die Zone ist also so hoch wie die Lücke und liegt direkt rechts hinter den Korallen.
+
+```
+Korallen (Area2D)
+├── ObenBild, ObenForm, UntenBild, UntenForm
+└── Punktzone (Area2D)
+    └── CollisionShape2D
+```
+
+**Wichtig:** Eine `CollisionShape2D` gehört immer zu ihrem **direkten** Eltern-Node. Die Form der Punktzone löst also *nicht* das `body_entered` von `Korallen` aus. Der Fisch stirbt nicht an der Punktzone.
+
+### 4.2 Die Koralle meldet: „Durchschwommen!“
+
+1. `Punktzone` auswählen → **Node** → **Signals** → `body_entered` → als Ziel **`Korallen`** wählen → **Connect**. Godot legt `_on_punktzone_body_entered` in `korallen.gd` an.
+2. Ergänze `korallen.gd`:
+
+```gdscript
+signal durchschwommen  # oben, unter extends
+
+func _on_punktzone_body_entered(_body):
+	durchschwommen.emit()
+```
+
+Die Koralle gibt die Nachricht nur weiter. Was ein Punkt wert ist und wo er angezeigt wird, geht sie nichts an.
+
+### 4.3 Main zählt mit
+
+Die Korallen entstehen erst während des Spiels. Deshalb kannst du ihr Signal nicht im Editor verbinden, sondern nur im Code. Das hast du in Übung 2 von Kapitel 3 schon geübt.
+
+1. In `main.tscn`: Rechtsklick auf `CanvasLayer` → **Add Child Node** → `Label` → `PunkteLabel`.
+   - **Text:** `0`
+   - **Horizontal Alignment:** `Center`
+   - **Font Size:** `48`
+   - **Anchor Preset:** **Center Top**. Dann noch die **Position** etwas nach unten ziehen, damit die Zahl nicht am Rand klebt.
+2. In `main.gd`:
+
+```gdscript
+var punkte = 0
+```
+
+In `_on_korallen_timer_timeout`, vor `add_child`:
+
+```gdscript
+	korallen.durchschwommen.connect(_on_durchschwommen)
+```
+
+Und die neue Funktion:
+
+```gdscript
+func _on_durchschwommen():
+	if $Fisch.tot:
+		return  # ein toter Fisch, der durch die Zone fällt, bekommt keine Punkte
+	punkte += 1
+	$CanvasLayer/PunkteLabel.text = str(punkte)
+```
+
+`str()` macht aus der Zahl einen Text, denn ein Label zeigt nur Texte. `$Fisch.tot` liest die Variable direkt aus dem Fisch-Skript.
+
+**F5** und testen: Pro Lücke sollte die Zahl um genau 1 steigen.
+
+### 4.4 Den Rekord speichern
+
+In Weltraumsteine hast du `localStorage` benutzt. Godot hat dafür `ConfigFile`: eine kleine Textdatei mit Abschnitten und Werten, ähnlich einer `.ini`-Datei.
+
+Ergänze `main.gd`:
+
+```gdscript
+const SAVE_PATH = "user://highscore.cfg"
+
+var highscore = 0
+
+func lade_highscore():
+	var config = ConfigFile.new()
+	if config.load(SAVE_PATH) == OK:
+		return config.get_value("spiel", "highscore", 0)
+	return 0  # noch keine Datei (erster Start) oder nicht lesbar
+
+func speichere_highscore():
+	var config = ConfigFile.new()
+	config.set_value("spiel", "highscore", highscore)
+	config.save(SAVE_PATH)
+```
+
+| Weltraumsteine (JS) | Flatterfisch (GDScript) |
+|---|---|
+| `try { ... } catch (e) { return 0; }` | `config.load(...)` wirft keinen Fehler, sondern gibt einen Fehlercode zurück. `OK` heißt: hat geklappt. |
+| `localStorage` (gehört zum Browser) | `user://` ist ein eigener Ordner für dein Spiel. Unter Windows liegt er in `%APPDATA%\Godot\app_userdata\Flatterfisch\`. Im Browser landet er automatisch im Browser-Speicher. |
+| `getItem('key') \|\| 0` | `get_value("spiel", "highscore", 0)` – die `0` am Ende ist der Standardwert, falls es den Eintrag nicht gibt |
+
+Jetzt einbauen:
+- In `_ready()`: `highscore = lade_highscore()`
+- In `_on_fisch_gestorben()`, **vor** dem `show()` des GAME-OVER-Labels:
+
+```gdscript
+	if punkte > highscore:
+		highscore = punkte
+		speichere_highscore()
+	$CanvasLayer/GameOverLabel.text = "GAME OVER\n\nPunkte: %d\nRekord: %d\n\nLeertaste: nochmal" % [punkte, highscore]
+```
+
+`\n` ist ein Zeilenumbruch. `%d` ist ein Platzhalter für eine ganze Zahl. Nach dem `%` stehen in eckigen Klammern die Werte, die der Reihe nach eingesetzt werden.
+
+Warum muss `highscore` nicht beim Neustart zurückgesetzt werden? `reload_current_scene()` setzt zwar alle Variablen zurück, aber `_ready()` liest den Rekord sofort wieder aus der Datei.
+
+**F5**, ein paar Runden spielen, Godot schließen, neu starten: Der Rekord sollte noch da sein.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 4
+
+1. **Neuer Rekord (leicht):** Steht ein neuer Rekord, soll im GAME-OVER-Text zusätzlich `NEUER REKORD!` erscheinen.
+2. **In die Datei schauen (leicht):** *Project → Open User Data Folder* öffnet den `user://`-Ordner. Öffne `highscore.cfg` mit einem Texteditor, schau dir den Aufbau an und schummle dir einen Rekord von 999. Was lernst du daraus über gespeicherte Spielstände?
+3. **Medaillen (mittel):** Ab 10 Punkten Bronze, ab 20 Silber, ab 40 Gold. Zeig die Medaille im GAME-OVER-Text an. Google mal `GDScript match`. Funktioniert es dafür, oder ist eine `if`/`elif`-Kette hier besser?
+4. **Es wird schneller (mittel):** Alle 10 Punkte sollen neue Korallen etwas schneller schwimmen. Tipp: Mach in `korallen.gd` aus `const SPEED` eine `var speed`. Main kann den Wert dann direkt nach `instantiate()` setzen, genau wie `korallen.position`.
