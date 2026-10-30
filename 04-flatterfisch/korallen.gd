@@ -2,7 +2,7 @@ extends Area2D
 
 signal durchschwommen
 
-var speed  # Pixel pro Sekunde nach links
+var speed = 150.0 # Pixel pro Sekunde nach links
 
 func _process(delta):
 	position.x -= speed * delta
@@ -16,5 +16,5 @@ func _on_body_entered(body: Node2D) -> void:
 		body.sterben()
 
 
-func _on_punktezone_body_entered(body: Node2D) -> void:
+func _on_punktezone_body_entered(_body: Node2D) -> void:
 	durchschwommen.emit()

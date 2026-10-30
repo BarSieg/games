@@ -8,8 +8,8 @@ Szenen (`.tscn`) und Skripte (`.gd`) sind bei Godot normale Textdateien. Darum k
 1. Godot einrichten, der Fisch fällt und flattert ✅
 2. Korallen: Hindernisse, die von rechts kommen (dein erstes **Signal**) ✅
 3. Zusammenstoß und Game Over (eigene **Signale**) ✅
-4. Punkte, Anzeige und Highscore ← *du bist hier*
-5. Eigene Grafik und Sound
+4. Punkte, Anzeige und Highscore ✅
+5. Eigene Grafik und Sound ← *du bist hier*
 6. Export als Web-Spiel und Eintrag auf der Startseite
 
 ---
@@ -509,3 +509,73 @@ Fertig? Committen und Bescheid geben.
 
 ### Antworten zu Kapitel 4
 2. Keine Sicherung gegen Manipulation. Am einfachsten einen Hashwert über alle gespeicherten Werte (zurzeit nur Highscore) in diesselbe Datei schreiben.
+
+---
+
+## Kapitel 5: Eigene Grafik und Sound
+
+Das Godot-Logo und die rosa Rechtecke haben ausgedient. Jetzt bekommt der Fisch ein eigenes, animiertes Aussehen, die Korallen eine Textur, und alles bekommt Sound.
+
+Spielerisch ändert sich nichts. Darum ist dieses Kapitel eine gute Gelegenheit, Grafik und Code sauber zu trennen: Du tauschst Nodes und Dateien aus, das Skript bleibt fast unverändert.
+
+### 5.1 Pixel-Art scharf darstellen
+
+Godot glättet Bilder beim Vergrößern. Bei Fotos ist das gut, bei Pixel-Art wird alles matschig. Einmal fürs ganze Projekt umstellen:
+
+*Project → Project Settings → Rendering → Textures → Canvas Textures → **Default Texture Filter*** = `Nearest`.
+
+Das ist dasselbe wie `imageSmoothingEnabled = false` in Insekteninvasion.
+
+### 5.2 Der Fisch mit Flossenschlag
+
+1. **Zeichnen:** In 🆓 Piskel oder 🆓 Pixelorama einen Fisch, ca. **32 × 24 Pixel**, Nase nach rechts. Mach **zwei Bilder**: Schwanzflosse oben und Schwanzflosse unten. Exportiere sie als `fisch1.png` und `fisch2.png`.
+2. **Ins Projekt holen:** Die Dateien aus dem Windows-Explorer ins **FileSystem**-Panel von Godot ziehen. Godot importiert sie automatisch und legt `.import`-Dateien an (die gehören ins Repo, wie bei `icon.svg`).
+3. **Node tauschen:** In `fisch.tscn` Rechtsklick auf `Sprite2D` → **Change Type** → `AnimatedSprite2D`.
+   Eine `AnimatedSprite2D` zeigt eine Folge von Bildern nacheinander, wie ein Daumenkino.
+   **Change Type** behält den alten Namen `Sprite2D`. Benenne die Node in `Bild` um, damit der Name nicht lügt.
+4. Im Inspector bei **Sprite Frames** → **New SpriteFrames**, dann darauf klicken. Unten öffnet sich das Panel **SpriteFrames**.
+   - Es gibt schon eine Animation `default`. Zieh `fisch1.png` und `fisch2.png` aus dem FileSystem in den Bereich für die Bilder.
+   - **FPS** auf etwa `8` stellen.
+   - Oben im Panel den Knopf **Autoplay on Load** (Play-Symbol mit „A“) anklicken.
+5. **Scale** der Node anpassen, z. B. `2, 2`, und den Kreis der `CollisionShape2D` an den neuen Fisch anpassen. Lieber etwas **kleiner** als der Fisch: Dann fühlt sich ein knapper Treffer fair an statt ärgerlich.
+
+**F5:** Der Fisch wedelt mit der Flosse. Am Skript musstest du nichts ändern.
+
+### 5.3 Korallen mit Textur
+
+1. **Zeichnen:** Ein Stück Koralle, **60 × 60 Pixel**, das sich nach oben und unten nahtlos wiederholen lässt. Speichern als `koralle.png` und ins FileSystem ziehen.
+2. In `korallen.tscn` Rechtsklick auf `ObenBild` → **Change Type** → `TextureRect`. Dasselbe für `UntenBild`.
+   Position und Größe bleiben erhalten, weil `ColorRect` und `TextureRect` beide Controls sind.
+3. Bei beiden im Inspector:
+   - **Texture:** `koralle.png`
+   - **Expand Mode:** `Ignore Size`
+   - **Stretch Mode:** `Tile` (das Bild wird wiederholt statt gestreckt)
+4. Bei `ObenBild` zusätzlich **Flip V** anhaken, damit die obere Koralle nach unten wächst.
+
+### 5.4 Sound
+
+1. **Erzeugen:** In 🆓 **jsfxr** (kennst du von Insekteninvasion) drei Sounds machen und als `.wav` speichern:
+   - `flap.wav`: kurz, z. B. aus *Jump*
+   - `punkt.wav`: hell, z. B. aus *Pickup/Coin*
+   - `tot.wav`: z. B. aus *Hit/Hurt*
+   Ins FileSystem ziehen.
+2. **Fisch:** In `fisch.tscn` zwei Kinder vom Typ `AudioStreamPlayer` anlegen, `FlapSound` und `TotSound`. Im Inspector bei **Stream** die passende Datei eintragen.
+3. **Main:** In `main.tscn` ein Kind `AudioStreamPlayer` namens `PunktSound` mit `punkt.wav`.
+4. **Abspielen:** Wo im Code passiert der Flossenschlag, der Tod, der Punkt? Dort jeweils eine Zeile wie:
+
+```gdscript
+	$FlapSound.play()
+```
+
+Das ist alles. Anders als in Insekteninvasion musst du nicht ans Zurückspulen denken: `play()` startet immer von vorn.
+
+**Achtung, Pause:** Läuft gerade ein Sound, wenn du P drückst? Ein `AudioStreamPlayer` gehorcht auch dem **Process Mode**. Unter dem Fisch (Pausable) hält er mit an.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 5
+
+1. **Kein Sound gleicht dem anderen (leicht):** Setz vor `$FlapSound.play()` die Tonhöhe auf einen kleinen Zufallswert: `$FlapSound.pitch_scale = randf_range(0.9, 1.1)`. Hör den Unterschied nach 20 Flossenschlägen. Profi-Spiele machen das ständig, damit sich Geräusche nicht „wie aus der Konserve“ anhören.
+2. **Luftblasen (mittel):** Bei jedem Flossenschlag sollen ein paar Blasen aus dem Fisch aufsteigen. Nimm eine `CPUParticles2D` als Kind des Fisches. Wichtige Einstellungen: **One Shot**, **Amount**, **Direction**, **Gravity** (negativ = Blasen steigen). Im Code: `$Blasen.restart()`.
+3. **Totes Aussehen (mittel):** Leg im SpriteFrames-Panel eine zweite Animation `tot` an, z. B. mit einem Fisch mit X-Augen. In `sterben()`: `$Bild.play("tot")`.
+4. **Sandboden, der mitläuft (schwer):** Ein Sandboden am unteren Rand soll so schnell nach links laufen wie die Korallen und sich endlos wiederholen. Stichwort: die Node `Parallax2D`, darin **Repeat Size** und **Autoscroll**. Wenn das klappt, probier eine zweite Ebene weiter hinten (z. B. Felsen), die langsamer läuft. Das erzeugt Tiefe, genau wie bei alten Konsolenspielen.

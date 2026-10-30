@@ -17,7 +17,7 @@ var highscore = 0
 
 func _on_korallen_timer_timeout():
 	var korallen = KORALLEN.instantiate()
-	korallen.speed = clamp(KORALLEN_SPEED + (punkte / 10) * KORALLEN_SPEED_DELTA,0,KORALLEN_SPEED_MAX)
+	korallen.speed = clamp(KORALLEN_SPEED + (punkte / 10) * KORALLEN_SPEED_DELTA, 0, KORALLEN_SPEED_MAX)
 	var newHeight = clamp(randf_range(GAP_MIN_Y, GAP_MAX_Y), lastHeight - 150, lastHeight + 150)
 	korallen.position = Vector2(400, newHeight)
 	lastHeight = newHeight
@@ -60,8 +60,8 @@ func _process(_delta):
 		$CanvasLayer/PauseLabel.visible = (Time.get_ticks_msec() * PAUSE_BLINKS_PER_SECOND / 1000 % 2 == 0)
 	else:
 		$CanvasLayer/PauseLabel.visible = false
-	if kann_neustarten and Input.is_action_just_pressed("flap"):
-		get_tree().reload_current_scene()
+		if kann_neustarten and Input.is_action_just_pressed("flap"):
+			get_tree().reload_current_scene()
 
 
 func _on_fisch_gestartet() -> void:
