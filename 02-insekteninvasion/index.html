@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Insekteninvasion</title>
 <style>
+  :root { --w: min(672px, 96vw, calc(86vh * 0.875)); }
   html, body {
     margin: 0;
     height: 100%;
@@ -20,7 +21,7 @@
   }
   canvas {
     display: block;
-    width: min(672px, 96vw, calc(86vh * 0.875));
+    width: var(--w);
     aspect-ratio: 224 / 256;
     background: #000;
     border: 2px solid #444;
@@ -28,6 +29,33 @@
     image-rendering: pixelated;   /* beim Vergrößern keine verschwommenen Pixel */
   }
   .hint { margin-top: 12px; color: #888; font-size: 14px; text-align: center; padding: 0 16px; }
+  /* Touch-Knöpfe: nur auf Geräten mit Finger statt Maus (Handy, Tablet) */
+  .touch { display: none; }
+  @media (pointer: coarse) {
+    :root { --w: min(672px, 96vw, calc((100vh - 150px) * 0.875)); }
+    .touch {
+      display: flex;
+      justify-content: space-between;
+      width: var(--w);
+      margin-top: 12px;
+    }
+    .touch div { display: flex; gap: 8px; }
+    .touch button {
+      min-width: 64px;
+      height: 64px;
+      padding: 0 8px;
+      font: bold 16px "Courier New", monospace;
+      color: #eee;
+      background: #222;
+      border: 2px solid #444;
+      border-radius: 12px;
+      touch-action: none;   /* kein Zoomen oder Scrollen beim Tippen */
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .touch button.down { background: #555; }
+  }
 </style>
 </head>
 <body>
@@ -35,6 +63,15 @@
 <canvas id="game"></canvas>
 <div class="hint">
   ← / → (A / D): bewegen · Leertaste: schießen · P: Pause · M: Ton an/aus
+</div>
+<div class="touch">
+  <div>
+    <button data-key="ArrowLeft">◀</button>
+    <button data-key="ArrowRight">▶</button>
+  </div>
+  <div>
+    <button data-key="Space">FEUER</button>
+  </div>
 </div>
 
 <script>
@@ -677,7 +714,7 @@ function drawTitle() {
     drawSprite(img, 72 - img.width / 2, y - img.height / 2);
     drawText(text, 88, y, 8, WHITE, 'left');
   });
-  if (blinkOn()) drawText('LEERTASTE ZUM STARTEN', W / 2, 206, 8, GREEN);
+  if (blinkOn()) drawText(START_KEY + ' ZUM STARTEN', W / 2, 206, 8, GREEN);
 }
 
 function drawOverlay(lines) {
@@ -750,7 +787,7 @@ function draw() {
   if (state === 'gameover') {
     const lines = [['GAME OVER', RED], ['PUNKTE ' + score, WHITE]];
     if (newRecord) lines.push(['NEUER REKORD!', GREEN]);
-    if (stateTimer <= 0) lines.push(['LEERTASTE: NOCHMAL', GREEN]);
+    if (stateTimer <= 0) lines.push([START_KEY + ': NOCHMAL', GREEN]);
     drawOverlay(lines);
   }
 }
@@ -766,19 +803,47 @@ function loop(now) {
 requestAnimationFrame(loop);
 
 // ---------- Eingaben ----------
+// Auf dem Handy gibt es keine Leertaste: Dort heißt der Start-Knopf FEUER.
+const TOUCH = matchMedia('(pointer: coarse)').matches;
+const START_KEY = TOUCH ? 'FEUER' : 'LEERTASTE';
+
 const keys = {};
+// Was beim Drücken einer Taste passiert. Die Touch-Knöpfe unten benutzen das auch.
+function pressKey(code) {
+  keys[code] = true;
+  ensureAudio();
+  if (code === 'Space' || code === 'Enter') action();
+  if (code === 'KeyP') togglePause();
+  if (code === 'KeyM') muted = !muted;
+  // Entwickler-Abkürzung zum Testen: K besiegt alle Invader der Welle
+  if (code === 'KeyK' && state === 'play') invaders.forEach(inv => inv.alive = false);
+}
 addEventListener('keydown', e => {
   if (['ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
-  keys[e.code] = true;
-  ensureAudio();
-  if (e.repeat) return;
-  if (e.code === 'Space' || e.code === 'Enter') action();
-  if (e.code === 'KeyP') togglePause();
-  if (e.code === 'KeyM') muted = !muted;
-  // Entwickler-Abkürzung zum Testen: K besiegt alle Invader der Welle
-  if (e.code === 'KeyK' && state === 'play') invaders.forEach(inv => inv.alive = false);
+  if (e.repeat) return;   // gedrückt halten: keys[e.code] ist schon true
+  pressKey(e.code);
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
+
+// ---------- Touch-Knöpfe (Handy, Tablet) ----------
+// Jeder Knopf tut so, als würde seine Taste gedrückt: Er setzt denselben Eintrag in keys
+// und löst über pressKey dieselben Aktionen aus wie die Tastatur. Die Spiellogik merkt
+// keinen Unterschied. Pointer-Events funktionieren mit mehreren Fingern gleichzeitig.
+for (const button of document.querySelectorAll('.touch button')) {
+  const code = button.dataset.key;
+  button.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    button.classList.add('down');
+    pressKey(code);
+    button.setPointerCapture(e.pointerId);   // Loslassen kommt an, auch wenn der Finger abrutscht
+  });
+  const release = () => {
+    keys[code] = false;
+    button.classList.remove('down');
+  };
+  button.addEventListener('pointerup', release);
+  button.addEventListener('pointercancel', release);
+}
 </script>
 </body>
 </html>
