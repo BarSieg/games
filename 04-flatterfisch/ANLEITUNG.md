@@ -9,8 +9,8 @@ Szenen (`.tscn`) und Skripte (`.gd`) sind bei Godot normale Textdateien. Darum k
 2. Korallen: Hindernisse, die von rechts kommen (dein erstes **Signal**) ✅
 3. Zusammenstoß und Game Over (eigene **Signale**) ✅
 4. Punkte, Anzeige und Highscore ✅
-5. Eigene Grafik und Sound ← *du bist hier*
-6. Export als Web-Spiel und Eintrag auf der Startseite
+5. Eigene Grafik und Sound ✅
+6. Export als Web-Spiel und Eintrag auf der Startseite ← *du bist hier*
 
 ---
 
@@ -579,3 +579,97 @@ Fertig? Committen und Bescheid geben.
 2. **Luftblasen (mittel):** Bei jedem Flossenschlag sollen ein paar Blasen aus dem Fisch aufsteigen. Nimm eine `CPUParticles2D` als Kind des Fisches. Wichtige Einstellungen: **One Shot**, **Amount**, **Direction**, **Gravity** (negativ = Blasen steigen). Im Code: `$Blasen.restart()`.
 3. **Totes Aussehen (mittel):** Leg im SpriteFrames-Panel eine zweite Animation `tot` an, z. B. mit einem Fisch mit X-Augen. In `sterben()`: `$Bild.play("tot")`.
 4. **Sandboden, der mitläuft (schwer):** Ein Sandboden am unteren Rand soll so schnell nach links laufen wie die Korallen und sich endlos wiederholen. Stichwort: die Node `Parallax2D`, darin **Repeat Size** und **Autoscroll**. Wenn das klappt, probier eine zweite Ebene weiter hinten (z. B. Felsen), die langsamer läuft. Das erzeugt Tiefe, genau wie bei alten Konsolenspielen.
+
+---
+
+## Kapitel 6: Export als Web-Spiel und Eintrag auf der Startseite
+
+Bis jetzt läuft Flatterfisch nur im Godot-Editor. Jetzt machst du daraus ein Spiel, das jeder im Browser spielen kann, auch ohne Godot. Genau wie deine anderen Spiele, und mit derselben Startseite.
+
+### 6.1 Export-Vorlagen installieren
+
+Godot braucht für den Export fertig gebaute Versionen der Engine für jede Plattform, die **Export Templates**.
+
+*Editor → Manage Export Templates → **Download and Install***.
+
+Das ist ein großer Download (rund 1 GB), weil Vorlagen für alle Plattformen dabei sind. Er ist nur einmal pro Godot-Version nötig.
+
+### 6.2 Ein Ordner, den Godot ignoriert
+
+Der Export erzeugt eine `index.html`, eine `.wasm`-Datei (die Engine), eine `.pck`-Datei (dein Spiel) und ein paar Bilder. Lägen die einfach im Projektordner, würde Godot die Bilder als Projekt-Dateien importieren und `.import`-Dateien dafür anlegen. Das ist Durcheinander.
+
+1. Lege im Ordner `04-flatterfisch` einen Unterordner **`web`** an.
+2. Lege darin eine **leere Datei** namens **`.gdignore`** an.
+   Ein Ordner mit `.gdignore` ist für Godot unsichtbar. Im Windows-Explorer geht das so: Neue Textdatei → umbenennen in `.gdignore.` (mit Punkt am Ende, Windows entfernt ihn dann). Oder im Terminal im `web`-Ordner: `New-Item .gdignore` (PowerShell) bzw. `touch .gdignore` (Git Bash).
+
+### 6.3 Exportieren
+
+1. *Project → Export → **Add…** → **Web***.
+2. Wichtige Einstellungen:
+   - **Export Path:** `web/index.html`
+   - **Thread Support** (unter *Variant*): **aus**. Mit Threads braucht der Webserver spezielle Einstellungen, die z. B. GitHub Pages nicht hat. Ohne Threads läuft es überall.
+3. **Export Project** → Häkchen bei **Export With Debug** entfernen → **Save**.
+
+Im Ordner `web` liegen jetzt die Dateien. Die `.wasm`-Datei ist groß (mehrere zehn MB): Das ist die komplette Godot-Engine. Für Git ist das kein Problem, solange sie unter 100 MB bleibt. Und weil sie bei jedem Export mit derselben Godot-Version identisch ist, speichert Git sie nur einmal.
+
+### 6.4 Im Browser testen
+
+Doppelklicken auf `index.html` funktioniert **nicht**. Ein Godot-Web-Spiel muss über einen Webserver laufen. Aber den kennst du ja schon:
+
+```bash
+python -m http.server 8000
+```
+
+(im `games`-Ordner), dann im Browser `http://localhost:8000/04-flatterfisch/web/` öffnen.
+
+Alternative ohne Terminal: Oben rechts im Godot-Editor gibt es ein Symbol für **Remote Debug / Run in Browser**. Godot startet dann selbst einen kleinen Server.
+
+Teste dabei:
+- Flattern mit Leertaste **und** Mausklick
+- Sound (Browser spielen Ton erst nach dem ersten Klick oder Tastendruck ab, das kennst du aus deinen JS-Spielen)
+- Highscore: Spiel neu laden, ist der Rekord noch da? Im Browser speichert `user://` automatisch im Browser-Speicher.
+- Und die Medaillen 🥇 …
+
+### 6.5 Auf die Startseite
+
+In der `index.html` im `games`-Ordner gibt es den Eintrag für Flatterfisch schon. Er ist nur noch grau und nicht anklickbar. Mach ihn spielbar:
+- `folder`: der Ordner, in dem die `index.html` des Spiels liegt. Das ist diesmal nicht `04-flatterfisch`, sondern …?
+- `color` und `desc` nach deinem Geschmack.
+- `highscoreKey` bleibt `null`. Warum? Dein Godot-Spiel speichert nicht in `localStorage`, sondern in einem anderen Browser-Speicher (IndexedDB). Die Startseite kann den Rekord deshalb nicht so einfach lesen.
+
+Trag Flatterfisch auch in die Spieltabelle in der `README.md` im `games`-Ordner ein.
+
+### 6.6 Godot gehört dazu: die Lizenz
+
+Godot ist kostenlos und Open Source unter der **MIT-Lizenz**. Die verlangt eine Sache: Wer die Engine weitergibt (und dein Web-Export *enthält* die Engine), muss den Lizenzhinweis von Godot mitgeben.
+
+Am einfachsten: In die `README.md` von Flatterfisch einen Abschnitt wie
+
+```markdown
+## Engine
+Erstellt mit der [Godot Engine](https://godotengine.org) (MIT-Lizenz).
+Lizenz und Hinweise: https://godotengine.org/license
+```
+
+Deine eigene Lizenz („Alle Rechte vorbehalten“) gilt weiterhin für **deinen** Code, deine Grafiken und Sounds. Für die Engine gilt die MIT-Lizenz. Beides verträgt sich.
+
+### 6.7 Die README für Flatterfisch
+
+Diesmal hast du das Spiel selbst gebaut, also schreibst du auch die `README.md` selbst. Orientier dich an den READMEs der anderen Spiele. Vorschlag für die Gliederung:
+
+- **Steuerung**
+- **Was ich gelernt habe** (Nodes, Szenen, Signale, Gruppen, Process Mode … in deinen Worten)
+- **Was schwer war** (der überschriebene `fisch.gd`, `GemOverLabel`, der fehlende Stream …?)
+- **JavaScript vs. Godot:** Was war in Godot leichter, was hat dir gefehlt?
+- **Engine** (der Lizenz-Abschnitt von oben)
+
+Die `ANLEITUNG.md` kann bleiben. Sie zeigt später jedem, wie das Spiel entstanden ist.
+
+Fertig? Committen, und dann ist Projekt 04 abgeschlossen. 🎉
+
+### Übungsaufgaben zu Kapitel 6
+
+1. **Medaillen im Browser (leicht):** Werden 🥇🥈🥉 im Browser angezeigt? Falls nicht: Ersetze sie durch Text (`GOLD`, `SILBER`, `BRONZE`) oder, schöner, durch ein kleines gezeichnetes Medaillen-Bild in einer `TextureRect` unter dem Text.
+2. **Eigenes Icon (leicht):** *Project Settings → Application → Config → Icon*: Trag dein `fisch1.png` ein und exportiere neu. Wo taucht es im Browser auf?
+3. **Ladebildschirm (leicht):** Beim Start zeigt der Browser kurz das Godot-Logo. Unter *Project Settings → Application → Boot Splash* kannst du Bild und Hintergrundfarbe ändern.
+4. **Aufs Handy (mittel):** Schalte im GitHub-Repo **GitHub Pages** ein (*Settings → Pages → Branch `main`, Ordner `/ (root)`*), dann ist deine Startseite unter `https://barsieg.github.io/games/` erreichbar. Öffne Flatterfisch auf dem Handy. Funktioniert Tippen? (Tipp, falls nicht: In der Input Map hast du die linke Maustaste. Such in den Project Settings nach **Emulate Mouse From Touch**.) Achtung: Damit ist das Repo samt Spielen öffentlich spielbar. Das wolltest du ja, aber mach es bewusst.

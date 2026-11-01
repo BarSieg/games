@@ -12,6 +12,7 @@ Alle Spiele laufen direkt im Browser, ohne Installation und ohne Bibliotheken. S
 | 01 | [Ziegelbrecher](01-ziegelbrecher/) | Steine zerschießen in 5 Leveln, mit Power-ups | Level als Daten, viele Objekte, Power-ups, Highscore |
 | 02 | [Insekteninvasion](02-insekteninvasion/) | Eine Insekten-Formation abwehren, hinter zerbröselnder Deckung | Sprites, Sprite-Animation, Pixel-Kollision, eigene Grafik und Sounds |
 | 03 | [Weltraumsteine](03-weltraumsteine/) | Mit Schub und Trägheit durchs Asteroidenfeld | Vektoren, Rotation mit sin/cos, Trägheit, Kreis-Kollision |
+| 04 | [Flatterfisch](04-weltraumsteine/web/) | Ein Fisch zwischen Korallen | Das erste Spiel mit der Godot-Engine |
 
 Jeder Ordner hat eine eigene `README.md` mit Steuerung, Lernnotizen und Übungsaufgaben.
 
@@ -29,7 +30,7 @@ Danach im Browser `http://localhost:8000/` öffnen.
 
 ## Nutzung und Urheberrecht
 
-© 2026 Siegfried (BarSieg). Alle Rechte vorbehalten.
+© 2026 Siegfried Baryschew (BarSieg). Alle Rechte vorbehalten.
 
 Spielen und Ansehen ist ausdrücklich erwünscht, auch über GitHub Pages. Der Code, die Grafiken und die Sounds dürfen aber ohne meine schriftliche Erlaubnis nicht kopiert, verändert, weiterverbreitet oder in anderen Projekten verwendet werden. Details stehen in [LICENSE](LICENSE).
 

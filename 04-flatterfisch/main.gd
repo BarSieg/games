@@ -10,6 +10,10 @@ const KORALLEN_SPEED = 150.0
 const KORALLEN_SPEED_DELTA = 5.0
 const KORALLEN_SPEED_MAX = 210.0
 
+const GOLD = preload("res://Gold.png")
+const SILBER = preload("res://Silber.png")
+const BRONZE = preload("res://Bronze.png")
+
 var lastHeight = (GAP_MIN_Y + GAP_MAX_Y) / 2
 
 var kann_neustarten = false
@@ -32,27 +36,26 @@ func _ready():
 	highscore = lade_highscore()
 
 func getMedal():
-	var medal = ""
 	match punkte:
 		var s when s >= 40:
-			medal = "🥇"
+			$CanvasLayer/Medal.texture = GOLD
 		var s when s >= 20:
-			medal = "🥈"
+			$CanvasLayer/Medal.texture = SILBER
 		var s when s >= 10:
-			medal = "🥉"
-	return medal
+			$CanvasLayer/Medal.texture = BRONZE
 
 func _on_fisch_gestorben() -> void:
 	$KorallenTimer.stop()
 	$Sand.autoscroll.x = 0.0
 	$Steine.autoscroll.x = 0.0
 	get_tree().call_group("korallen", "set_process", false)
+	getMedal()
 	if punkte > highscore:
 		highscore = punkte
 		speichere_highscore()
-		$CanvasLayer/GameOverLabel.text = "GAME OVER\n%s\nPunkte: %d\nNeuer Rekord!\n\nLeertaste: nochmal" % [getMedal(), punkte]
+		$CanvasLayer/GameOverLabel.text = "GAME OVER\n\nPunkte: %d\nNeuer Rekord!\n\nLeertaste: nochmal" % [punkte]
 	else:
-		$CanvasLayer/GameOverLabel.text = "GAME OVER\n%s\nPunkte: %d\nRekord: %d\n\nLeertaste: nochmal" % [getMedal(), punkte, highscore]
+		$CanvasLayer/GameOverLabel.text = "GAME OVER\n\nPunkte: %d\nRekord: %d\n\nLeertaste: nochmal" % [punkte, highscore]
 	$CanvasLayer/GameOverLabel.show()
 	# kurz warten, damit ein hektischer Tastendruck nicht sofort neu startet
 	await get_tree().create_timer(0.8).timeout

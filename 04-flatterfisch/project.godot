@@ -13,7 +13,9 @@ config_version=5
 config/name="Flatterfisch"
 run/main_scene="uid://caw8871jo4qb2"
 config/features=PackedStringArray("4.7", "GL Compatibility")
-config/icon="res://icon.svg"
+boot_splash/bg_color=Color(0.39607844, 0.7490196, 0.9882353, 1)
+boot_splash/image="uid://yrrp5kwqtgll"
+config/icon="uid://bi7obaibi1w72"
 
 [display]
 
@@ -41,6 +43,7 @@ pause={
 
 [rendering]
 
+textures/canvas_textures/default_texture_filter=0
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
