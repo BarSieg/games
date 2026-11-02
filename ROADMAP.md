@@ -36,7 +36,7 @@ Phase 1  Grundlagen im Browser (JS)
    │
 Phase 2  Godot 2D
    ├─ 04  Flatterfisch                 Godot kennenlernen: Szenen, Nodes, Signale
-   ├─ 05  Super Mario Bros. – Level 1-1    Plattformer-Physik, Tilemaps, Kamera
+   ├─ 05  Hüpfheld                     Plattformer-Physik, Tilemaps, Kamera
    ├─ 06  Zelda – erster Dungeon       State Machines, Inventar, Räume, Speichern
    └─ 07  Vampire Survivors (light)    Hunderte Gegner, Performance, Upgrades
    │
@@ -87,10 +87,11 @@ Jetzt kommt die erste echte Engine. Du wirst merken, wie viel schneller es geht,
 - **Warum Flappy Bird:** Ein Spiel, das so klein ist, dass du dich ganz auf das Lernen der Engine konzentrieren kannst
 - **Eigene Variante:** Ein Fisch, der zwischen Korallen hindurchschwimmt. Gleiche Mechanik, eigene Optik.
 
-### 05 · Super Mario Bros. – Level 1-1 (2–3 Wochen)
+### 05 · Hüpfheld – nach Super Mario Bros. Level 1-1 (2–3 Wochen)
 - **Du lernst:** Plattformer-Physik, die sich *gut anfühlt* („Coyote Time“, „Jump Buffering“, variable Sprunghöhe), **Tilemaps**, Kamera, die dem Spieler folgt, Gegner, Animationen (AnimationPlayer), Blöcke und Items
 - **Neue Tools:** Godot-TileMap 🆓, optional 🆓 **LDtk** oder 🆓 **Tiled** (spezialisierte Level-Editoren), 🆓 **Kenney.nl** (riesige Sammlung freier Grafiken, CC0)
 - **Umfang:** Nur 1-1, mit eigenen/freien Grafiken
+- **Eigene Variante:** Kacheln und Hintergrund aus einem freien Kenney-Paket (CC0), die Spielfigur selbst gezeichnet.
 
 ### 06 · Zelda – erster Dungeon (3–4 Wochen)
 - **Du lernst:** **State Machines** (Gegner: Patrouille → Verfolgen → Angriff), Top-Down-Steuerung, Inventar, Schlüssel & verschlossene Türen, Dialoge, **Speichern und Laden**, Raumwechsel
