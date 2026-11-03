@@ -1,5 +1,7 @@
 # Games – Spieleentwicklung lernen
 
+**🎮 Direkt im Browser spielen: [barsieg.github.io/games](https://barsieg.github.io/games/)**
+
 Mein Lernprojekt: Ich baue klassische Spielideen nach, um Spieleentwicklung von Grund auf zu lernen. Es fängt mit einem einfachen Ballspiel an, und am Ende soll ein Ego-Shooter im Stil der 2010er stehen. Der ganze Lernpfad steht in [ROADMAP.md](ROADMAP.md).
 
 Alle Spiele laufen direkt im Browser, ohne Installation und ohne Bibliotheken. Sie sind in reinem JavaScript mit dem HTML-Canvas geschrieben.
