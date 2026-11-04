@@ -7,8 +7,8 @@ Das Projekt ist größer als Flatterfisch (die Roadmap rechnet mit 2–3 Wochen)
 **Geplante Kapitel:**
 1. Projekt, Grafiken und die erste Plattform ✔
 2. Laufen und Springen, die sich gut anfühlen (eigene Steuerung, variable Sprunghöhe) ✔
-3. Game Feel: Beschleunigung, Coyote Time, Jump Buffering ← *du bist hier*
-4. Kamera und ein langer Level
+3. Game Feel: Beschleunigung, Coyote Time, Jump Buffering ✔
+4. Kamera und ein langer Level ← *du bist hier*
 5. Animationen: stehen, laufen, springen
 6. Gegner: patrouillieren und plattgesprungen werden
 7. Blöcke und Items: Münzen und ein Power-up
@@ -499,3 +499,109 @@ Fertig? Committen und Bescheid geben.
 2. **Kojote übertreiben (leicht):** Setz `COYOTE_TIME` auf `0.5` und lauf über eine Kante. Was kannst du jetzt, was eigentlich nicht gehen sollte? Danach auf `0`: Merkst du beim Springen an Kanten einen Unterschied zu `0.1`?
 3. **Bremsspur (mittel):** Bei Mario rutscht der Held beim Umdrehen kurz weiter, bremst dabei aber stärker als beim normalen Ausrollen. Bau eine Konstante `TURN_ACCELERATION = 1200.0` ein. Sie gilt, wenn der Held am Boden ist, eine Richtung gedrückt ist **und** er sich gerade in die andere Richtung bewegt. Tipp: Zwei Zahlen haben verschiedene Vorzeichen, wenn ihr Produkt kleiner als 0 ist: `direction * velocity.x < 0`.
 4. **Der verschluckte Kurzsprung (knifflig):** Tipp die Sprungtaste ganz kurz an, kurz bevor der Held landet. Er macht dann einen vollen, hohen Sprung, obwohl du nur getippt hast. Warum? Denk daran, wann `is_action_just_released` kommt und wann der gemerkte Sprung ausgelöst wird. Repariere es beim Absprung mit zwei Zeilen. Tipp: `Input.is_action_pressed("springen")` sagt dir, ob die Taste in diesem Moment noch gedrückt ist.
+
+---
+
+## Kapitel 4: Kamera und ein langer Level
+
+Bisher passt der ganze Level auf einen Bildschirm. Level 1-1 von Mario ist aber gut 13 Bildschirme lang. In diesem Kapitel folgt eine Kamera dem Held, der Level wird lang, und dahinter zieht ein Hintergrund langsamer vorbei.
+
+### 4.1 Pixel sauber halten
+
+Sobald sich eine Kamera bewegt, steht sie oft zwischen zwei Pixeln, zum Beispiel bei x = 103,4. Bei Pixel-Art führt das zu Zittern: Mal wird ein Pixel nach links gerundet, mal nach rechts, und Held und Kacheln wackeln gegeneinander. Dagegen hilft eine Einstellung.
+
+*Project → Project Settings* (mit **Advanced Settings**) → Rendering → 2D → Snap:
+
+| Einstellung | Wert |
+|---|---|
+| **Snap 2D Transforms to Pixel** | an |
+
+Godot rundet dann alle Positionen beim Zeichnen auf ganze Pixel. Gerechnet wird weiterhin genau, nur das Bild ist sauber.
+
+### 4.2 Die Kamera
+
+1. `held.tscn` öffnen. Rechtsklick auf `Held` → **Add Child Node** → `Camera2D`.
+2. Im Inspector:
+
+| Einstellung | Wert | Warum |
+|---|---|---|
+| **Limit → Left** | `0` | Links vom Levelanfang gibt es nichts zu sehen. |
+| **Limit → Top** | `0` | Zusammen mit Bottom: Der Level ist genau 216 hoch, die Kamera bewegt sich also nie nach oben oder unten. So ist es bei Mario auch. |
+| **Limit → Bottom** | `216` | 12 Kacheln × 18 Pixel. |
+| **Limit → Right** | erst mal so lassen | Das setzen wir, wenn der Level fertig ist (4.4). |
+| **Position Smoothing → Enabled** | an | Die Kamera gleitet hinterher, statt am Held zu kleben. |
+| **Position Smoothing → Speed** | `8` | Größer heißt: schneller hinterher. |
+
+Eine Kamera, die ein Kind des Helden ist, bewegt sich automatisch mit ihm. Code brauchst du dafür nicht.
+
+3. **F5**: Lauf nach rechts aus dem Bild. Die Kamera folgt.
+
+Dein Level ist bisher nur einen Bildschirm breit, also läuft der Held gleich ins Leere. Das ändern wir in 4.4.
+
+### 4.3 Nach dem Sturz nicht durch den Level gleiten
+
+Probier es: Fall in ein Loch weit rechts. Der Held erscheint am Start, aber die Kamera gleitet gemütlich durch den ganzen Level zurück. Das liegt am Smoothing. Nach einem Sprung an eine neue Stelle soll die Kamera sofort dort sein.
+
+In `held.gd` beim Runtergefallen eine Zeile dazu:
+
+```gdscript
+	# Runtergefallen
+	if position.y > FALL_LIMIT:
+		position = start_position
+		velocity = Vector2.ZERO
+		$Camera2D.reset_smoothing()
+```
+
+`reset_smoothing()` heißt: Vergiss das Gleiten und spring direkt ans Ziel.
+
+### 4.4 Ein langer Level
+
+Jetzt kommt der kreative Teil. Mal den Level in `level.tscn` breiter, als Richtwert etwa **120 Kacheln** (gut 2000 Pixel, knapp 6 Bildschirme). Level 1-1 ist so aufgebaut, dass jeder Abschnitt eine Sache beibringt. Nimm dir das als Vorbild, ohne es abzumalen:
+
+1. **Start:** flacher Boden, nichts passiert. Der Spieler probiert die Steuerung aus.
+2. **Erste schwebende Blöcke:** eine Reihe in 4 Kacheln Höhe. Hier kommen in Kapitel 7 Münzblöcke hin.
+3. **Säulen** in steigender Höhe: 2, 3 und 4 Kacheln. Die letzte schafft man nur mit vollem Sprung. Bei Mario sind das die grünen Röhren.
+4. **Erste Lücke:** 2 Kacheln breit, einfach.
+5. **Plattformen über einer längeren Lücke**, zum Beispiel deine One-Way-Plattformen.
+6. **Eine breitere Lücke**, die man nur mit Anlauf (Rennen) schafft.
+7. **Treppen:** eine Pyramide hoch und wieder runter, dann eine Treppe mit Lücke dazwischen.
+8. **Ende:** eine große Treppe, danach ein flaches Stück. Hier kommt in Kapitel 8 das Ziel hin.
+
+Lass zwischen den Abschnitten flache Stücke zum Durchatmen. Und bedenke: Der Held springt etwa 4 Kacheln hoch. Was höher als 4 Kacheln ist, ist eine Wand.
+
+Wenn der Level fertig ist, brauchst du die rechte Kante der letzten Kachel. Oben und links im 2D-Editor sind Lineale mit Pixel-Koordinaten. Lies oben ab, wo die letzte Kachel rechts aufhört. Das ist immer ein Vielfaches von 18, bei 120 Kacheln zum Beispiel 120 × 18 = 2160. Diesen Wert trägst du in der Kamera bei **Limit → Right** ein.
+
+### 4.5 Himmel und Hintergrund
+
+Der graue Hintergrund ist Godots Standardfarbe. Für einen Himmel brauchst du keine Kacheln:
+
+*Project Settings* → Rendering → Environment → **Default Clear Color** → ein helles Blau.
+
+Dazu kommt ein Hintergrund, der langsamer vorbeizieht als der Level. Das ist der Parallax-Effekt, den du von Flatterfisch kennst.
+
+1. In `level.tscn`: Rechtsklick auf `Level` → **Add Child Node** → `Parallax2D` → umbenennen in `Hintergrund`. Im Szenenbaum ganz nach oben ziehen, damit es hinter allem gezeichnet wird.
+2. Darunter eine `TileMapLayer` namens `Huegel` anlegen, mit einem neuen TileSet aus `tilemap-backgrounds_packed.png`. Diese Kacheln sind **24 × 24** groß, nicht 18. Also **Tile Size** `24, 24`, bevor du das Bild hineinziehst.
+3. Schau dir das Kachelblatt an: Es enthält Himmel-, Wolken- und Hügel-Stücke. Mal damit einen Streifen, der genau **16 Kacheln breit** ist (16 × 24 = 384, eine Bildschirmbreite), unten auf Höhe des Bodens.
+4. `Hintergrund` im Inspector:
+
+| Einstellung | Wert | Warum |
+|---|---|---|
+| **Scroll Scale** | `0.5, 1` | Halb so schnell wie die Kamera, das wirkt weit weg. |
+| **Repeat → Repeat Size** | `384, 0` | Der Streifen wiederholt sich alle 384 Pixel, nach rechts endlos. |
+
+Den Hintergrund-Streifen brauchst du also nur einmal zu malen.
+
+Erinnerst du dich an die Streifen am Sand bei Flatterfisch? Hier passieren sie nicht: Die Kacheln werden mit Nearest-Filter gezeichnet und nicht als Tile-Textur gestreckt.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 4
+
+1. **Kamera ausprobieren (leicht):** Stell **Position Smoothing → Speed** auf `2` und auf `20`. Was ist der Unterschied? Was passiert ganz ohne Smoothing? Such dir den Wert aus, der dir gefällt.
+2. **Vorausschauen (leicht):** Die Kamera zeigt gleich viel vor und hinter dem Held. Nach vorne zu sehen ist aber wichtiger. Schieb die Kamera ein Stück nach vorne: Ihre **Offset**-Eigenschaft, zum Beispiel `40, 0`. Was passiert jetzt, wenn der Held nach links läuft? (Eine Lösung, bei der die Kamera mit der Laufrichtung umschwenkt, findest du vielleicht selbst: `flip_h` kennst du schon.)
+3. **Zweite Parallax-Ebene (mittel):** Leg eine zweite `Parallax2D` mit Wolken an, die noch langsamer zieht (`Scroll Scale` 0.25). Die Wolken dürfen aus dem normalen Kachelblatt oder aus dem Hintergrund-Blatt kommen. Bonus: Lass sie mit **Autoscroll** ganz langsam von allein ziehen, wie bei Flatterfisch.
+4. **Kein Weg zurück (knifflig):** Bei Mario kann man nie zurück nach links laufen: Die Kamera fährt nur nach rechts, und der linke Bildrand ist eine Wand. Bau das nach. Tipps:
+   - Die linke Bildkante liegt bei `$Camera2D.get_screen_center_position().x - 192` (die halbe Bildschirmbreite).
+   - Wenn du `$Camera2D.limit_left` jedes Bild auf diese Kante setzt (aber nur, wenn sie dadurch größer wird), kann die Kamera nicht mehr zurück.
+   - Den Held hältst du mit `position.x = max(position.x, …)` im Bild. Denk an die halbe Breite des Helden.
+   - Was passiert jetzt beim Runterfallen und Neustart am Anfang? Was musst du dort zurücksetzen?
