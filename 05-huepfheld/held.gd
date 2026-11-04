@@ -14,6 +14,7 @@ const AIR_ACCELERATION = 400.0    # in der Luft lenken
 const AIR_FRICTION = 150.0        # in der Luft fast keine Bremse: der Schwung bleibt
 const COYOTE_TIME = 0.1           # so lange nach der Kante darf man noch springen
 const JUMP_BUFFER = 0.1           # so lange wird ein zu früher Sprung gemerkt
+const TURN_ACCELERATION = 1200.0
 
 var start_position: Vector2
 var coyote_timer := 0.0
@@ -52,6 +53,8 @@ func _physics_process(delta: float) -> void:
 	# Springen, wenn beides passt: Taste gerade gedrückt, Boden gerade unter den Füßen
 	if jump_buffer_timer > 0 and coyote_timer > 0:
 		velocity.y = JUMP_VELOCITY
+		if !Input.is_action_pressed("springen"):
+			velocity.y *= JUMP_CUT # losgelassen noch vor der Landung
 		jump_buffer_timer = 0
 		coyote_timer = 0
 		$SprungTon.play()
@@ -63,10 +66,11 @@ func _physics_process(delta: float) -> void:
 	var max_speed := RUN_SPEED if Input.is_action_pressed("rennen") else SPEED
 	var accel: float
 	if direction:
-		accel = ACCELERATION if is_on_floor() else AIR_ACCELERATION
+		accel = TURN_ACCELERATION if is_on_floor() && direction * velocity.x < 0 else ACCELERATION if is_on_floor() else AIR_ACCELERATION
 		$Bild.flip_h = direction < 0
 	else:
 		accel = FRICTION if is_on_floor() else AIR_FRICTION
 	velocity.x = move_toward(velocity.x, direction * max_speed, accel * delta)
 
 	move_and_slide()
+	$Debug.text = "%d %d" % [velocity.x, velocity.y]
