@@ -5,8 +5,8 @@ Ein Jump'n'Run nach dem Vorbild von Super Mario Bros. Level 1-1. Wie bei Flatter
 Das Projekt ist größer als Flatterfisch (die Roadmap rechnet mit 2–3 Wochen). Dafür kannst du vieles wiederverwenden: Szenen, Signale, Gruppen, Process Mode, Export.
 
 **Geplante Kapitel:**
-1. Projekt, Grafiken und die erste Plattform ← *du bist hier*
-2. Laufen und Springen, die sich gut anfühlen (eigene Steuerung, variable Sprunghöhe)
+1. Projekt, Grafiken und die erste Plattform ✔
+2. Laufen und Springen, die sich gut anfühlen (eigene Steuerung, variable Sprunghöhe) ← *du bist hier*
 3. Game Feel: Beschleunigung, Coyote Time, Jump Buffering
 4. Kamera und ein langer Level
 5. Animationen: stehen, laufen, springen
@@ -118,3 +118,183 @@ Fertig? Committen und Bescheid geben.
 2. **Kein Fallen ins Nichts (leicht):** Was passiert, wenn der Held vom Rand fällt? Lass ihn wieder am Start erscheinen, sobald er unter den Bildschirm fällt. (Bei Flatterfisch hattest du `position.y > 660`.)
 3. **Zweite Ebene (mittel):** Leg in `level.tscn` eine zweite `TileMapLayer` namens `Deko` an, die dasselbe TileSet benutzt (im Inspector beim TileSet: Pfeil → **Copy**, dann bei der neuen Ebene **Paste**). Mal darauf Büsche, Wolken und Zäune. Warum ist es praktisch, Deko auf einer eigenen Ebene ohne Kollision zu haben?
 4. **Einseitige Plattform (mittel):** Manche Plattformen soll man von unten durchspringen können. Im TileSet-Tab bei der Kollision einer Kachel gibt es **One Way**. Probier es an deiner schwebenden Plattform aus.
+
+---
+
+## Kapitel 2: Laufen und Springen, die sich gut anfühlen
+
+Die Vorlage aus Kapitel 1 funktioniert, fühlt sich aber steif an: Jeder Sprung ist gleich hoch, der Held fällt so langsam, wie er steigt, und er schaut immer nach rechts. In diesem Kapitel baust du das Skript Stück für Stück um. Am Ende steht das ganze Skript zum Vergleichen.
+
+### 2.1 Eigene Aktionen statt `ui_…`
+
+Die Aktionen `ui_left`, `ui_right` und `ui_accept` gehören eigentlich den Menüs. `ui_accept` reagiert zum Beispiel auch auf Enter, und wenn du später ein Menü baust, kommen sich Spiel und Menü in die Quere. Deshalb legt man für das Spiel eigene Aktionen an.
+
+*Project → Project Settings* → Tab **Input Map**:
+
+1. Oben bei *Add New Action* `links` eintippen → **Add**. Genauso `rechts` und `springen`.
+2. Neben jeder Aktion auf das **+** klicken und die Taste drücken, die dazugehören soll:
+
+| Aktion | Tasten |
+|---|---|
+| `links` | Pfeil links, A |
+| `rechts` | Pfeil rechts, D |
+| `springen` | Leertaste, Pfeil hoch, W |
+
+Eine Aktion darf mehrere Tasten haben. Im Code fragst du nur noch die Aktion ab und musst die Tasten nicht kennen. Das ist dasselbe Prinzip wie dein `pressKey` bei den Touch-Knöpfen: Viele Eingaben führen zu einer Handlung.
+
+Dann im Skript die drei Namen austauschen:
+
+```gdscript
+	if Input.is_action_just_pressed("springen") and is_on_floor():
+	...
+	var direction := Input.get_axis("links", "rechts")
+```
+
+Den Kommentar „As good practice, you should replace UI actions …“ kannst du jetzt löschen, das ist erledigt.
+
+### 2.2 Variable Sprunghöhe
+
+Bei Mario gilt: kurz tippen ergibt einen kleinen Hüpfer, gedrückt halten einen hohen Sprung. Der Trick dahinter ist einfach. Lässt der Spieler die Taste los, während der Held noch steigt, nimmt man ihm einen Teil des Schwungs weg.
+
+Oben zu den Konstanten:
+
+```gdscript
+const JUMP_CUT = 0.5   # Taste früh losgelassen: restlichen Schwung halbieren
+```
+
+Direkt unter den Sprung:
+
+```gdscript
+	if Input.is_action_just_released("springen") and velocity.y < 0:
+		velocity.y *= JUMP_CUT
+```
+
+`velocity.y < 0` heißt: Der Held steigt noch. Ohne diese Bedingung würde das Loslassen auch beim Fallen bremsen, und der Held würde kurz in der Luft schweben.
+
+Die volle Sprunghöhe aus Übung 1 von Kapitel 1 bleibt gleich, denn wer die Taste hält, merkt vom Abschneiden nichts.
+
+### 2.3 Schneller fallen
+
+In echt fällt man genauso schnell, wie man steigt. In Spielen fühlt sich das schwammig an, wie auf dem Mond. Fast alle Jump'n'Runs ziehen den Helden beim Fallen deshalb stärker nach unten als beim Steigen. Zusätzlich gibt es eine Höchstgeschwindigkeit, damit lange Stürze nicht immer schneller werden.
+
+```gdscript
+const FALL_GRAVITY_FACTOR = 1.6   # beim Fallen stärker nach unten ziehen
+const MAX_FALL_SPEED = 300.0
+```
+
+Den Schwerkraft-Teil ersetzt du so:
+
+```gdscript
+	# Schwerkraft, beim Fallen stärker
+	if not is_on_floor():
+		var gravity := get_gravity()
+		if velocity.y > 0:
+			gravity *= FALL_GRAVITY_FACTOR
+		velocity += gravity * delta
+		velocity.y = min(velocity.y, MAX_FALL_SPEED)
+```
+
+`min` nimmt den kleineren der beiden Werte, so wird `velocity.y` nie größer als 300. Bei 60 Bildern pro Sekunde sind das 5 Pixel pro Bild. Das ist weniger als eine Kachel (18), so kann der Held auch nicht durch eine dünne Plattform „durchrutschen“.
+
+Weil nur das Fallen stärker wird, bleibt die Sprunghöhe dieselbe. Der Sprung wird nur kürzer und knackiger.
+
+### 2.4 Den Startpunkt merken
+
+In deiner Übung 2 aus Kapitel 1 stehen die Zahlen `44` und `135` zweimal: im Level (wo der Held steht) und im Skript (wohin er zurückkommt). Verschiebst du den Held im Level, stimmt das Skript nicht mehr. Besser: Der Held merkt sich beim Start selbst, wo er steht.
+
+```gdscript
+const FALL_LIMIT = 224   # tiefer als das: runtergefallen
+
+var start_position: Vector2
+
+
+func _ready() -> void:
+	start_position = position
+```
+
+`_ready` läuft einmal, sobald der Held in der Szene ist. Dein Rücksetzen wird dann zu:
+
+```gdscript
+	# Runtergefallen
+	if position.y > FALL_LIMIT:
+		position = start_position
+		velocity = Vector2.ZERO
+```
+
+`Vector2.ZERO` ist dasselbe wie `Vector2(0, 0)`, nur besser lesbar. Und `position` kann man als Ganzes zuweisen, `x` und `y` einzeln sind nicht nötig.
+
+### 2.5 In Laufrichtung schauen
+
+Der Held schaut immer nach rechts, auch wenn er nach links läuft. Ein `Sprite2D` kann sein Bild spiegeln: **Flip H** (horizontal). Im Skript dort, wo `direction` nicht 0 ist:
+
+```gdscript
+	if direction:
+		velocity.x = direction * SPEED
+		$Bild.flip_h = direction < 0
+```
+
+`direction < 0` ist `true` beim Laufen nach links und `false` nach rechts. Steht der Held still, bleibt das Bild, wie es war. So schaut er weiter in die Richtung, in die er zuletzt gelaufen ist.
+
+### 2.6 Das ganze Skript
+
+So sollte `held.gd` jetzt ungefähr aussehen:
+
+```gdscript
+extends CharacterBody2D
+
+
+const SPEED = 100.0
+const JUMP_VELOCITY = -376.0
+const JUMP_CUT = 0.5              # Taste früh losgelassen: restlichen Schwung halbieren
+const FALL_GRAVITY_FACTOR = 1.6   # beim Fallen stärker nach unten ziehen
+const MAX_FALL_SPEED = 300.0
+const FALL_LIMIT = 224            # tiefer als das: runtergefallen
+
+var start_position: Vector2
+
+
+func _ready() -> void:
+	start_position = position
+
+
+func _physics_process(delta: float) -> void:
+	# Schwerkraft, beim Fallen stärker
+	if not is_on_floor():
+		var gravity := get_gravity()
+		if velocity.y > 0:
+			gravity *= FALL_GRAVITY_FACTOR
+		velocity += gravity * delta
+		velocity.y = min(velocity.y, MAX_FALL_SPEED)
+
+	# Runtergefallen
+	if position.y > FALL_LIMIT:
+		position = start_position
+		velocity = Vector2.ZERO
+
+	# Springen, und kürzer springen beim frühen Loslassen
+	if Input.is_action_just_pressed("springen") and is_on_floor():
+		velocity.y = JUMP_VELOCITY
+	if Input.is_action_just_released("springen") and velocity.y < 0:
+		velocity.y *= JUMP_CUT
+
+	# Laufen
+	var direction := Input.get_axis("links", "rechts")
+	if direction:
+		velocity.x = direction * SPEED
+		$Bild.flip_h = direction < 0
+	else:
+		velocity.x = move_toward(velocity.x, 0, SPEED)
+
+	move_and_slide()
+```
+
+Ausprobieren: kurz tippen und lang halten an deiner Treppe. Fühlt sich der Sprung besser an als vorher?
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 2
+
+1. **Am Gefühl drehen (leicht):** Probier `JUMP_CUT` mit `0.2`, `0.5` und `1.0` aus und `FALL_GRAVITY_FACTOR` mit `1.0`, `1.6` und `3.0`. Was passiert bei `JUMP_CUT = 1.0`? Such dir die Werte aus, die sich für dich am besten anfühlen. Game Feel ist Geschmackssache, es gibt kein Richtig.
+2. **Rennen (leicht):** Leg eine Aktion `rennen` an (Shift). Solange sie gedrückt ist, läuft der Held mit `RUN_SPEED = 160.0` statt `SPEED`. Kommt er mit Anlauf über eine breitere Lücke? Bau eine in deinen Level, die man nur rennend schafft.
+3. **Gamepad (mittel):** Falls du einen Controller hast: Gib den Aktionen in der Input Map auch Gamepad-Eingaben (für `links`/`rechts` den linken Stick, *Joypad Axis*, und das Steuerkreuz, für `springen` den unteren Knopf, *Joypad Button 0*). Musst du am Skript etwas ändern? Warum nicht?
+4. **Sprung-Sound (mittel):** Wie bei Flatterfisch: einen kurzen Sprung-Ton mit 🆓 jsfxr machen, als `AudioStreamPlayer` namens `SprungTon` an den Held hängen und beim Abspringen abspielen. Denk an die Lehre aus Flatterfisch: Ohne zugewiesenen **Stream** bleibt es still, ohne Fehlermeldung.
