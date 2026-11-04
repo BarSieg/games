@@ -2,9 +2,10 @@ extends CharacterBody2D
 
 
 const SPEED = 100.0
+const RUN_SPEED = 160.0
 const JUMP_VELOCITY = -376.0
-const JUMP_CUT = 0.5   # Taste früh losgelassen: restlichen Schwung halbieren
-const FALL_GRAVITY_FACTOR = 1.6   # beim Fallen stärker nach unten ziehen
+const JUMP_CUT = 0.4   # Taste früh losgelassen: restlichen Schwung halbieren
+const FALL_GRAVITY_FACTOR = 1.7   # beim Fallen stärker nach unten ziehen
 const MAX_FALL_SPEED = 300.0
 const FALL_LIMIT = 224   # tiefer als das: runtergefallen
 
@@ -30,13 +31,17 @@ func _physics_process(delta: float) -> void:
 	# Handle jump.
 	if Input.is_action_just_pressed("springen") and is_on_floor():
 		velocity.y = JUMP_VELOCITY
+		$SprungTon.play()
 	if Input.is_action_just_released("springen") and velocity.y < 0:
 		velocity.y *= JUMP_CUT
 
 	# Get the input direction and handle the movement/deceleration.
 	var direction := Input.get_axis("links", "rechts")
 	if direction:
-		velocity.x = direction * SPEED
+		if Input.is_action_pressed("rennen"):
+			velocity.x = direction * RUN_SPEED
+		else:
+			velocity.x = direction * SPEED
 		$Bild.flip_h = direction < 0
 	else:
 		velocity.x = move_toward(velocity.x, 0, SPEED)

@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://or5nbftp2l13" path="res://held.gd" id="1_7usdt"]
 [ext_resource type="Texture2D" uid="uid://hv1w6jlj6nyb" path="res://held.png" id="2_xw2dj"]
+[ext_resource type="AudioStream" uid="uid://0vqudorcrgfe" path="res://jump.wav" id="3_xw2dj"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
 size = Vector2(12, 15)
@@ -15,3 +16,7 @@ texture = ExtResource("2_xw2dj")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2098115707]
 position = Vector2(0, 0.5)
 shape = SubResource("RectangleShape2D_s017u")
+
+[node name="SprungTon" type="AudioStreamPlayer" parent="." unique_id=1262602284]
+stream = ExtResource("3_xw2dj")
+volume_db = -7.298
