@@ -16,9 +16,8 @@ const AIR_FRICTION = 150.0        # in der Luft fast keine Bremse: der Schwung b
 const COYOTE_TIME = 0.1           # so lange nach der Kante darf man noch springen
 const JUMP_BUFFER = 0.1           # so lange wird ein zu früher Sprung gemerkt
 const TURN_ACCELERATION = 1200.0  # beim Umdrehen am Boden stärker bremsen
-const CAMERA_OFFSET_X = 54.0
-const CAMERA_TURN_SPEED = 60.0   # Pixel pro Sekunde, die die Kamera umschwenkt
-
+const CAMERA_OFFSET_X = 54.0      # so weit schaut die Kamera voraus
+const CAMERA_TURN_SPEED = 60.0    # Pixel pro Sekunde, die die Kamera umschwenkt
 
 var start_position: Vector2
 var coyote_timer := 0.0
@@ -30,6 +29,18 @@ func _ready() -> void:
 	start_position = position
 	$Camera2D.reset_smoothing()
 
+
+# Welche Animation passt gerade?
+func update_animation() -> void:
+	if not is_on_floor():
+		if velocity.y < 0:
+			$Bild.play("springen")
+		else:
+			$Bild.play("fallen")
+	elif abs(velocity.x) > 5:
+		$Bild.play("laufen")
+	else:
+		$Bild.play("stehen")
 
 func _physics_process(delta: float) -> void:
 	# Coyote Time: Am Boden wird der Zähler voll, in der Luft läuft er ab
@@ -83,12 +94,18 @@ func _physics_process(delta: float) -> void:
 		accel = FRICTION if is_on_floor() else AIR_FRICTION
 	velocity.x = move_toward(velocity.x, direction * max_speed, accel * delta)
 
-	# kein zurück für die Kamera
+	# Kein Zurück für die Kamera
 	$Camera2D.limit_left = max($Camera2D.limit_left, $Camera2D.get_screen_center_position().x - 192)
-	# kein zurück für den Helden
-	position.x = max(position.x, $Camera2D.limit_left + 9)
-	
+
+
 	$Camera2D.position.x = move_toward($Camera2D.position.x, camera_target_x, CAMERA_TURN_SPEED * delta)
 
 	move_and_slide()
+	update_animation()
+	
+	# Kein Zurück für den Helden
+	if position.x < $Camera2D.limit_left + 9:
+		position.x = $Camera2D.limit_left + 9
+		velocity.x = 0
+	
 	$Debug.text = "%d %d" % [velocity.x, velocity.y]

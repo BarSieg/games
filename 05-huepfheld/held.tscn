@@ -4,14 +4,88 @@
 [ext_resource type="Texture2D" uid="uid://hv1w6jlj6nyb" path="res://held.png" id="2_xw2dj"]
 [ext_resource type="AudioStream" uid="uid://0vqudorcrgfe" path="res://jump.wav" id="3_xw2dj"]
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_2b6es"]
+atlas = ExtResource("2_xw2dj")
+region = Rect2(96, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xw2dj"]
+atlas = ExtResource("2_xw2dj")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_q6bl5"]
+atlas = ExtResource("2_xw2dj")
+region = Rect2(32, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kdfus"]
+atlas = ExtResource("2_xw2dj")
+region = Rect2(48, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_33x0v"]
+atlas = ExtResource("2_xw2dj")
+region = Rect2(64, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g67po"]
+atlas = ExtResource("2_xw2dj")
+region = Rect2(80, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jvvaw"]
+atlas = ExtResource("2_xw2dj")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_0orc7"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2b6es")
+}],
+"loop": 1,
+"name": &"fallen",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xw2dj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_q6bl5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kdfus")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_33x0v")
+}],
+"loop": 1,
+"name": &"laufen",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g67po")
+}],
+"loop": 1,
+"name": &"springen",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jvvaw")
+}],
+"loop": 1,
+"name": &"stehen",
+"speed": 5.0
+}]
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
 size = Vector2(12, 15)
 
 [node name="Held" type="CharacterBody2D" unique_id=2053799237]
 script = ExtResource("1_7usdt")
 
-[node name="Bild" type="Sprite2D" parent="." unique_id=450307394]
-texture = ExtResource("2_xw2dj")
+[node name="Bild" type="AnimatedSprite2D" parent="." unique_id=479849996]
+sprite_frames = SubResource("SpriteFrames_0orc7")
+animation = &"stehen"
+autoplay = "stehen"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2098115707]
 position = Vector2(0, 0.5)

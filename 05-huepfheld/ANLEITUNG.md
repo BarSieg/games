@@ -8,8 +8,8 @@ Das Projekt ist größer als Flatterfisch (die Roadmap rechnet mit 2–3 Wochen)
 1. Projekt, Grafiken und die erste Plattform ✔
 2. Laufen und Springen, die sich gut anfühlen (eigene Steuerung, variable Sprunghöhe) ✔
 3. Game Feel: Beschleunigung, Coyote Time, Jump Buffering ✔
-4. Kamera und ein langer Level ← *du bist hier*
-5. Animationen: stehen, laufen, springen
+4. Kamera und ein langer Level ✔
+5. Animationen: stehen, laufen, springen ← *du bist hier*
 6. Gegner: patrouillieren und plattgesprungen werden
 7. Blöcke und Items: Münzen und ein Power-up
 8. Ziel, Leben, Anzeige und Web-Export
@@ -605,3 +605,86 @@ Fertig? Committen und Bescheid geben.
    - Wenn du `$Camera2D.limit_left` jedes Bild auf diese Kante setzt (aber nur, wenn sie dadurch größer wird), kann die Kamera nicht mehr zurück.
    - Den Held hältst du mit `position.x = max(position.x, …)` im Bild. Denk an die halbe Breite des Helden.
    - Was passiert jetzt beim Runterfallen und Neustart am Anfang? Was musst du dort zurücksetzen?
+
+---
+
+## Kapitel 5: Animationen
+
+Der Held gleitet im Moment als starres Bild durch den Level. In diesem Kapitel bekommt er Beine: ein Bild zum Stehen, eine Laufanimation und ein Sprungbild. Die Technik kennst du vom Flossenschlag bei Flatterfisch (`AnimatedSprite2D`). Neu ist, dass das Skript abhängig vom Zustand selbst entscheidet, welche Animation läuft.
+
+### 5.1 Die Bilder zeichnen
+
+In 🆓 Piskel oder 🆓 Pixelorama, jedes Bild 16 × 16 wie bisher:
+
+| Animation | Bilder | Idee |
+|---|---|---|
+| `stehen` | 1 | dein jetziges `held.png` |
+| `laufen` | 3 oder 4 | Beine abwechselnd vorne und hinten. Bei 3 Bildern zum Beispiel: Schritt links, Beine zusammen, Schritt rechts |
+| `springen` | 1 | Beine angezogen, Arme hoch |
+
+Tipp: Fang mit dem Stehbild an, kopiere es (in Piskel: das Bild links in der Liste duplizieren) und ändere nur die Beine. So bleibt der Körper in allen Bildern an derselben Stelle und wackelt nicht.
+
+Exportiere alle Bilder als **ein Sprite-Sheet**: in Piskel unter *Export → PNG* mit allen Bildern nebeneinander in einer Zeile. Speichern als `held_sheet.png` und ins FileSystem ziehen.
+
+### 5.2 Aus `Bild` wird eine `AnimatedSprite2D`
+
+Du musst den Node nicht löschen und neu anlegen. In `held.tscn`:
+
+1. Rechtsklick auf `Bild` → **Change Type** → `AnimatedSprite2D`.
+
+Name und Position bleiben dabei, und `$Bild.flip_h` im Skript funktioniert weiter, denn `AnimatedSprite2D` kann das auch. Nur die **Texture** fällt weg, an ihre Stelle kommen **Sprite Frames**.
+
+2. Im Inspector **Sprite Frames** → **New SpriteFrames** → darauf klicken. Unten öffnet sich der SpriteFrames-Editor.
+3. Die Animation `default` umbenennen in `stehen` (Doppelklick).
+4. Auf das Raster-Symbol klicken (**Add frames from a Sprite Sheet**), `held_sheet.png` wählen und bei *Horizontal* die Zahl deiner Bilder eintragen, bei *Vertical* `1`. Godot zeigt die Bilder nummeriert an. Für `stehen` nur das Stehbild anklicken → **Add Frames**.
+5. Mit **Add Animation** (das Blatt-Symbol links oben) `laufen` und `springen` anlegen und genauso füllen.
+6. Bei `laufen`: **Loop** an (das Pfeil-Symbol) und das Tempo auf etwa **10 FPS**. Bei `stehen` und `springen` ist das Tempo egal, es gibt nur ein Bild.
+7. Bei **Autoplay on Load** (das Symbol mit dem A und dem Pfeil) die Animation `stehen` wählen.
+
+Wenn du jetzt F5 drückst, steht der Held wie vorher. Gewechselt wird noch nicht.
+
+### 5.3 Die richtige Animation wählen
+
+Welche Animation läuft, hängt davon ab, was der Held gerade tut. Das gehört in eine eigene Funktion, damit `_physics_process` übersichtlich bleibt:
+
+```gdscript
+# Welche Animation passt gerade?
+func update_animation() -> void:
+	if not is_on_floor():
+		$Bild.play("springen")
+	elif abs(velocity.x) > 5:
+		$Bild.play("laufen")
+	else:
+		$Bild.play("stehen")
+```
+
+Aufgerufen wird sie ganz am Ende von `_physics_process`, nach `move_and_slide()`. Dann stimmt `is_on_floor()` schon für dieses Bild.
+
+```gdscript
+	move_and_slide()
+	update_animation()
+```
+
+Drei Dinge dazu:
+
+- **`elif`** ist „else if“. Es wird nur geprüft, wenn das `if` davor nicht gepasst hat. In JavaScript schreibst du `else if`.
+- **`abs`** macht eine Zahl positiv: `abs(-80)` ist 80. So zählt Laufen nach links und nach rechts gleich.
+- **`> 5` statt `!= 0`:** Durch das Abbremsen aus Kapitel 3 ist `velocity.x` am Ende ein paar Bilder lang winzig klein, aber nicht 0. Der Held würde dann auf der Stelle trippeln.
+
+Und warum ist es kein Problem, dass `play` jedes Bild aufgerufen wird? Läuft die Animation schon, macht `play` mit demselben Namen einfach nichts. Sie fängt nicht jedes Bild von vorne an.
+
+### 5.4 Ausprobieren
+
+**F5**: stehen, loslaufen, springen, landen. Achte auf zwei Dinge:
+
+- Beim Runterlaufen von einer Kante zeigt der Held sofort das Sprungbild, obwohl er gar nicht gesprungen ist. Das ist bei Mario genauso und fällt nicht auf. (Wenn es dich stört: Übung 1.)
+- Wirken die Beine beim Laufen zu schnell oder zu langsam? Dreh am Tempo der Animation im SpriteFrames-Editor.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 5
+
+1. **Fallen ist nicht Springen (leicht):** Zeichne ein Bild `fallen`, zum Beispiel mit Armen nach oben und gestreckten Beinen. Zeige `springen`, solange der Held steigt, und `fallen`, sobald er sinkt. Welche Zahl verrät dir, ob er steigt oder sinkt?
+2. **Schritte im Takt (leicht):** Beim Rennen sollen die Beine schneller gehen. Eine `AnimatedSprite2D` hat dafür `speed_scale`: `1.0` ist normal, `2.0` doppelt so schnell. Setz es beim Laufen auf `abs(velocity.x) / SPEED`. Was passiert beim Anlaufen aus dem Stand?
+3. **Bremsen (mittel):** Zu deiner Bremsspur aus Kapitel 3 gehört ein Bild: Bei Mario dreht sich der Held beim Umdrehen schon in die neue Richtung und stemmt die Füße in den Boden. Zeichne ein Bild `bremsen` und zeig es, solange `direction * velocity.x < 0` ist und der Held am Boden steht. Tipp: `direction` kennt `update_animation()` nicht, weil es eine lokale Variable in `_physics_process` ist. Gib sie als Parameter mit: `update_animation(direction)`.
+4. **Staubwolke (mittel):** Beim Landen soll kurz etwas Staub aufwirbeln. Häng eine `CPUParticles2D` namens `Staub` an die Füße des Helden: **One Shot** an, **Emitting** aus, wenige Partikel (etwa 6), kurze **Lifetime** (0,3), eine helle Farbe. Abspielen mit `$Staub.restart()`. Das Knifflige ist der Moment: Du musst wissen, dass der Held im letzten Bild noch in der Luft war und jetzt am Boden steht. Merk dir dazu am Ende jedes Bilds in einer Variablen, ob er in der Luft war.
