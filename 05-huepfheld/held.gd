@@ -3,7 +3,7 @@ extends CharacterBody2D
 
 const SPEED = 100.0
 const JUMP_VELOCITY = -376.0
-
+const JUMP_CUT = 0.5   # Taste früh losgelassen: restlichen Schwung halbieren
 
 func _physics_process(delta: float) -> void:
 	# Add the gravity.
@@ -19,6 +19,8 @@ func _physics_process(delta: float) -> void:
 	# Handle jump.
 	if Input.is_action_just_pressed("springen") and is_on_floor():
 		velocity.y = JUMP_VELOCITY
+	if Input.is_action_just_released("springen") and velocity.y < 0:
+		velocity.y *= JUMP_CUT
 
 	# Get the input direction and handle the movement/deceleration.
 	var direction := Input.get_axis("links", "rechts")
