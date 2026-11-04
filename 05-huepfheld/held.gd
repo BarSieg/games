@@ -45,6 +45,7 @@ func _physics_process(delta: float) -> void:
 	if position.y > FALL_LIMIT:
 		position = start_position
 		velocity = Vector2.ZERO
+		$Camera2D.reset_smoothing()
 
 	# Jump Buffering: Ein Tastendruck gilt noch kurze Zeit
 	if Input.is_action_just_pressed("springen"):
