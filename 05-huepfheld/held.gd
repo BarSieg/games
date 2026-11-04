@@ -4,11 +4,17 @@ extends CharacterBody2D
 const SPEED = 100.0
 const JUMP_VELOCITY = -376.0
 const JUMP_CUT = 0.5   # Taste früh losgelassen: restlichen Schwung halbieren
+const FALL_GRAVITY_FACTOR = 1.6   # beim Fallen stärker nach unten ziehen
+const MAX_FALL_SPEED = 300.0
 
 func _physics_process(delta: float) -> void:
-	# Add the gravity.
+	# Schwerkraft, beim Fallen stärker
 	if not is_on_floor():
-		velocity += get_gravity() * delta
+		var gravity := get_gravity()
+		if velocity.y > 0:
+			gravity *= FALL_GRAVITY_FACTOR
+		velocity += gravity * delta
+		velocity.y = min(velocity.y, MAX_FALL_SPEED)
 	
 	# Runtergefallen
 	if position.y > 224:
