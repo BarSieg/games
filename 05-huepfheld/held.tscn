@@ -30,9 +30,11 @@ theme_override_font_sizes/font_size = 8
 horizontal_alignment = 1
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=283332041]
+position = Vector2(54, 0)
 limit_left = 0
 limit_top = 0
 limit_right = 5040
 limit_bottom = 216
+limit_smoothed = true
 position_smoothing_enabled = true
-position_smoothing_speed = 8.0
+position_smoothing_speed = 15.0

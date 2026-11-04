@@ -16,14 +16,19 @@ const AIR_FRICTION = 150.0        # in der Luft fast keine Bremse: der Schwung b
 const COYOTE_TIME = 0.1           # so lange nach der Kante darf man noch springen
 const JUMP_BUFFER = 0.1           # so lange wird ein zu früher Sprung gemerkt
 const TURN_ACCELERATION = 1200.0  # beim Umdrehen am Boden stärker bremsen
+const CAMERA_OFFSET_X = 54.0
+const CAMERA_TURN_SPEED = 60.0   # Pixel pro Sekunde, die die Kamera umschwenkt
+
 
 var start_position: Vector2
 var coyote_timer := 0.0
 var jump_buffer_timer := 0.0
+var camera_target_x := CAMERA_OFFSET_X
 
 
 func _ready() -> void:
 	start_position = position
+	$Camera2D.reset_smoothing()
 
 
 func _physics_process(delta: float) -> void:
@@ -45,7 +50,9 @@ func _physics_process(delta: float) -> void:
 	if position.y > FALL_LIMIT:
 		position = start_position
 		velocity = Vector2.ZERO
+		$Camera2D.limit_left = 0
 		$Camera2D.reset_smoothing()
+		$Camera2D.align()
 
 	# Jump Buffering: Ein Tastendruck gilt noch kurze Zeit
 	if Input.is_action_just_pressed("springen"):
@@ -71,9 +78,17 @@ func _physics_process(delta: float) -> void:
 	if direction:
 		accel = TURN_ACCELERATION if is_on_floor() and direction * velocity.x < 0 else ACCELERATION if is_on_floor() else AIR_ACCELERATION
 		$Bild.flip_h = direction < 0
+		camera_target_x = CAMERA_OFFSET_X * sign(direction)
 	else:
 		accel = FRICTION if is_on_floor() else AIR_FRICTION
 	velocity.x = move_toward(velocity.x, direction * max_speed, accel * delta)
+
+	# kein zurück für die Kamera
+	$Camera2D.limit_left = max($Camera2D.limit_left, $Camera2D.get_screen_center_position().x - 192)
+	# kein zurück für den Helden
+	position.x = max(position.x, $Camera2D.limit_left + 9)
+	
+	$Camera2D.position.x = move_toward($Camera2D.position.x, camera_target_x, CAMERA_TURN_SPEED * delta)
 
 	move_and_slide()
 	$Debug.text = "%d %d" % [velocity.x, velocity.y]
