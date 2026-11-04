@@ -4,17 +4,32 @@ extends CharacterBody2D
 const SPEED = 100.0
 const RUN_SPEED = 160.0
 const JUMP_VELOCITY = -376.0
-const JUMP_CUT = 0.4   # Taste früh losgelassen: restlichen Schwung halbieren
+const JUMP_CUT = 0.4              # Taste früh losgelassen: restlichen Schwung kürzen
 const FALL_GRAVITY_FACTOR = 1.7   # beim Fallen stärker nach unten ziehen
 const MAX_FALL_SPEED = 300.0
-const FALL_LIMIT = 224   # tiefer als das: runtergefallen
+const FALL_LIMIT = 224            # tiefer als das: runtergefallen
+const ACCELERATION = 600.0        # am Boden loslaufen
+const FRICTION = 800.0            # am Boden abbremsen
+const AIR_ACCELERATION = 400.0    # in der Luft lenken
+const AIR_FRICTION = 150.0        # in der Luft fast keine Bremse: der Schwung bleibt
+const COYOTE_TIME = 0.1           # so lange nach der Kante darf man noch springen
+const JUMP_BUFFER = 0.1           # so lange wird ein zu früher Sprung gemerkt
 
 var start_position: Vector2
+var coyote_timer := 0.0
+var jump_buffer_timer := 0.0
 
 func _ready() -> void:
 	start_position = position
 
+
 func _physics_process(delta: float) -> void:
+	# Coyote Time: Am Boden wird der Zähler voll, in der Luft läuft er ab
+	if is_on_floor():
+		coyote_timer = COYOTE_TIME
+	else:
+		coyote_timer -= delta
+	
 	# Schwerkraft, beim Fallen stärker
 	if not is_on_floor():
 		var gravity := get_gravity()
@@ -22,28 +37,36 @@ func _physics_process(delta: float) -> void:
 			gravity *= FALL_GRAVITY_FACTOR
 		velocity += gravity * delta
 		velocity.y = min(velocity.y, MAX_FALL_SPEED)
-	
+
 	# Runtergefallen
 	if position.y > FALL_LIMIT:
 		position = start_position
 		velocity = Vector2.ZERO
 
-	# Handle jump.
-	if Input.is_action_just_pressed("springen") and is_on_floor():
+	# Jump Buffering: Ein Tastendruck gilt noch kurze Zeit
+	if Input.is_action_just_pressed("springen"):
+		jump_buffer_timer = JUMP_BUFFER
+	else:
+		jump_buffer_timer -= delta
+
+	# Springen, wenn beides passt: Taste gerade gedrückt, Boden gerade unter den Füßen
+	if jump_buffer_timer > 0 and coyote_timer > 0:
 		velocity.y = JUMP_VELOCITY
+		jump_buffer_timer = 0
+		coyote_timer = 0
 		$SprungTon.play()
 	if Input.is_action_just_released("springen") and velocity.y < 0:
 		velocity.y *= JUMP_CUT
 
-	# Get the input direction and handle the movement/deceleration.
+	# Laufen: Die Geschwindigkeit nähert sich dem Ziel, statt zu springen
 	var direction := Input.get_axis("links", "rechts")
+	var max_speed := RUN_SPEED if Input.is_action_pressed("rennen") else SPEED
+	var accel: float
 	if direction:
-		if Input.is_action_pressed("rennen"):
-			velocity.x = direction * RUN_SPEED
-		else:
-			velocity.x = direction * SPEED
+		accel = ACCELERATION if is_on_floor() else AIR_ACCELERATION
 		$Bild.flip_h = direction < 0
 	else:
-		velocity.x = move_toward(velocity.x, 0, SPEED)
+		accel = FRICTION if is_on_floor() else AIR_FRICTION
+	velocity.x = move_toward(velocity.x, direction * max_speed, accel * delta)
 
 	move_and_slide()

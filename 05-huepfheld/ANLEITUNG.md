@@ -6,8 +6,8 @@ Das Projekt ist größer als Flatterfisch (die Roadmap rechnet mit 2–3 Wochen)
 
 **Geplante Kapitel:**
 1. Projekt, Grafiken und die erste Plattform ✔
-2. Laufen und Springen, die sich gut anfühlen (eigene Steuerung, variable Sprunghöhe) ← *du bist hier*
-3. Game Feel: Beschleunigung, Coyote Time, Jump Buffering
+2. Laufen und Springen, die sich gut anfühlen (eigene Steuerung, variable Sprunghöhe) ✔
+3. Game Feel: Beschleunigung, Coyote Time, Jump Buffering ← *du bist hier*
 4. Kamera und ein langer Level
 5. Animationen: stehen, laufen, springen
 6. Gegner: patrouillieren und plattgesprungen werden
@@ -298,3 +298,204 @@ Fertig? Committen und Bescheid geben.
 2. **Rennen (leicht):** Leg eine Aktion `rennen` an (Shift). Solange sie gedrückt ist, läuft der Held mit `RUN_SPEED = 160.0` statt `SPEED`. Kommt er mit Anlauf über eine breitere Lücke? Bau eine in deinen Level, die man nur rennend schafft.
 3. **Gamepad (mittel):** Falls du einen Controller hast: Gib den Aktionen in der Input Map auch Gamepad-Eingaben (für `links`/`rechts` den linken Stick, *Joypad Axis*, und das Steuerkreuz, für `springen` den unteren Knopf, *Joypad Button 0*). Musst du am Skript etwas ändern? Warum nicht?
 4. **Sprung-Sound (mittel):** Wie bei Flatterfisch: einen kurzen Sprung-Ton mit 🆓 jsfxr machen, als `AudioStreamPlayer` namens `SprungTon` an den Held hängen und beim Abspringen abspielen. Denk an die Lehre aus Flatterfisch: Ohne zugewiesenen **Stream** bleibt es still, ohne Fehlermeldung.
+
+---
+
+## Kapitel 3: Game Feel
+
+„Game Feel“ nennt man alles, was ein Spiel sich gut anfühlen lässt, ohne dass man es bewusst bemerkt. Spieler sagen dann „die Steuerung ist präzise“ oder „fühlt sich schwammig an“. In diesem Kapitel kommen drei Tricks dazu, die fast jedes gute Jump'n'Run benutzt.
+
+### 3.1 Beschleunigen und Abbremsen
+
+Im Moment ist der Held sofort auf voller Geschwindigkeit und steht sofort still. Das ist präzise, wirkt aber, als hätte er kein Gewicht. Mario dagegen nimmt Anlauf und rutscht ein Stück nach.
+
+Die Idee: `velocity.x` springt nicht auf den Zielwert, sondern bewegt sich jedes Bild ein Stück darauf zu. Dafür hast du `move_toward` schon. Bisher war die Schrittweite `SPEED`, also alles auf einmal. Jetzt wird sie klein.
+
+Neue Konstanten. Die Einheit ist Pixel pro Sekunde², also „so viel schneller pro Sekunde“:
+
+```gdscript
+const ACCELERATION = 600.0        # am Boden loslaufen
+const FRICTION = 800.0            # am Boden abbremsen
+const AIR_ACCELERATION = 400.0    # in der Luft lenken
+const AIR_FRICTION = 150.0        # in der Luft fast keine Bremse: der Schwung bleibt
+```
+
+Bei 600 ist der Held nach 1/6 Sekunde auf 100. Bewusst merkt man das kaum, aber es fühlt sich weicher an.
+
+Den ganzen Lauf-Teil ersetzt du so:
+
+```gdscript
+	# Laufen: Die Geschwindigkeit nähert sich dem Ziel, statt zu springen
+	var direction := Input.get_axis("links", "rechts")
+	var max_speed := RUN_SPEED if Input.is_action_pressed("rennen") else SPEED
+	var accel: float
+	if direction:
+		accel = ACCELERATION if is_on_floor() else AIR_ACCELERATION
+		$Bild.flip_h = direction < 0
+	else:
+		accel = FRICTION if is_on_floor() else AIR_FRICTION
+	velocity.x = move_toward(velocity.x, direction * max_speed, accel * delta)
+```
+
+Neu ist die Schreibweise **`A if Bedingung else B`**. Das ist dasselbe wie `Bedingung ? A : B` in JavaScript: ein `if` in einer Zeile, das einen Wert ergibt.
+
+Der Trick steckt in der letzten Zeile. Das Ziel ist `direction * max_speed`: mit gedrückter Taste 100 (oder 160 beim Rennen), ohne Taste 0. Losrennen, Abbremsen und vom Rennen zurück zum Gehen sind damit alle dieselbe Zeile, nur `accel` ist jeweils anders.
+
+Das `* delta` ist wichtig. Die Beschleunigung gilt pro Sekunde, ein Bild dauert aber nur 1/60 Sekunde. Das kennst du aus den JavaScript-Spielen (`dt`).
+
+Ausprobieren: Spring mit Anlauf und lass in der Luft die Taste los. Der Held fliegt fast genauso weit weiter, statt in der Luft stehen zu bleiben. Das behebt auch etwas aus Übung 2 von Kapitel 2: Bisher fiel der Held in der Luft sofort auf Schrittgeschwindigkeit zurück, wenn man Shift losließ.
+
+### 3.2 Coyote Time
+
+Kennst du das aus Zeichentrickfilmen? Der Kojote rennt über die Klippe hinaus, schwebt kurz in der Luft und fällt erst, wenn er nach unten schaut.
+
+Das Problem im Spiel: Spieler drücken Springen oft ein paar Hundertstelsekunden zu spät, wenn der Held schon über die Kante gelaufen ist. `is_on_floor()` ist dann `false`, der Sprung kommt nicht, und es fühlt sich an, als hätte das Spiel die Taste verschluckt. Die Lösung: Man darf noch kurz nach dem Verlassen des Bodens springen. Etwa 0,1 Sekunden reichen, sehen tut das niemand.
+
+Du brauchst dafür einen Zähler, der herunterläuft. Bei Flatterfisch hast du `Timer`-Nodes benutzt. Für so kurze Zeiten, die jedes Bild neu gesetzt werden, ist eine einfache Zahl aber übersichtlicher, wie dein `alienSpawn -= dt` bei Weltraumsteine.
+
+```gdscript
+const COYOTE_TIME = 0.1           # so lange nach der Kante darf man noch springen
+
+var coyote_timer := 0.0
+```
+
+Ganz oben in `_physics_process`, noch vor der Schwerkraft:
+
+```gdscript
+	# Coyote Time: Am Boden wird der Zähler voll, in der Luft läuft er ab
+	if is_on_floor():
+		coyote_timer = COYOTE_TIME
+	else:
+		coyote_timer -= delta
+```
+
+Der Sprung fragt jetzt den Zähler statt `is_on_floor()`:
+
+```gdscript
+	if Input.is_action_just_pressed("springen") and coyote_timer > 0:
+		velocity.y = JUMP_VELOCITY
+		coyote_timer = 0
+		$SprungTon.play()
+```
+
+`coyote_timer = 0` beim Absprung ist wichtig. Sonst könnte man in den ersten 0,1 Sekunden des Sprungs ein zweites Mal springen.
+
+### 3.3 Jump Buffering
+
+Das ist das Gegenstück zur Coyote Time: Der Spieler drückt Springen ein paar Hundertstel **zu früh**, kurz bevor der Held landet. Auch dieser Druck ginge verloren. Also merkt sich das Spiel den Tastendruck einen Moment lang und springt, sobald der Held den Boden berührt.
+
+```gdscript
+const JUMP_BUFFER = 0.1           # so lange wird ein zu früher Sprung gemerkt
+
+var jump_buffer_timer := 0.0
+```
+
+Der Sprung-Teil wird zu:
+
+```gdscript
+	# Jump Buffering: Ein Tastendruck gilt noch kurze Zeit
+	if Input.is_action_just_pressed("springen"):
+		jump_buffer_timer = JUMP_BUFFER
+	else:
+		jump_buffer_timer -= delta
+
+	# Springen, wenn beides passt: Taste gerade gedrückt, Boden gerade unter den Füßen
+	if jump_buffer_timer > 0 and coyote_timer > 0:
+		velocity.y = JUMP_VELOCITY
+		jump_buffer_timer = 0
+		coyote_timer = 0
+		$SprungTon.play()
+	if Input.is_action_just_released("springen") and velocity.y < 0:
+		velocity.y *= JUMP_CUT
+```
+
+Beide Zähler werden beim Absprung auf 0 gesetzt. So wird aus einem Tastendruck genau ein Sprung.
+
+Ausprobieren: Spring mehrmals hintereinander die Treppe hoch und drück die Taste jedes Mal kurz vor der Landung. Vorher kam dabei manchmal kein Sprung, jetzt klappt es jedes Mal.
+
+### 3.4 Das ganze Skript
+
+```gdscript
+extends CharacterBody2D
+
+
+const SPEED = 100.0
+const RUN_SPEED = 160.0
+const ACCELERATION = 600.0        # am Boden loslaufen
+const FRICTION = 800.0            # am Boden abbremsen
+const AIR_ACCELERATION = 400.0    # in der Luft lenken
+const AIR_FRICTION = 150.0        # in der Luft fast keine Bremse: der Schwung bleibt
+const JUMP_VELOCITY = -376.0
+const JUMP_CUT = 0.4              # Taste früh losgelassen: restlichen Schwung kürzen
+const FALL_GRAVITY_FACTOR = 1.7   # beim Fallen stärker nach unten ziehen
+const MAX_FALL_SPEED = 300.0
+const FALL_LIMIT = 224            # tiefer als das: runtergefallen
+const COYOTE_TIME = 0.1           # so lange nach der Kante darf man noch springen
+const JUMP_BUFFER = 0.1           # so lange wird ein zu früher Sprung gemerkt
+
+var start_position: Vector2
+var coyote_timer := 0.0
+var jump_buffer_timer := 0.0
+
+
+func _ready() -> void:
+	start_position = position
+
+
+func _physics_process(delta: float) -> void:
+	# Coyote Time: Am Boden wird der Zähler voll, in der Luft läuft er ab
+	if is_on_floor():
+		coyote_timer = COYOTE_TIME
+	else:
+		coyote_timer -= delta
+
+	# Schwerkraft, beim Fallen stärker
+	if not is_on_floor():
+		var gravity := get_gravity()
+		if velocity.y > 0:
+			gravity *= FALL_GRAVITY_FACTOR
+		velocity += gravity * delta
+		velocity.y = min(velocity.y, MAX_FALL_SPEED)
+
+	# Runtergefallen
+	if position.y > FALL_LIMIT:
+		position = start_position
+		velocity = Vector2.ZERO
+
+	# Jump Buffering: Ein Tastendruck gilt noch kurze Zeit
+	if Input.is_action_just_pressed("springen"):
+		jump_buffer_timer = JUMP_BUFFER
+	else:
+		jump_buffer_timer -= delta
+
+	# Springen, wenn beides passt: Taste gerade gedrückt, Boden gerade unter den Füßen
+	if jump_buffer_timer > 0 and coyote_timer > 0:
+		velocity.y = JUMP_VELOCITY
+		jump_buffer_timer = 0
+		coyote_timer = 0
+		$SprungTon.play()
+	if Input.is_action_just_released("springen") and velocity.y < 0:
+		velocity.y *= JUMP_CUT
+
+	# Laufen: Die Geschwindigkeit nähert sich dem Ziel, statt zu springen
+	var direction := Input.get_axis("links", "rechts")
+	var max_speed := RUN_SPEED if Input.is_action_pressed("rennen") else SPEED
+	var accel: float
+	if direction:
+		accel = ACCELERATION if is_on_floor() else AIR_ACCELERATION
+		$Bild.flip_h = direction < 0
+	else:
+		accel = FRICTION if is_on_floor() else AIR_FRICTION
+	velocity.x = move_toward(velocity.x, direction * max_speed, accel * delta)
+
+	move_and_slide()
+```
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 3
+
+1. **Werte sichtbar machen (leicht):** Häng ein `Label` namens `Debug` an den Held, mit kleiner Schrift und über seinen Kopf geschoben. Am Ende von `_physics_process` schreibst du die Geschwindigkeit hinein: `$Debug.text = "%d %d" % [velocity.x, velocity.y]`. Bei mehreren Werten steht hinter dem `%` eine Liste in eckigen Klammern. Wie schnell ist der Held am höchsten Punkt eines Sprungs? Und wie schnell kurz vor der Landung nach einem langen Sturz?
+2. **Kojote übertreiben (leicht):** Setz `COYOTE_TIME` auf `0.5` und lauf über eine Kante. Was kannst du jetzt, was eigentlich nicht gehen sollte? Danach auf `0`: Merkst du beim Springen an Kanten einen Unterschied zu `0.1`?
+3. **Bremsspur (mittel):** Bei Mario rutscht der Held beim Umdrehen kurz weiter, bremst dabei aber stärker als beim normalen Ausrollen. Bau eine Konstante `TURN_ACCELERATION = 1200.0` ein. Sie gilt, wenn der Held am Boden ist, eine Richtung gedrückt ist **und** er sich gerade in die andere Richtung bewegt. Tipp: Zwei Zahlen haben verschiedene Vorzeichen, wenn ihr Produkt kleiner als 0 ist: `direction * velocity.x < 0`.
+4. **Der verschluckte Kurzsprung (knifflig):** Tipp die Sprungtaste ganz kurz an, kurz bevor der Held landet. Er macht dann einen vollen, hohen Sprung, obwohl du nur getippt hast. Warum? Denk daran, wann `is_action_just_released` kommt und wann der gemerkte Sprung ausgelöst wird. Repariere es beim Absprung mit zwei Zeilen. Tipp: `Input.is_action_pressed("springen")` sagt dir, ob die Taste in diesem Moment noch gedrückt ist.
