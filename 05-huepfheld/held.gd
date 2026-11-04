@@ -23,6 +23,7 @@ var start_position: Vector2
 var coyote_timer := 0.0
 var jump_buffer_timer := 0.0
 var camera_target_x := CAMERA_OFFSET_X
+var prev_is_on_floor = true
 
 
 func _ready() -> void:
@@ -31,12 +32,14 @@ func _ready() -> void:
 
 
 # Welche Animation passt gerade?
-func update_animation() -> void:
+func update_animation(direction) -> void:
 	if not is_on_floor():
 		if velocity.y < 0:
 			$Bild.play("springen")
 		else:
 			$Bild.play("fallen")
+	elif direction * velocity.x < 0:
+		$Bild.play("bremsen")
 	elif abs(velocity.x) > 5:
 		$Bild.play("laufen")
 	else:
@@ -56,6 +59,11 @@ func _physics_process(delta: float) -> void:
 			gravity *= FALL_GRAVITY_FACTOR
 		velocity += gravity * delta
 		velocity.y = min(velocity.y, MAX_FALL_SPEED)
+
+	# Staub beim landen
+	if not prev_is_on_floor and is_on_floor():
+		$Staub.restart()
+	prev_is_on_floor = is_on_floor()
 
 	# Runtergefallen
 	if position.y > FALL_LIMIT:
@@ -93,6 +101,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		accel = FRICTION if is_on_floor() else AIR_FRICTION
 	velocity.x = move_toward(velocity.x, direction * max_speed, accel * delta)
+	$Bild.speed_scale = abs(velocity.x) / SPEED
 
 	# Kein Zurück für die Kamera
 	$Camera2D.limit_left = max($Camera2D.limit_left, $Camera2D.get_screen_center_position().x - 192)
@@ -101,7 +110,7 @@ func _physics_process(delta: float) -> void:
 	$Camera2D.position.x = move_toward($Camera2D.position.x, camera_target_x, CAMERA_TURN_SPEED * delta)
 
 	move_and_slide()
-	update_animation()
+	update_animation(direction)
 	
 	# Kein Zurück für den Helden
 	if position.x < $Camera2D.limit_left + 9:

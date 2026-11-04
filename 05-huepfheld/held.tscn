@@ -4,6 +4,10 @@
 [ext_resource type="Texture2D" uid="uid://hv1w6jlj6nyb" path="res://held.png" id="2_xw2dj"]
 [ext_resource type="AudioStream" uid="uid://0vqudorcrgfe" path="res://jump.wav" id="3_xw2dj"]
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_1audq"]
+atlas = ExtResource("2_xw2dj")
+region = Rect2(112, 0, 16, 16)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_2b6es"]
 atlas = ExtResource("2_xw2dj")
 region = Rect2(96, 0, 16, 16)
@@ -36,6 +40,14 @@ region = Rect2(0, 0, 16, 16)
 animations = [{
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_1audq")
+}],
+"loop": 1,
+"name": &"bremsen",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_2b6es")
 }],
 "loop": 1,
@@ -57,7 +69,7 @@ animations = [{
 }],
 "loop": 1,
 "name": &"laufen",
-"speed": 12.0
+"speed": 20.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -84,7 +96,7 @@ script = ExtResource("1_7usdt")
 
 [node name="Bild" type="AnimatedSprite2D" parent="." unique_id=479849996]
 sprite_frames = SubResource("SpriteFrames_0orc7")
-animation = &"stehen"
+animation = &"bremsen"
 autoplay = "stehen"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2098115707]
@@ -112,3 +124,15 @@ limit_bottom = 216
 limit_smoothed = true
 position_smoothing_enabled = true
 position_smoothing_speed = 15.0
+
+[node name="Staub" type="CPUParticles2D" parent="." unique_id=971468265]
+position = Vector2(1, 8)
+emitting = false
+amount = 6
+lifetime = 0.3
+one_shot = true
+lifetime_randomness = 0.05
+emission_shape = 1
+emission_sphere_radius = 2.0
+gravity = Vector2(0, -50)
+color = Color(0.98743266, 0.9876762, 0.99414915, 1)
