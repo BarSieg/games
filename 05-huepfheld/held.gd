@@ -6,6 +6,12 @@ const JUMP_VELOCITY = -376.0
 const JUMP_CUT = 0.5   # Taste früh losgelassen: restlichen Schwung halbieren
 const FALL_GRAVITY_FACTOR = 1.6   # beim Fallen stärker nach unten ziehen
 const MAX_FALL_SPEED = 300.0
+const FALL_LIMIT = 224   # tiefer als das: runtergefallen
+
+var start_position: Vector2
+
+func _ready() -> void:
+	start_position = position
 
 func _physics_process(delta: float) -> void:
 	# Schwerkraft, beim Fallen stärker
@@ -17,10 +23,9 @@ func _physics_process(delta: float) -> void:
 		velocity.y = min(velocity.y, MAX_FALL_SPEED)
 	
 	# Runtergefallen
-	if position.y > 224:
-		position.x = 44
-		position.y = 135
-		velocity = Vector2(0, 0)
+	if position.y > FALL_LIMIT:
+		position = start_position
+		velocity = Vector2.ZERO
 
 	# Handle jump.
 	if Input.is_action_just_pressed("springen") and is_on_floor():
