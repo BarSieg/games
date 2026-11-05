@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://dlwrwxefdhv3f"]
+
+[ext_resource type="Script" uid="uid://dqnan2k2kmqpk" path="res://muenze.gd" id="1_n34yf"]
+[ext_resource type="Texture2D" uid="uid://bnaq88sngsy0o" path="res://tilemap_packed.png" id="1_rsjet"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_s017u"]
+radius = 7.0
+
+[node name="Muenze" type="Area2D" unique_id=628381877]
+z_index = -1
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_n34yf")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=832206034]
+texture = ExtResource("1_rsjet")
+hframes = 20
+vframes = 9
+frame = 151
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1164428482]
+shape = SubResource("CircleShape2D_s017u")
+
+[connection signal="area_entered" from="." to="." method="_on_area_entered"]
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

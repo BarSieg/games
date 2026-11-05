@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://hv1w6jlj6nyb" path="res://held.png" id="2_xw2dj"]
 [ext_resource type="AudioStream" uid="uid://0vqudorcrgfe" path="res://jump.wav" id="3_xw2dj"]
 [ext_resource type="AudioStream" uid="uid://c72rqiij70hth" path="res://plopp.wav" id="4_q6bl5"]
+[ext_resource type="AudioStream" uid="uid://sjxfgcxmv5uu" path="res://muenze.wav" id="5_kdfus"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_1audq"]
 atlas = ExtResource("2_xw2dj")
@@ -101,7 +102,7 @@ script = ExtResource("1_7usdt")
 
 [node name="Bild" type="AnimatedSprite2D" parent="." unique_id=479849996]
 sprite_frames = SubResource("SpriteFrames_0orc7")
-animation = &"bremsen"
+animation = &"stehen"
 autoplay = "stehen"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2098115707]
@@ -152,3 +153,6 @@ color_ramp = SubResource("Gradient_xw2dj")
 
 [node name="GegnerPlopp" type="AudioStreamPlayer" parent="." unique_id=1855731123]
 stream = ExtResource("4_q6bl5")
+
+[node name="MuenzeTon" type="AudioStreamPlayer" parent="." unique_id=659486499]
+stream = ExtResource("5_kdfus")

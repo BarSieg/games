@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://bnaq88sngsy0o" path="res://tilemap_packed.png" id="1_u52ul"]
 [ext_resource type="PackedScene" uid="uid://5r8qseqmgc1q" path="res://gegner.tscn" id="2_0b4ue"]
 [ext_resource type="PackedScene" uid="uid://bfa3ccrbrl0ja" path="res://held.tscn" id="2_vonw3"]
+[ext_resource type="PackedScene" uid="uid://dlwrwxefdhv3f" path="res://muenze.tscn" id="5_f2txt"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_f2txt"]
 texture = ExtResource("1_u52ul")
@@ -728,3 +729,30 @@ kantenerkennung = true
 [node name="Gegner7" parent="." unique_id=992285583 instance=ExtResource("2_0b4ue")]
 position = Vector2(1438, 164)
 kantenerkennung = true
+
+[node name="Muenze" parent="." unique_id=628381877 instance=ExtResource("5_f2txt")]
+position = Vector2(692, 154)
+
+[node name="Muenze2" parent="." unique_id=1532459875 instance=ExtResource("5_f2txt")]
+position = Vector2(856, 118)
+
+[node name="Muenze3" parent="." unique_id=330885163 instance=ExtResource("5_f2txt")]
+position = Vector2(1846, 154)
+
+[node name="Muenze4" parent="." unique_id=1596023475 instance=ExtResource("5_f2txt")]
+position = Vector2(1864, 154)
+
+[node name="Muenze5" parent="." unique_id=874338333 instance=ExtResource("5_f2txt")]
+position = Vector2(3610, 100)
+
+[node name="Muenze6" parent="." unique_id=284707044 instance=ExtResource("5_f2txt")]
+position = Vector2(3250, 64)
+
+[node name="Muenze7" parent="." unique_id=959237665 instance=ExtResource("5_f2txt")]
+position = Vector2(3286, 64)
+
+[node name="Muenze8" parent="." unique_id=1081009078 instance=ExtResource("5_f2txt")]
+position = Vector2(190, 82)
+
+[node name="Muenze9" parent="." unique_id=475793806 instance=ExtResource("5_f2txt")]
+position = Vector2(4510, 100)

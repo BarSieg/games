@@ -27,6 +27,7 @@ var camera_target_x := CAMERA_OFFSET_X
 var prev_is_on_floor := true
 var brake_timer := 0.0
 var tot := false
+var muenzen := 0
 
 
 func _ready() -> void:
@@ -146,4 +147,9 @@ func _physics_process(delta: float) -> void:
 		position.x = $Camera2D.limit_left + 9
 		velocity.x = 0
 
-	$Debug.text = "%d %d" % [velocity.x, velocity.y]
+
+# Eine Muenze eingesammelt
+func muenze_einsammeln() -> void:
+	muenzen += 1
+	$MuenzeTon.play()
+	$Debug.text = "%d" % muenzen
