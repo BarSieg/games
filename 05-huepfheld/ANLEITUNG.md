@@ -10,8 +10,8 @@ Das Projekt ist größer als Flatterfisch (die Roadmap rechnet mit 2–3 Wochen)
 3. Game Feel: Beschleunigung, Coyote Time, Jump Buffering ✔
 4. Kamera und ein langer Level ✔
 5. Animationen: stehen, laufen, springen ✔
-6. Gegner: patrouillieren und plattgesprungen werden ← *du bist hier*
-7. Blöcke und Items: Münzen und ein Power-up
+6. Gegner: patrouillieren und plattgesprungen werden ✔
+7. Blöcke und Items: Münzen und ein Power-up ← *du bist hier*
 8. Ziel, Leben, Anzeige und Web-Export
 
 ---
@@ -861,3 +861,235 @@ Fertig? Committen und Bescheid geben.
    - Beim Sterben: `velocity.y` kräftig nach oben, `velocity.x = 0` und die **Mask** auf 0 (`collision_mask = 0`), damit er durch den Boden fällt.
    - Mit `await` etwa 1,5 Sekunden warten, dann `reload_current_scene()`.
    - Denk an die Lehre aus Flatterfisch: Was passiert, wenn `sterben()` zweimal aufgerufen wird, zum Beispiel von zwei Gegnern gleichzeitig oder vom Gegner und danach vom Runterfallen?
+
+---
+
+## Kapitel 7: Blöcke und Items
+
+Was wäre Mario ohne Münzen und Fragezeichen-Blöcke? In diesem Kapitel kommen drei Dinge dazu: Münzen zum Einsammeln, Blöcke, gegen die man von unten springt, und ein Power-up, das einen Treffer aushält.
+
+Neu sind dabei **Tweens** (kleine Animationen per Code) und Szenen, die andere Szenen während des Spiels erzeugen. Vieles kennst du aber schon: `Area2D` als Sensor, Kollisionsebenen, `preload` und `instantiate` von den Korallen.
+
+### 7.1 Bilder aus dem Kachelblatt ohne SpriteFrames
+
+Für Blöcke und Items brauchst du einzelne Bilder aus `tilemap_packed.png`. Dafür gibt es einen einfachen Weg: Eine `Sprite2D` kann ein Kachelblatt selbst in Stücke teilen.
+
+- **Texture** = `tilemap_packed.png`
+- **Animation → Hframes** = `20` (Spalten), **Vframes** = `9` (Zeilen). Das Blatt ist 360 × 162 groß, das ergibt 18 × 18 pro Bild.
+- **Animation → Frame** = die Nummer des Bildes: Zeile × 20 + Spalte, gezählt ab 0. Am einfachsten drehst du im Inspector an der Zahl, bis das richtige Bild erscheint.
+
+Im Code kann man `frame` ändern. So wird aus einem vollen Block ein leerer, ohne zweites Bild.
+
+Such dir im Kachelblatt aus:
+- eine **Münze**,
+- einen **Block**, der nach „da ist was drin“ aussieht, und einen, der leer oder benutzt aussieht,
+- ein **Power-up**, zum Beispiel einen Pilz, ein Herz oder einen Edelstein.
+
+### 7.2 Die Münze
+
+1. Neue Szene → **Other Node** → `Area2D` → `Muenze`.
+2. **Collision → Layer:** keine. **Mask:** nur `2` (Held).
+3. Kinder: `Sprite2D` → `Bild` (wie in 7.1, mit dem Münzbild) und `CollisionShape2D` mit einem **CircleShape2D**, Radius etwa `6`.
+4. Speichern als `muenze.tscn`, Skript `muenze.gd`. Das Signal `body_entered` der Münze mit sich selbst verbinden.
+
+```gdscript
+extends Area2D
+
+
+func _on_body_entered(body: Node2D) -> void:
+	body.muenze_einsammeln()
+	queue_free()
+```
+
+Der Held zählt mit, vorerst in seinem Debug-Label. Eine richtige Anzeige kommt in Kapitel 8. In `held.gd`:
+
+```gdscript
+var muenzen := 0
+
+
+# Eine Münze eingesammelt
+func muenze_einsammeln() -> void:
+	muenzen += 1
+	$MuenzTon.play()
+```
+
+Und das Debug-Label zeigt jetzt die Münzen: `$Debug.text = "%d" % muenzen`.
+
+Den `MuenzTon` (`AudioStreamPlayer` am Held, Ton mit 🆓 jsfxr, Vorlage *Pickup/Coin*) hängst du an den **Held**, nicht an die Münze. Du kennst das Problem aus Übung 1 von Kapitel 6: Die Münze verschwindet sofort, ihr Ton würde mit ihr verschwinden.
+
+Verteil ein paar Münzen im Level. Eine Reihe über einer Lücke lockt den Spieler zum Springen. Eine Münze hoch über einer Säule belohnt den, der sich traut.
+
+### 7.3 Der Block
+
+Ein Block ist fest wie eine Kachel. Er merkt aber, wenn der Held von unten dagegen springt.
+
+1. Neue Szene → **Other Node** → `StaticBody2D` → `Block`. Ein `StaticBody2D` bewegt sich nie, er ist einfach nur da, wie ein Stück Wand.
+2. **Collision → Layer:** `1` (Welt). Der Held und die Gegner stehen darauf wie auf Kacheln.
+3. Kinder:
+   - `Sprite2D` → `Bild` mit dem vollen Block (7.1).
+   - `CollisionShape2D` → RectangleShape2D `18, 18`.
+   - `Area2D` → `Unterseite`, **Layer** keine, **Mask** `2`. Darin eine `CollisionShape2D` als Streifen direkt unter dem Block: Größe `14, 8`, Position `0, 13`. Er reicht also von der Unterkante des Blocks 8 Pixel nach unten.
+     - Schmaler als der Block, damit ein Sprung knapp neben dem Block nicht zählt.
+     - 8 Pixel hoch, weil der Held schnell ist: Beim Absprung steigt er gut 6 Pixel pro Bild. Wäre der Streifen dünner, könnte der Held im selben Bild hineinkommen und schon mit dem Kopf anstoßen. Dann steht `velocity.y` bereits auf 0, und die Bedingung „steigt gerade“ unten passt nicht mehr. Mit 8 Pixeln ist er sicher mindestens ein Bild lang im Streifen, während er noch steigt.
+4. Speichern als `block.tscn`, Skript `block.gd`. Signal `body_entered` von `Unterseite` mit `Block` verbinden.
+
+```gdscript
+extends StaticBody2D
+
+
+const FRAME_LEER = 0   # hier die Nummer deines leeren Blocks eintragen
+
+var leer := false
+
+
+func _on_unterseite_body_entered(body: Node2D) -> void:
+	# Nur wenn der Held von unten kommt, also gerade steigt
+	if body.velocity.y < 0 and not leer:
+		leer = true
+		$Bild.frame = FRAME_LEER
+		body.muenze_einsammeln()
+		anstossen()
+```
+
+`velocity.y < 0` heißt: Der Held steigt. Ohne diese Bedingung würde auch ein Held zählen, der seitlich durch den Streifen läuft.
+
+Wenn der Held mit dem Kopf gegen den Block stößt, stoppt `move_and_slide()` den Sprung übrigens von selbst. Dafür musst du nichts tun.
+
+### 7.4 Tweens: Der Block hüpft
+
+Bei Mario hüpft ein Block kurz hoch, wenn man dagegen springt. Das könnte man mit einer Variablen und `_process` von Hand bauen. Für solche kleinen Bewegungen hat Godot aber **Tweens**. Ein Tween verändert eine Eigenschaft über eine bestimmte Zeit von ihrem jetzigen Wert zu einem Zielwert.
+
+```gdscript
+# Kurz hochhüpfen und zurück
+func anstossen() -> void:
+	var tween := create_tween()
+	tween.tween_property($Bild, "position:y", -4.0, 0.08)
+	tween.tween_property($Bild, "position:y", 0.0, 0.08)
+```
+
+- `create_tween()` erzeugt einen neuen Tween. Er startet sofort von selbst.
+- `tween_property(Node, "Eigenschaft", Ziel, Sekunden)`: Schieb `$Bild.position.y` in 0,08 Sekunden auf -4.
+- Mehrere `tween_property` laufen **nacheinander**: erst hoch, dann zurück. Fertig ist der Hüpfer.
+- `"position:y"` mit Doppelpunkt heißt: nur der y-Teil der Position.
+
+Bewegt wird nur das **Bild**, nicht der Block. Die Kollision bleibt an ihrem Platz, sonst würde der Held mit hochgeschoben.
+
+Setz ein paar Blöcke in den Level, zum Beispiel an die Stelle aus Kapitel 4, an der eine Reihe Blöcke in 4 Kacheln Höhe schwebt.
+
+### 7.5 Das Power-up
+
+Bei Mario macht der Pilz den Helden groß, und er hält einen Treffer aus. Ein großer Held bräuchte neue, doppelt so hohe Bilder und eine andere Kollisionsform. Wir machen es einfacher: Das Power-up macht den Held **stark**. Er leuchtet golden, und ein Treffer macht ihn nur wieder normal, statt ihn zu besiegen.
+
+**Die Power-up-Szene.** Ein Pilz läuft bei Mario wie ein Gegner über den Boden. Du kannst also fast alles von deinem Gegner übernehmen.
+
+1. Neue Szene → `CharacterBody2D` → `PowerUp`. **Layer:** keine, **Mask:** `1`. Es läuft auf der Welt, und nichts stößt dagegen.
+2. Kinder: `Sprite2D` `Bild` (7.1), `CollisionShape2D` (etwa `14, 14`), `Area2D` `Einsammeln` mit Mask `2` und einer etwas größeren Form.
+3. Speichern als `power_up.tscn`, Skript `power_up.gd`:
+
+```gdscript
+extends CharacterBody2D
+
+
+const SPEED = 40.0
+
+var direction := 1.0   # läuft nach rechts aus dem Block
+
+
+func _physics_process(delta: float) -> void:
+	if not is_on_floor():
+		velocity += get_gravity() * delta
+	velocity.x = direction * SPEED
+	move_and_slide()
+
+	# An einer Wand umdrehen, wie der Gegner
+	if is_on_wall() and get_wall_normal().x * direction < 0:
+		direction = -direction
+
+
+func _on_einsammeln_body_entered(body: Node2D) -> void:
+	body.power_up()
+	queue_free()
+```
+
+**Der Block erzeugt das Power-up.** In `block.gd` eine Einstellung, ob der Block eine Münze oder ein Power-up enthält:
+
+```gdscript
+const POWER_UP = preload("res://power_up.tscn")
+
+@export var hat_power_up := false
+```
+
+Im Signal statt `body.muenze_einsammeln()`:
+
+```gdscript
+		if hat_power_up:
+			var power_up := POWER_UP.instantiate()
+			power_up.position = position + Vector2(0, -18)   # eine Kachel über dem Block
+			get_parent().add_child.call_deferred(power_up)
+		else:
+			body.muenze_einsammeln()
+```
+
+- `get_parent()` ist der `Level`. Das Power-up gehört in den Level, nicht in den Block, sonst würde es mit dem Block-Bild hüpfen.
+- **`add_child.call_deferred(...)`**: Das ist dasselbe Prinzip wie `set_deferred` in Kapitel 6. Wir sind gerade mitten in einer Kollisionsmeldung, da darf man keine neuen Physik-Objekte einfügen. `call_deferred` ruft die Funktion erst am Ende des Physik-Schritts auf.
+
+Im Level wählst du bei einem Block **Hat Power Up** an. Das ist dein `@export` aus Kapitel 6.
+
+**Der Held wird stark.** In `held.gd`:
+
+```gdscript
+const INVINCIBLE_TIME = 1.5       # so lange ist der Held nach einem Treffer unverwundbar
+
+var stark := false
+var unverwundbar := 0.0
+
+
+# Power-up eingesammelt
+func power_up() -> void:
+	stark = true
+	$Bild.modulate = Color(1, 0.8, 0.3)   # golden
+
+
+# Von einem Gegner erwischt
+func getroffen() -> void:
+	if unverwundbar > 0:
+		return
+	if stark:
+		stark = false
+		$Bild.modulate = Color.WHITE
+		unverwundbar = INVINCIBLE_TIME
+	else:
+		sterben()
+```
+
+- `modulate` färbt einen Node ein. Weiß heißt: Originalfarben.
+- `return` beendet die Funktion sofort. Ist der Held gerade unverwundbar, passiert gar nichts.
+
+In `gegner.gd` ersetzt du `body.sterben()` durch `body.getroffen()`. Das Runterfallen ruft weiter direkt `sterben()` auf, denn gegen ein Loch hilft auch das Power-up nicht.
+
+**Blinken, solange er unverwundbar ist.** In `_physics_process`, zum Beispiel nach dem Herunterzählen von `brake_timer`:
+
+```gdscript
+	# Nach einem Treffer kurz unverwundbar, und blinken
+	if unverwundbar > 0:
+		unverwundbar -= delta
+		$Bild.visible = int(unverwundbar * 10) % 2 == 0
+	else:
+		$Bild.visible = true
+```
+
+`int(unverwundbar * 10) % 2` wechselt alle 0,1 Sekunden zwischen 0 und 1. Das ist derselbe Trick wie beim blinkenden „PAUSE“ bei Flatterfisch, nur mit dem eigenen Zähler statt der Uhrzeit.
+
+### 7.6 Ausprobieren
+
+Spring gegen einen Münzblock: Er hüpft, wird leer, und eine Münze wird gezählt. Spring gegen den Power-up-Block: Das Power-up läuft heraus. Sammel es ein und lauf in einen Gegner. Der Held blinkt, ist wieder normal und läuft weiter. Beim zweiten Gegner ist er erledigt.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 7
+
+1. **Klingeling (leicht):** Wenn man schnell viele Münzen einsammelt, klingt der immer gleiche Ton künstlich. Gib dem `MuenzTon` vor jedem Abspielen eine leicht andere Tonhöhe: `$MuenzTon.pitch_scale = randf_range(0.9, 1.1)`. Hörst du den Unterschied?
+2. **Mehrfach-Block (leicht):** Manche Blöcke bei Mario geben mehrere Münzen, eine pro Anstoßen. Ersetz `leer` durch `@export var muenzen := 1`. Jedes Anstoßen zählt eins herunter, bei 0 ist der Block leer. Stell im Level einen Block auf 5.
+3. **Aus dem Block steigen (mittel):** Das Power-up erscheint einfach über dem Block. Bei Mario steigt es langsam heraus. Lass es an der Stelle des Blocks entstehen (`position` statt `position + Vector2(0, -18)`), hinter dem Block (`z_index = -1`) und mit einem Tween in 0,5 Sekunden nach oben steigen. Während es steigt, darf es noch nicht laufen. Tipp: `set_physics_process(false)` und der Tween kann am Ende eine Funktion aufrufen: `tween.tween_callback(set_physics_process.bind(true))`.
+4. **Von unten erwischt (mittel):** Bei Mario besiegt man Gegner, die auf einem Block stehen, indem man von unten gegen den Block springt. Gib dem Block eine zweite `Area2D` namens `Oberseite` als flachen Streifen auf dem Block, mit **Mask** `3` (Gegner). Beim Anstoßen gehst du alle Körper durch, die gerade darauf stehen: `for gegner in $Oberseite.get_overlapping_bodies():` und machst sie platt.
+5. **Ziegel zerschlagen (knifflig):** Ein starker Held kann bei Mario Ziegel zerschlagen. Mach eine Einstellung `@export var zerbrechlich := false`. Ein zerbrechlicher Block verschwindet beim Anstoßen, aber nur, wenn `body.stark` ist. Sonst hüpft er nur. Bonus: ein paar Bruchstücke mit `CPUParticles2D`. Vorsicht: Die Partikel hängen am Block, und der verschwindet. Was kannst du tun, damit die Bruchstücke trotzdem zu sehen sind? (Denk an den Ton aus Kapitel 6.)

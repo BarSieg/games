@@ -2,11 +2,11 @@ extends CharacterBody2D
 
 
 const SPEED = 30.0
-const FALL_LIMIT = 224
-const LEFT_MAX_DISTANZ = 372 # W/2 + 10 Kacheln 
+const FALL_LIMIT = 224          # tiefer als das: in ein Loch gefallen
+const LEFT_MAX_DISTANZ = 372    # halbe Bildbreite + 10 Kacheln
 
 var direction := -1.0   # startet nach links, dem Held entgegen
-@export var kantenerkennung = false
+@export var kantenerkennung := false
 
 
 func _ready() -> void:
@@ -28,17 +28,19 @@ func _physics_process(delta: float) -> void:
 	if is_on_wall() and get_wall_normal().x * direction < 0:
 		umdrehen()
 	$Bild.flip_h = direction > 0
-	
+
 	if kantenerkennung and is_on_floor() and not $Kante.is_colliding():
 		umdrehen()
 
 	# Runtergefallen...
 	if position.y > FALL_LIMIT:
 		queue_free()
-	
+
+	# Weit links hinter dem Bild: weg für immer
 	var camera := get_viewport().get_camera_2d()
 	if global_position.x + LEFT_MAX_DISTANZ < camera.get_screen_center_position().x:
 		queue_free()
+
 
 func plattmachen() -> void:
 	$Bild.play("platt")

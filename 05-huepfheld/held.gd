@@ -18,19 +18,18 @@ const JUMP_BUFFER = 0.1           # so lange wird ein zu früher Sprung gemerkt
 const TURN_ACCELERATION = 1200.0  # beim Umdrehen am Boden stärker bremsen
 const CAMERA_OFFSET_X = 54.0      # so weit schaut die Kamera voraus
 const CAMERA_TURN_SPEED = 60.0    # Pixel pro Sekunde, die die Kamera umschwenkt
-const BRAKE_SHOW_TIME = 0.15       # so lange bleibt das Bremsbild mindestens stehen
+const BRAKE_SHOW_TIME = 0.15      # so lange bleibt das Bremsbild mindestens stehen
 const STOMP_BOUNCE = -220.0       # so hoch prallt der Held vom Gegner ab
 
-var start_position: Vector2
 var coyote_timer := 0.0
 var jump_buffer_timer := 0.0
 var camera_target_x := CAMERA_OFFSET_X
 var prev_is_on_floor := true
 var brake_timer := 0.0
-var tot = false
+var tot := false
+
 
 func _ready() -> void:
-	start_position = position
 	$Camera2D.reset_smoothing()
 
 
@@ -71,8 +70,8 @@ func sterben() -> void:
 		collision_layer = 0
 		await get_tree().create_timer(1.5).timeout
 		get_tree().reload_current_scene()
-	
-	
+
+
 func _physics_process(delta: float) -> void:
 	var gravity := get_gravity()
 	if tot:
@@ -89,7 +88,6 @@ func _physics_process(delta: float) -> void:
 
 	# Schwerkraft, beim Fallen stärker
 	if not is_on_floor():
-		
 		if velocity.y > 0:
 			gravity *= FALL_GRAVITY_FACTOR
 		velocity += gravity * delta
