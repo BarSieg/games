@@ -7,6 +7,10 @@ var direction := -1.0   # startet nach links, dem Held entgegen
 @export var kantenerkennung = false
 
 
+func _ready() -> void:
+	set_physics_process(false)   # warten, bis der Gegner ins Bild kommt
+
+
 func umdrehen() -> void:
 	direction = -direction
 	$Kante.position.x = 12 * sign(direction)
@@ -23,7 +27,7 @@ func _physics_process(delta: float) -> void:
 		umdrehen()
 	$Bild.flip_h = direction > 0
 	
-	if kantenerkennung and not $Kante.is_colliding():
+	if kantenerkennung and is_on_floor() and not $Kante.is_colliding():
 		umdrehen()
 
 
@@ -36,12 +40,13 @@ func plattmachen() -> void:
 
 
 func _on_treffer_body_entered(body: Node2D) -> void:
-	# Auf einen anderen Gegner getroffen
-	if body.has_node("Kante"):
-		pass #umdrehen()
-	# Vom Helden getroffen. Von oben drauf: platt. Sonst hat der Held verloren.
-	elif body.velocity.y > 0 and body.global_position.y < global_position.y:
+	# Von oben drauf: platt. Sonst hat der Held verloren.
+	if body.velocity.y > 0 and body.global_position.y < global_position.y:
 		plattmachen()
 		body.abprallen()
 	else:
 		body.sterben()
+
+
+func _on_visible_on_screen_enabler_2d_screen_entered() -> void:
+	set_physics_process(true)    # ab jetzt läuft er, auch außerhalb des Bildes

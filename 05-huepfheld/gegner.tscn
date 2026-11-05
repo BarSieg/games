@@ -65,7 +65,7 @@ collision_mask = 2
 position = Vector2(-0.5, 2)
 shape = SubResource("RectangleShape2D_0orc7")
 
-[node name="VisibleOnScreenEnabler2D" type="VisibleOnScreenEnabler2D" parent="." unique_id=1089076350]
+[node name="VisibleOnScreenEnabler2D" type="VisibleOnScreenNotifier2D" parent="." unique_id=1328866190]
 position = Vector2(0, 2)
 rect = Rect2(-12, -10, 24, 20)
 
@@ -74,3 +74,4 @@ position = Vector2(-12, 11)
 target_position = Vector2(0, 5)
 
 [connection signal="body_entered" from="Treffer" to="." method="_on_treffer_body_entered"]
+[connection signal="screen_entered" from="VisibleOnScreenEnabler2D" to="." method="_on_visible_on_screen_enabler_2d_screen_entered"]
