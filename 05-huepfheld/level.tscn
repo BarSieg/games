@@ -706,7 +706,7 @@ tile_map_data = PackedByteArray("AAAIAAkAAAAEAAYAAAAEAAkAAAAIAAQAAAAAAAkAAAAPAAQ
 tile_set = SubResource("TileSet_0orc7")
 
 [node name="Gegner" parent="." unique_id=953975202 instance=ExtResource("2_0b4ue")]
-position = Vector2(1016, 160)
+position = Vector2(1034, 161)
 kantenerkennung = true
 
 [node name="Gegner2" parent="." unique_id=765906395 instance=ExtResource("2_0b4ue")]
