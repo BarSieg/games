@@ -18,12 +18,14 @@ const JUMP_BUFFER = 0.1           # so lange wird ein zu früher Sprung gemerkt
 const TURN_ACCELERATION = 1200.0  # beim Umdrehen am Boden stärker bremsen
 const CAMERA_OFFSET_X = 54.0      # so weit schaut die Kamera voraus
 const CAMERA_TURN_SPEED = 60.0    # Pixel pro Sekunde, die die Kamera umschwenkt
+const BRAKE_SHOW_TIME = 0.15   # so lange bleibt das Bremsbild mindestens stehen
 
 var start_position: Vector2
 var coyote_timer := 0.0
 var jump_buffer_timer := 0.0
 var camera_target_x := CAMERA_OFFSET_X
-var prev_is_on_floor = true
+var prev_is_on_floor := true
+var brake_timer := 0.0
 
 
 func _ready() -> void:
@@ -32,18 +34,22 @@ func _ready() -> void:
 
 
 # Welche Animation passt gerade?
-func update_animation(direction) -> void:
+func update_animation(direction: float) -> void:
 	if not is_on_floor():
 		if velocity.y < 0:
 			$Bild.play("springen")
 		else:
 			$Bild.play("fallen")
-	elif direction * velocity.x < 0:
+	elif direction * velocity.x < 0 and abs(velocity.x) > 60:
+		brake_timer = BRAKE_SHOW_TIME
+		$Bild.play("bremsen")
+	elif brake_timer > 0:
 		$Bild.play("bremsen")
 	elif abs(velocity.x) > 5:
 		$Bild.play("laufen")
 	else:
 		$Bild.play("stehen")
+
 
 func _physics_process(delta: float) -> void:
 	# Coyote Time: Am Boden wird der Zähler voll, in der Luft läuft er ab
@@ -51,6 +57,7 @@ func _physics_process(delta: float) -> void:
 		coyote_timer = COYOTE_TIME
 	else:
 		coyote_timer -= delta
+	brake_timer -= delta
 
 	# Schwerkraft, beim Fallen stärker
 	if not is_on_floor():
@@ -60,7 +67,7 @@ func _physics_process(delta: float) -> void:
 		velocity += gravity * delta
 		velocity.y = min(velocity.y, MAX_FALL_SPEED)
 
-	# Staub beim landen
+	# Staub beim Landen
 	if not prev_is_on_floor and is_on_floor():
 		$Staub.restart()
 	prev_is_on_floor = is_on_floor()
@@ -106,15 +113,15 @@ func _physics_process(delta: float) -> void:
 	# Kein Zurück für die Kamera
 	$Camera2D.limit_left = max($Camera2D.limit_left, $Camera2D.get_screen_center_position().x - 192)
 
-
+	# Kamera schwenkt langsam in Laufrichtung
 	$Camera2D.position.x = move_toward($Camera2D.position.x, camera_target_x, CAMERA_TURN_SPEED * delta)
 
 	move_and_slide()
 	update_animation(direction)
-	
+
 	# Kein Zurück für den Helden
 	if position.x < $Camera2D.limit_left + 9:
 		position.x = $Camera2D.limit_left + 9
 		velocity.x = 0
-	
+
 	$Debug.text = "%d %d" % [velocity.x, velocity.y]
