@@ -45,6 +45,7 @@ size = Vector2(25, 20)
 
 [node name="Gegner" type="CharacterBody2D" unique_id=953975202]
 collision_layer = 4
+collision_mask = 5
 script = ExtResource("1_co84x")
 
 [node name="Bild" type="AnimatedSprite2D" parent="." unique_id=1437649602]
@@ -67,5 +68,9 @@ shape = SubResource("RectangleShape2D_0orc7")
 [node name="VisibleOnScreenEnabler2D" type="VisibleOnScreenEnabler2D" parent="." unique_id=1089076350]
 position = Vector2(0, 2)
 rect = Rect2(-12, -10, 24, 20)
+
+[node name="Kante" type="RayCast2D" parent="." unique_id=51485065]
+position = Vector2(-12, 11)
+target_position = Vector2(0, 5)
 
 [connection signal="body_entered" from="Treffer" to="." method="_on_treffer_body_entered"]

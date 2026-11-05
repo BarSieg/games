@@ -27,7 +27,7 @@ var jump_buffer_timer := 0.0
 var camera_target_x := CAMERA_OFFSET_X
 var prev_is_on_floor := true
 var brake_timer := 0.0
-
+var tot = false
 
 func _ready() -> void:
 	start_position = position
@@ -54,15 +54,32 @@ func update_animation(direction: float) -> void:
 
 # Auf einen Gegner gesprungen: hochfedern
 func abprallen() -> void:
-	velocity.y = STOMP_BOUNCE
+	if Input.is_action_pressed("springen"):
+		velocity.y = JUMP_VELOCITY
+	else:
+		velocity.y = STOMP_BOUNCE
+	$GegnerPlopp.play()
 
 
 # Erwischt: Level von vorn
 func sterben() -> void:
-	get_tree().reload_current_scene()
+	if not tot:
+		tot = true
+		velocity.x = 0
+		velocity.y = JUMP_VELOCITY
+		collision_mask = 0
+		collision_layer = 0
+		await get_tree().create_timer(1.5).timeout
+		get_tree().reload_current_scene()
 	
 	
 func _physics_process(delta: float) -> void:
+	var gravity := get_gravity()
+	if tot:
+		velocity += gravity * delta
+		move_and_slide()
+		return
+
 	# Coyote Time: Am Boden wird der Zähler voll, in der Luft läuft er ab
 	if is_on_floor():
 		coyote_timer = COYOTE_TIME
@@ -72,7 +89,7 @@ func _physics_process(delta: float) -> void:
 
 	# Schwerkraft, beim Fallen stärker
 	if not is_on_floor():
-		var gravity := get_gravity()
+		
 		if velocity.y > 0:
 			gravity *= FALL_GRAVITY_FACTOR
 		velocity += gravity * delta
