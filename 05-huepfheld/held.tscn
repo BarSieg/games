@@ -95,6 +95,7 @@ size = Vector2(12, 15)
 colors = PackedColorArray(0.9882353, 0.9882353, 0.99607843, 1, 1, 1, 1, 0)
 
 [node name="Held" type="CharacterBody2D" unique_id=2053799237]
+collision_layer = 2
 script = ExtResource("1_7usdt")
 
 [node name="Bild" type="AnimatedSprite2D" parent="." unique_id=479849996]

@@ -2,6 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://bhp33sk3dyqj5" path="res://tilemap-backgrounds_packed.png" id="1_oi3di"]
 [ext_resource type="Texture2D" uid="uid://bnaq88sngsy0o" path="res://tilemap_packed.png" id="1_u52ul"]
+[ext_resource type="PackedScene" uid="uid://5r8qseqmgc1q" path="res://gegner.tscn" id="2_0b4ue"]
 [ext_resource type="PackedScene" uid="uid://bfa3ccrbrl0ja" path="res://held.tscn" id="2_vonw3"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_f2txt"]
@@ -390,6 +391,7 @@ texture_region_size = Vector2i(18, 18)
 13:5/0 = 0
 14:5/0 = 0
 15:5/0 = 0
+15:5/0/physics_layer_0/polygon_0/points = PackedVector2Array(-9, -9, 9, -9, 9, 9, -9, 9)
 16:5/0 = 0
 17:5/0 = 0
 18:5/0 = 0
@@ -411,9 +413,13 @@ texture_region_size = Vector2i(18, 18)
 10:6/0 = 0
 11:6/0 = 0
 12:6/0 = 0
+12:6/0/physics_layer_0/polygon_0/points = PackedVector2Array(-9, -9, 9, -9, 9, 9, -9, 9)
 13:6/0 = 0
+13:6/0/physics_layer_0/polygon_0/points = PackedVector2Array(-9, -9, 9, -9, 9, 9, -9, 9)
 14:6/0 = 0
+14:6/0/physics_layer_0/polygon_0/points = PackedVector2Array(-9, -9, 9, -9, 9, 9, -9, 9)
 15:6/0 = 0
+15:6/0/physics_layer_0/polygon_0/points = PackedVector2Array(-9, -9, 9, -9, 9, 9, -9, 9)
 16:6/0 = 0
 17:6/0 = 0
 18:6/0 = 0
@@ -436,9 +442,17 @@ texture_region_size = Vector2i(18, 18)
 11:7/0 = 0
 12:7/0 = 0
 13:7/0 = 0
+13:7/0/physics_layer_0/polygon_0/points = PackedVector2Array(-9, -9, 9, -9, 9, 9, -9, 9)
+13:7/0/physics_layer_0/polygon_0/one_way = true
 14:7/0 = 0
+14:7/0/physics_layer_0/polygon_0/points = PackedVector2Array(-9, -9, 9, -9, 9, 9, -9, 9)
+14:7/0/physics_layer_0/polygon_0/one_way = true
 15:7/0 = 0
+15:7/0/physics_layer_0/polygon_0/points = PackedVector2Array(-9, -9, 9, -9, 9, 9, -9, 9)
+15:7/0/physics_layer_0/polygon_0/one_way = true
 16:7/0 = 0
+16:7/0/physics_layer_0/polygon_0/points = PackedVector2Array(-9, -9, 9, -9, 9, 9, -9, 9)
+16:7/0/physics_layer_0/polygon_0/one_way = true
 17:7/0 = 0
 18:7/0 = 0
 19:7/0 = 0
@@ -690,3 +704,24 @@ position = Vector2(44, 135)
 z_index = -1
 tile_map_data = PackedByteArray("AAAIAAkAAAAEAAYAAAAEAAkAAAAIAAQAAAAAAAkAAAAPAAQAAAAWAAkAAAANAAQAAAAXAAkAAAAOAAQAAAAZAAkAAAAFAAYAAABKAAkAAAAIAAQAAABEAAkAAAAFAAYAAAA8AAkAAAAEAAYAAAAsAAkAAAAEAAYAAABiAAkAAAAFAAYAAABrAAkAAAAEAAYAAABnAAkAAAAOAAQAAABmAAkAAAANAAQAAACcAAkAAAAEAAYAAAC9AAkAAAAFAAYAAADdAAkAAAAEAAYAAAD6AAkAAAAEAAYAAADoAAkAAAAIAAQAAADpAAkAAAAIAAQAAAAJAAEAAAALAAgAAAALAAEAAAALAAgAAAAKAAEAAAARAAcAAAA=")
 tile_set = SubResource("TileSet_0orc7")
+
+[node name="Gegner" parent="." unique_id=953975202 instance=ExtResource("2_0b4ue")]
+position = Vector2(951, 166)
+
+[node name="Gegner2" parent="." unique_id=765906395 instance=ExtResource("2_0b4ue")]
+position = Vector2(1136, 143)
+
+[node name="Gegner3" parent="." unique_id=407122975 instance=ExtResource("2_0b4ue")]
+position = Vector2(1989, 80)
+
+[node name="Gegner4" parent="." unique_id=461420564 instance=ExtResource("2_0b4ue")]
+position = Vector2(2797, 85)
+
+[node name="Gegner5" parent="." unique_id=607872376 instance=ExtResource("2_0b4ue")]
+position = Vector2(4775, 18)
+
+[node name="Gegner6" parent="." unique_id=2008084247 instance=ExtResource("2_0b4ue")]
+position = Vector2(566, 91)
+
+[node name="Gegner7" parent="." unique_id=992285583 instance=ExtResource("2_0b4ue")]
+position = Vector2(1316, 162)

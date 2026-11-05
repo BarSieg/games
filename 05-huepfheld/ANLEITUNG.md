@@ -9,8 +9,8 @@ Das Projekt ist größer als Flatterfisch (die Roadmap rechnet mit 2–3 Wochen)
 2. Laufen und Springen, die sich gut anfühlen (eigene Steuerung, variable Sprunghöhe) ✔
 3. Game Feel: Beschleunigung, Coyote Time, Jump Buffering ✔
 4. Kamera und ein langer Level ✔
-5. Animationen: stehen, laufen, springen ← *du bist hier*
-6. Gegner: patrouillieren und plattgesprungen werden
+5. Animationen: stehen, laufen, springen ✔
+6. Gegner: patrouillieren und plattgesprungen werden ← *du bist hier*
 7. Blöcke und Items: Münzen und ein Power-up
 8. Ziel, Leben, Anzeige und Web-Export
 
@@ -688,3 +688,176 @@ Fertig? Committen und Bescheid geben.
 2. **Schritte im Takt (leicht):** Beim Rennen sollen die Beine schneller gehen. Eine `AnimatedSprite2D` hat dafür `speed_scale`: `1.0` ist normal, `2.0` doppelt so schnell. Setz es beim Laufen auf `abs(velocity.x) / SPEED`. Was passiert beim Anlaufen aus dem Stand?
 3. **Bremsen (mittel):** Zu deiner Bremsspur aus Kapitel 3 gehört ein Bild: Bei Mario dreht sich der Held beim Umdrehen schon in die neue Richtung und stemmt die Füße in den Boden. Zeichne ein Bild `bremsen` und zeig es, solange `direction * velocity.x < 0` ist und der Held am Boden steht. Tipp: `direction` kennt `update_animation()` nicht, weil es eine lokale Variable in `_physics_process` ist. Gib sie als Parameter mit: `update_animation(direction)`.
 4. **Staubwolke (mittel):** Beim Landen soll kurz etwas Staub aufwirbeln. Häng eine `CPUParticles2D` namens `Staub` an die Füße des Helden: **One Shot** an, **Emitting** aus, wenige Partikel (etwa 6), kurze **Lifetime** (0,3), eine helle Farbe. Abspielen mit `$Staub.restart()`. Das Knifflige ist der Moment: Du musst wissen, dass der Held im letzten Bild noch in der Luft war und jetzt am Boden steht. Merk dir dazu am Ende jedes Bilds in einer Variablen, ob er in der Luft war.
+
+---
+
+## Kapitel 6: Gegner
+
+Jetzt bekommt der Level Bewohner: kleine Krabbler, die hin und her laufen. Springt man ihnen auf den Kopf, sind sie platt. Berührt man sie von der Seite, ist der Held erledigt. Das ist das Grundprinzip jedes Mario-Gegners.
+
+Neu in diesem Kapitel sind **Kollisionsebenen**: Wer stößt mit wem zusammen und wer bemerkt wen?
+
+### 6.1 Kollisionsebenen benennen
+
+Bisher liegt alles auf derselben Ebene 1: Kacheln, Held, alles stößt mit allem zusammen. Mit Gegnern wird das zum Problem. Der Held würde Gegner vor sich herschieben wie Kisten, statt mit ihnen zusammenzustoßen. Deshalb verteilt man die Dinge auf Ebenen.
+
+*Project Settings* → General → Layer Names → **2D Physics**:
+
+| Ebene | Name |
+|---|---|
+| 1 | `Welt` |
+| 2 | `Held` |
+| 3 | `Gegner` |
+
+Jedes Physik-Objekt hat zwei Einstellungen unter **Collision**:
+
+- **Layer:** Auf welcher Ebene *bin ich*?
+- **Mask:** Welche Ebenen *bemerke ich*? Gegen die stoße ich, oder die melde ich als Signal.
+
+Die Kacheln liegen schon auf Ebene 1, das ist im TileSet so eingestellt.
+
+Jetzt beim Held: `held.tscn` öffnen, `Held` auswählen → **Collision**:
+- **Layer:** nur `2` (das Kästchen 1 ausschalten, 2 einschalten).
+- **Mask:** nur `1`. Der Held steht auf der Welt, durch Gegner läuft er körperlich hindurch. Ob er sie berührt, merkt der Gegner selbst (6.4).
+
+Wenn du über die Kästchen fährst, zeigt Godot die Namen, die du eben vergeben hast.
+
+### 6.2 Die Gegner-Szene
+
+Grafik: Im Kachelblatt `tilemap-characters_packed.png` von Kenney sind neben Spielfiguren auch kleine Gegner, jeweils mit zwei Bildern zum Laufen. Die Bilder sind **24 × 24** groß, das Blatt hat 9 Spalten und 3 Zeilen. Du kannst auch einen eigenen Gegner zeichnen, wie beim Held.
+
+1. *Scene → New Scene* → **Other Node** → `CharacterBody2D` → umbenennen in `Gegner`.
+2. **Collision → Layer:** nur `3`. **Mask:** nur `1`. Gegner laufen auf der Welt und laufen durch den Held hindurch.
+3. Kinder hinzufügen:
+   - `AnimatedSprite2D` → `Bild`. New SpriteFrames, Animation `laufen` (Loop an, etwa 5 FPS) mit den zwei Bildern deines Gegners aus dem Kachelblatt (Add frames from a Sprite Sheet, Horizontal `9`, Vertical `3`). **Autoplay on Load** = `laufen`. Lege auch eine Animation `platt` mit einem Bild an, das zweite Bild reicht für den Anfang.
+   - `CollisionShape2D` → RectangleShape2D, so groß wie der *sichtbare* Körper des Gegners, nicht wie das ganze 24-er Bild. Schieb die Form so, dass ihre Unterkante genau an den Füßen liegt. Sonst schwebt der Gegner über dem Boden oder versinkt darin.
+   - `Area2D` → `Treffer`, mit einer eigenen `CollisionShape2D`: dieselbe Form, nur 1 bis 2 Pixel größer. **Collision → Layer:** keine. **Mask:** nur `2`. Diese Fläche meldet also ausschließlich den Held.
+4. Speichern als `gegner.tscn`.
+
+Warum zwei Formen? Die `CollisionShape2D` direkt am Gegner ist für die Physik: Boden, Wände. Die `Treffer`-Fläche ist ein Sensor. Sie hält nichts auf, sie meldet nur. Das kennst du von der Punktzone der Korallen bei Flatterfisch.
+
+### 6.3 Hin und her laufen
+
+Skript an `Gegner` hängen (diesmal **ohne** Vorlage, *Template* auf **Empty**). Speichern als `gegner.gd`:
+
+```gdscript
+extends CharacterBody2D
+
+
+const SPEED = 30.0
+
+var direction := -1.0   # startet nach links, dem Held entgegen
+
+
+func _physics_process(delta: float) -> void:
+	if not is_on_floor():
+		velocity += get_gravity() * delta
+	velocity.x = direction * SPEED
+	move_and_slide()
+
+	# An einer Wand umdrehen
+	if is_on_wall():
+		direction = -direction
+	$Bild.flip_h = direction > 0
+```
+
+- `is_on_wall()` ist wie `is_on_floor()`, nur für die Seiten: Ist der Gegner beim letzten `move_and_slide()` gegen etwas Seitliches gestoßen?
+- `direction = -direction` dreht die Richtung um, aus -1 wird 1 und umgekehrt.
+- Bei `flip_h` kommt es darauf an, wohin dein Bild schaut. Schaut der Gegner im Bild nach links, ist `direction > 0` richtig. Läuft er rückwärts, nimm `direction < 0`.
+
+Zum Testen: Setz einen Gegner in `level.tscn` zwischen zwei Säulen und drück F5. Er sollte hin und her pendeln.
+
+### 6.4 Draufspringen oder erwischt werden
+
+Wenn der Held die `Treffer`-Fläche berührt, gibt es zwei Möglichkeiten:
+
+- Der Held **fällt** gerade (`velocity.y > 0`) **und** ist **über** dem Gegner: Der Gegner ist platt, der Held prallt ab.
+- Sonst: Der Held hat verloren.
+
+**Signal verbinden:** `Treffer` auswählen → Tab **Node** → **Signals** → `body_entered` doppelklicken → mit `Gegner` verbinden. Godot legt in `gegner.gd` die Funktion `_on_treffer_body_entered` an. Fülle sie so:
+
+```gdscript
+func _on_treffer_body_entered(body: Node2D) -> void:
+	# Von oben drauf: platt. Sonst hat der Held verloren.
+	if body.velocity.y > 0 and body.global_position.y < global_position.y:
+		plattmachen()
+		body.abprallen()
+	else:
+		body.sterben()
+```
+
+`body` ist hier immer der Held, denn die Maske von `Treffer` meldet nur Ebene 2. Deshalb darf man einfach `body.velocity` fragen und `body.sterben()` aufrufen.
+
+`global_position` statt `position`: Die `position` ist immer relativ zum Eltern-Node. Held und Gegner sind beide Kinder von `Level`, da wäre es gleich. `global_position` ist aber immer die Position in der Welt und damit die sichere Wahl, wenn man zwei Objekte vergleicht.
+
+Und das Plattmachen:
+
+```gdscript
+func plattmachen() -> void:
+	$Bild.play("platt")
+	set_physics_process(false)                   # nicht mehr laufen
+	$Treffer.set_deferred("monitoring", false)   # nicht noch einmal treffen
+	await get_tree().create_timer(0.5).timeout
+	queue_free()
+```
+
+- `set_physics_process(false)` schaltet `_physics_process` für diesen Node ab. Der Gegner bleibt stehen.
+- **`set_deferred`** heißt: „Mach das, aber erst am Ende dieses Physik-Schritts.“ Während Godot gerade Kollisionen meldet, darf man an Kollisionsformen nichts ändern. Ohne `set_deferred` gäbe es eine Fehlermeldung.
+- `await … create_timer(0.5)` kennst du aus Flatterfisch. Der platte Gegner bleibt eine halbe Sekunde liegen, dann verschwindet er.
+
+### 6.5 Der Held: abprallen und sterben
+
+In `held.gd` zwei neue Funktionen. Zuerst die Konstante oben:
+
+```gdscript
+const STOMP_BOUNCE = -220.0       # so hoch prallt der Held vom Gegner ab
+```
+
+Dann:
+
+```gdscript
+# Auf einen Gegner gesprungen: hochfedern
+func abprallen() -> void:
+	velocity.y = STOMP_BOUNCE
+
+
+# Erwischt: Level von vorn
+func sterben() -> void:
+	get_tree().reload_current_scene()
+```
+
+`reload_current_scene()` kennst du vom Neustart bei Flatterfisch. Es setzt alles zurück: Held, Kamera und auch die plattgemachten Gegner sind wieder da. Bei Mario fängt man nach dem Tod auch von vorne an. Leben und Punkte, die einen Neustart überleben, kommen in Kapitel 8.
+
+Damit kannst du auch das Runterfallen vereinfachen. Statt alles einzeln zurückzusetzen:
+
+```gdscript
+	# Runtergefallen
+	if position.y > FALL_LIMIT:
+		sterben()
+```
+
+Danach brauchst du `start_position`, das `limit_left = 0` und die beiden Kamera-Zeilen beim Runterfallen nicht mehr. Du kannst sie löschen, `reload_current_scene()` erledigt das alles.
+
+### 6.6 Erst loslaufen, wenn man sie sieht
+
+Setz jetzt 4 bis 6 Gegner in deinen Level: einen allein auf dem ersten flachen Stück, ein Paar zwischen den Säulen, einen auf einer Plattform. Drück F5 und lauf zum letzten Gegner.
+
+Wahrscheinlich fehlen einige. Alle Gegner laufen ab dem Start los, auch die, die noch weit rechts außerhalb des Bildes sind. Bis der Held ankommt, sind manche schon in eine Lücke gefallen. Bei Mario werden Gegner erst lebendig, wenn sie ins Bild kommen.
+
+Dafür hat Godot einen fertigen Node: In `gegner.tscn` ein Kind `VisibleOnScreenEnabler2D` an `Gegner` hängen. Er zeigt ein Rechteck. Mach es etwa so groß wie den Gegner. Solange dieses Rechteck außerhalb des Bildschirms ist, schaltet der Enabler seinen Eltern-Node ab, also den Gegner. Sobald es ins Bild kommt, läuft der Gegner los.
+
+Probier es noch einmal: Jetzt warten alle Gegner, bis du kommst.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 6
+
+1. **Plopp (leicht):** Ein Geräusch beim Plattmachen. Mach mit 🆓 jsfxr einen kurzen Ton und spiel ihn ab. Vorsicht: Hängt der `AudioStreamPlayer` am Gegner, verschwindet er nach 0,5 Sekunden mit dem Gegner. Ist dein Ton länger, wird er abgeschnitten. Wo könnte der Player stattdessen hängen?
+2. **Hoher Abpraller (leicht):** Bei Mario prallt man höher ab, wenn man beim Draufspringen die Sprungtaste gedrückt hält. Bau das in `abprallen()` ein, zum Beispiel mit `JUMP_VELOCITY` statt `STOMP_BOUNCE`, solange `springen` gedrückt ist.
+3. **Nicht von der Kante fallen (mittel):** Manche Gegner drehen an Kanten um, statt herunterzufallen. Häng einen `RayCast2D` namens `Kante` an den Gegner: etwas vor seinen Füßen, mit **Target Position** `0, 10` (ein kurzer Strahl nach unten). Wenn `$Kante.is_colliding()` `false` ist, ist vor ihm kein Boden mehr: umdrehen. Damit der Strahl immer *vorne* ist, setzt du `$Kante.position.x` abhängig von `direction`. Mach eine zweite Gegner-Szene oder eine Einstellung mit `@export`, damit es beide Sorten gibt.
+4. **Gegner stoßen sich (mittel):** Im Moment laufen Gegner durcheinander hindurch. Welche Einstellung musst du ändern, damit sie aneinander umdrehen wie an einer Wand? Tipp: Es ist nur ein Kästchen, kein Code.
+5. **Ein richtiger Abgang (knifflig):** Bei Mario hüpft der Held beim Sterben einmal hoch und fällt dann durch den Boden aus dem Bild. Erst danach beginnt der Level neu. Bau das nach:
+   - Eine Variable `tot`. Ist sie `true`, ignoriert `_physics_process` alle Eingaben und lässt nur noch die Schwerkraft wirken.
+   - Beim Sterben: `velocity.y` kräftig nach oben, `velocity.x = 0` und die **Mask** auf 0 (`collision_mask = 0`), damit er durch den Boden fällt.
+   - Mit `await` etwa 1,5 Sekunden warten, dann `reload_current_scene()`.
+   - Denk an die Lehre aus Flatterfisch: Was passiert, wenn `sterben()` zweimal aufgerufen wird, zum Beispiel von zwei Gegnern gleichzeitig oder vom Gegner und danach vom Runterfallen?

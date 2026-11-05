@@ -1,0 +1,71 @@
+[gd_scene format=3 uid="uid://5r8qseqmgc1q"]
+
+[ext_resource type="Script" uid="uid://cori5uec3b7tu" path="res://gegner.gd" id="1_co84x"]
+[ext_resource type="Texture2D" uid="uid://dnw6y3wugfbv6" path="res://tilemap-characters_packed.png" id="1_v5qxm"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_co84x"]
+atlas = ExtResource("1_v5qxm")
+region = Rect2(72, 48, 24, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tvgt1"]
+atlas = ExtResource("1_v5qxm")
+region = Rect2(96, 48, 24, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_068ba"]
+atlas = ExtResource("1_v5qxm")
+region = Rect2(120, 48, 24, 24)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_s017u"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_co84x")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tvgt1")
+}],
+"loop": 1,
+"name": &"laufen",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_068ba")
+}],
+"loop": 1,
+"name": &"platt",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(24, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0orc7"]
+size = Vector2(25, 20)
+
+[node name="Gegner" type="CharacterBody2D" unique_id=953975202]
+collision_layer = 4
+script = ExtResource("1_co84x")
+
+[node name="Bild" type="AnimatedSprite2D" parent="." unique_id=1437649602]
+sprite_frames = SubResource("SpriteFrames_s017u")
+animation = &"laufen"
+autoplay = "laufen"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=148888375]
+position = Vector2(0, 2)
+shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Treffer" type="Area2D" parent="." unique_id=1153394691]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Treffer" unique_id=1299167804]
+position = Vector2(-0.5, 2)
+shape = SubResource("RectangleShape2D_0orc7")
+
+[node name="VisibleOnScreenEnabler2D" type="VisibleOnScreenEnabler2D" parent="." unique_id=1089076350]
+position = Vector2(0, 2)
+rect = Rect2(-12, -10, 24, 20)
+
+[connection signal="body_entered" from="Treffer" to="." method="_on_treffer_body_entered"]

@@ -18,7 +18,8 @@ const JUMP_BUFFER = 0.1           # so lange wird ein zu früher Sprung gemerkt
 const TURN_ACCELERATION = 1200.0  # beim Umdrehen am Boden stärker bremsen
 const CAMERA_OFFSET_X = 54.0      # so weit schaut die Kamera voraus
 const CAMERA_TURN_SPEED = 60.0    # Pixel pro Sekunde, die die Kamera umschwenkt
-const BRAKE_SHOW_TIME = 0.15   # so lange bleibt das Bremsbild mindestens stehen
+const BRAKE_SHOW_TIME = 0.15       # so lange bleibt das Bremsbild mindestens stehen
+const STOMP_BOUNCE = -220.0       # so hoch prallt der Held vom Gegner ab
 
 var start_position: Vector2
 var coyote_timer := 0.0
@@ -51,6 +52,16 @@ func update_animation(direction: float) -> void:
 		$Bild.play("stehen")
 
 
+# Auf einen Gegner gesprungen: hochfedern
+func abprallen() -> void:
+	velocity.y = STOMP_BOUNCE
+
+
+# Erwischt: Level von vorn
+func sterben() -> void:
+	get_tree().reload_current_scene()
+	
+	
 func _physics_process(delta: float) -> void:
 	# Coyote Time: Am Boden wird der Zähler voll, in der Luft läuft er ab
 	if is_on_floor():
@@ -74,11 +85,7 @@ func _physics_process(delta: float) -> void:
 
 	# Runtergefallen
 	if position.y > FALL_LIMIT:
-		position = start_position
-		velocity = Vector2.ZERO
-		$Camera2D.limit_left = 0
-		$Camera2D.reset_smoothing()
-		$Camera2D.align()
+		sterben()
 
 	# Jump Buffering: Ein Tastendruck gilt noch kurze Zeit
 	if Input.is_action_just_pressed("springen"):
