@@ -41,6 +41,10 @@ func _physics_process(delta: float) -> void:
 	if global_position.x + LEFT_MAX_DISTANZ < camera.get_screen_center_position().x:
 		queue_free()
 
+	# Steckt der Held in mir? Jedes Bild pruefen, nicht nur beim ersten Kontakt
+	for body in $Treffer.get_overlapping_bodies():
+		treffer(body)
+
 
 func plattmachen() -> void:
 	$Bild.play("platt")
@@ -50,7 +54,7 @@ func plattmachen() -> void:
 	queue_free()
 
 
-func _on_treffer_body_entered(body: Node2D) -> void:
+func treffer(body: Node2D) -> void:
 	# Von oben drauf: platt. Sonst hat der Held verloren.
 	if body.velocity.y > 0 and body.global_position.y < global_position.y:
 		plattmachen()
