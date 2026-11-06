@@ -4,7 +4,9 @@
 [ext_resource type="Texture2D" uid="uid://bnaq88sngsy0o" path="res://tilemap_packed.png" id="1_u52ul"]
 [ext_resource type="PackedScene" uid="uid://5r8qseqmgc1q" path="res://gegner.tscn" id="2_0b4ue"]
 [ext_resource type="PackedScene" uid="uid://bfa3ccrbrl0ja" path="res://held.tscn" id="2_vonw3"]
+[ext_resource type="Script" uid="uid://b0aeai7vfy6is" path="res://hud.gd" id="4_km5ld"]
 [ext_resource type="PackedScene" uid="uid://dlwrwxefdhv3f" path="res://muenze.tscn" id="5_f2txt"]
+[ext_resource type="LabelSettings" uid="uid://bo7rfkypyk7k3" path="res://schrift.tres" id="5_i2t4f"]
 [ext_resource type="PackedScene" uid="uid://c3lcab1dxdqb5" path="res://block.tscn" id="6_1ainy"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_f2txt"]
@@ -672,6 +674,60 @@ texture_region_size = Vector2i(18, 18)
 tile_size = Vector2i(18, 18)
 sources/0 = SubResource("TileSetAtlasSource_oi3di")
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_km5ld"]
+atlas = ExtResource("1_u52ul")
+region = Rect2(198, 126, 18, 18)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i2t4f"]
+atlas = ExtResource("1_u52ul")
+region = Rect2(216, 126, 18, 18)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_s017u"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_km5ld")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i2t4f")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 4.0
+}]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8cye3"]
+atlas = ExtResource("1_u52ul")
+region = Rect2(72, 36, 18, 18)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2orkt"]
+atlas = ExtResource("1_u52ul")
+region = Rect2(90, 36, 18, 18)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aicyk"]
+atlas = ExtResource("1_u52ul")
+region = Rect2(108, 36, 18, 18)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_0orc7"]
+animations = [{
+"frames": [{
+"duration": 7.0,
+"texture": SubResource("AtlasTexture_8cye3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2orkt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_aicyk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2orkt")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 6.0
+}]
+
 [node name="Level" type="Node2D" unique_id=162578079]
 
 [node name="Hintergrund2" type="Parallax2D" parent="." unique_id=518389020]
@@ -706,6 +762,38 @@ position = Vector2(44, 135)
 z_index = -1
 tile_map_data = PackedByteArray("AAAIAAkAAAAEAAYAAAAEAAkAAAAIAAQAAAAWAAkAAAANAAQAAAAXAAkAAAAOAAQAAAAZAAkAAAAFAAYAAABKAAkAAAAIAAQAAABEAAkAAAAFAAYAAAA8AAkAAAAEAAYAAAAsAAkAAAAEAAYAAABiAAkAAAAFAAYAAABrAAkAAAAEAAYAAABnAAkAAAAOAAQAAABmAAkAAAANAAQAAACcAAkAAAAEAAYAAAC9AAkAAAAFAAYAAADdAAkAAAAEAAYAAADoAAkAAAAIAAQAAADpAAkAAAAIAAQAAAAJAAEAAAALAAgAAAALAAEAAAALAAgAAAAKAAEAAAARAAcAAADhAAkAAAAFAAYAAADMAAkAAAAEAAYAAACnAAkAAAAEAAYAAAD7AAkAAAAEAAYAAAAMAQkAAAAEAAYAAAABAAkAAAAPAAQAAAA=")
 tile_set = SubResource("TileSet_0orc7")
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=266962863]
+script = ExtResource("4_km5ld")
+
+[node name="Muenzen" type="Label" parent="HUD" unique_id=266471771]
+offset_left = 25.0
+offset_top = 2.0
+offset_right = 65.0
+offset_bottom = 25.0
+label_settings = ExtResource("5_i2t4f")
+
+[node name="MuenzenBild" type="AnimatedSprite2D" parent="HUD" unique_id=1765339288]
+position = Vector2(13, 12)
+sprite_frames = SubResource("SpriteFrames_s017u")
+autoplay = "default"
+
+[node name="Leben" type="Label" parent="HUD" unique_id=2013256694]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -16.0
+offset_top = 2.0
+offset_bottom = 25.0
+grow_horizontal = 0
+label_settings = ExtResource("5_i2t4f")
+
+[node name="LebenBild" type="AnimatedSprite2D" parent="HUD" unique_id=238611874]
+position = Vector2(353, 12)
+rotation = 0.00032676596
+sprite_frames = SubResource("SpriteFrames_0orc7")
+autoplay = "default"
+frame_progress = 0.9987229
 
 [node name="Gegner" parent="." unique_id=953975202 instance=ExtResource("2_0b4ue")]
 position = Vector2(1034, 161)

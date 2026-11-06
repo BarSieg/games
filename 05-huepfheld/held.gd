@@ -29,7 +29,6 @@ var camera_target_x := CAMERA_OFFSET_X
 var prev_is_on_floor := true
 var brake_timer := 0.0
 var tot := false
-var muenzen := 0
 var stark := false
 var unverwundbar := 0.0
 
@@ -187,10 +186,9 @@ func _physics_process(delta: float) -> void:
 
 # Eine Muenze eingesammelt
 func muenze_einsammeln() -> void:
-	muenzen += 1
+	Spielstand.muenzen += 1
 	$MuenzeTon.pitch_scale = randf_range(0.9, 1.1)
 	$MuenzeTon.play()
-	$Debug.text = "%d" % muenzen
 
 
 # Ziegel zerschlagen: Scherben fliegen
