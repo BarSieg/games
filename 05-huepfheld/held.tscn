@@ -7,6 +7,7 @@
 [ext_resource type="AudioStream" uid="uid://sjxfgcxmv5uu" path="res://muenze.wav" id="5_kdfus"]
 [ext_resource type="Texture2D" uid="uid://dab4cmm1cw75k" path="res://ziegel.png" id="6_33x0v"]
 [ext_resource type="AudioStream" uid="uid://crkfst3dml0ly" path="res://hit.wav" id="7_g67po"]
+[ext_resource type="AudioStream" uid="uid://do4mv7rk5v55" path="res://powerUpCollect.wav" id="8_jvvaw"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_1audq"]
 atlas = ExtResource("2_xw2dj")
@@ -180,4 +181,8 @@ hue_variation_min = -0.46
 
 [node name="Schaden" type="AudioStreamPlayer" parent="." unique_id=732645574]
 stream = ExtResource("7_g67po")
+volume_db = -5.0
+
+[node name="PowerUp" type="AudioStreamPlayer" parent="." unique_id=1269972959]
+stream = ExtResource("8_jvvaw")
 volume_db = -5.0

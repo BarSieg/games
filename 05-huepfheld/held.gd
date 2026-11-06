@@ -75,6 +75,7 @@ func abprallen() -> void:
 func power_up() -> void:
 	stark = true
 	$Bild.modulate = Color(1, 0.8, 0.3)   # golden
+	$PowerUp.play()
 
 
 # Von einem Gegner erwischt

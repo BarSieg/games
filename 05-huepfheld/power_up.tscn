@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cr1bucqalodp" path="res://power_up.gd" id="1_mkoic"]
 [ext_resource type="Texture2D" uid="uid://bnaq88sngsy0o" path="res://tilemap_packed.png" id="2_h1prs"]
+[ext_resource type="AudioStream" uid="uid://xkm8b1omo7y7" path="res://powerUpGrow.wav" id="3_h1prs"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
 size = Vector2(12, 12)
@@ -33,5 +34,10 @@ collision_mask = 2
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Einsammeln" unique_id=88780688]
 position = Vector2(2, 2)
 shape = SubResource("RectangleShape2D_0orc7")
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=632953133]
+stream = ExtResource("3_h1prs")
+volume_db = -5.0
+autoplay = true
 
 [connection signal="body_entered" from="Einsammeln" to="." method="_on_einsammeln_body_entered"]
