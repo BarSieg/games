@@ -12,6 +12,7 @@ enum Typ { MUENZE, POWER_UP, ZIEGEL }
 
 var leer := false
 
+
 func _ready() -> void:
 	if typ == Typ.ZIEGEL:
 		$Bild.frame = FRAME_ZIEGEL

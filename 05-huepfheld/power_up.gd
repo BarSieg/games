@@ -1,16 +1,19 @@
 extends CharacterBody2D
 
+
 const SPEED = 40.0
 
 var direction := 1.0   # läuft nach rechts aus dem Block
 
+
 func _ready() -> void:
 	set_physics_process(false)
-	$Bild.position.y = 18 
+	$Bild.position.y = 18
 	var tween := create_tween()
 	tween.tween_property($Bild, "position:y", 0.0, 0.5)
 	tween.tween_callback(set_physics_process.bind(true))
 	z_index = 0 # zur Sicherheit
+
 
 func _physics_process(delta: float) -> void:
 	if not is_on_floor():

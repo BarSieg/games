@@ -185,5 +185,6 @@ func muenze_einsammeln() -> void:
 	$Debug.text = "%d" % muenzen
 
 
+# Ziegel zerschlagen: Scherben fliegen
 func ziegel_brechen() -> void:
 	$Scherben.restart()
