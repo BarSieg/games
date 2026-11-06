@@ -56,13 +56,19 @@ func update_animation(direction: float) -> void:
 		$Bild.play("stehen")
 
 
+# Ein Gegner ist erledigt
+func plopp(hoehe := 1.0) -> void:
+	$GegnerPlopp.pitch_scale = hoehe
+	$GegnerPlopp.play()
+
+
 # Auf einen Gegner gesprungen: hochfedern
 func abprallen() -> void:
 	if Input.is_action_pressed("springen"):
 		velocity.y = BOUNCE_VELOCITY
 	else:
 		velocity.y = STOMP_BOUNCE
-	$GegnerPlopp.play()
+	plopp()
 
 
 # Power-up eingesammelt
