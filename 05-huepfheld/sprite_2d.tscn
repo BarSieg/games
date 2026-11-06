@@ -1,9 +1,0 @@
-[gd_scene format=3 uid="uid://bn8f3aksdn13n"]
-
-[ext_resource type="Texture2D" uid="uid://bnaq88sngsy0o" path="res://tilemap_packed.png" id="1_f7cmv"]
-
-[node name="Sprite2D" type="Sprite2D" unique_id=2141278289]
-texture = ExtResource("1_f7cmv")
-hframes = 20
-vframes = 9
-frame = 9

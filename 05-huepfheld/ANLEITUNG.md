@@ -11,8 +11,8 @@ Das Projekt ist größer als Flatterfisch (die Roadmap rechnet mit 2–3 Wochen)
 4. Kamera und ein langer Level ✔
 5. Animationen: stehen, laufen, springen ✔
 6. Gegner: patrouillieren und plattgesprungen werden ✔
-7. Blöcke und Items: Münzen und ein Power-up ← *du bist hier*
-8. Ziel, Leben, Anzeige und Web-Export
+7. Blöcke und Items: Münzen und ein Power-up ✔
+8. Ziel, Leben, Anzeige und Web-Export ← *du bist hier*
 
 ---
 
@@ -1093,3 +1093,266 @@ Fertig? Committen und Bescheid geben.
 3. **Aus dem Block steigen (mittel):** Das Power-up erscheint einfach über dem Block. Bei Mario steigt es langsam heraus. Lass es an der Stelle des Blocks entstehen (`position` statt `position + Vector2(0, -18)`), hinter dem Block (`z_index = -1`) und mit einem Tween in 0,5 Sekunden nach oben steigen. Während es steigt, darf es noch nicht laufen. Tipp: `set_physics_process(false)` und der Tween kann am Ende eine Funktion aufrufen: `tween.tween_callback(set_physics_process.bind(true))`.
 4. **Von unten erwischt (mittel):** Bei Mario besiegt man Gegner, die auf einem Block stehen, indem man von unten gegen den Block springt. Gib dem Block eine zweite `Area2D` namens `Oberseite` als flachen Streifen auf dem Block, mit **Mask** `3` (Gegner). Beim Anstoßen gehst du alle Körper durch, die gerade darauf stehen: `for gegner in $Oberseite.get_overlapping_bodies():` und machst sie platt.
 5. **Ziegel zerschlagen (knifflig):** Ein starker Held kann bei Mario Ziegel zerschlagen. Mach eine Einstellung `@export var zerbrechlich := false`. Ein zerbrechlicher Block verschwindet beim Anstoßen, aber nur, wenn `body.stark` ist. Sonst hüpft er nur. Bonus: ein paar Bruchstücke mit `CPUParticles2D`. Vorsicht: Die Partikel hängen am Block, und der verschwindet. Was kannst du tun, damit die Bruchstücke trotzdem zu sehen sind? (Denk an den Ton aus Kapitel 6.)
+
+---
+
+## Kapitel 8: Ziel, Leben, Anzeige und Web-Export
+
+Im letzten Kapitel wird aus dem Level ein richtiges Spiel. Es gibt 3 Leben, eine Anzeige oben im Bild, ein Ziel am Ende und einen Bildschirm für „Game Over“ und „Geschafft“. Danach exportierst du Hüpfheld fürs Web und stellst es auf die Startseite.
+
+Neu sind zwei Dinge:
+- **Autoload:** ein Node, der einen Szenenwechsel überlebt.
+- **`change_scene_to_file`:** von einer Szene zu einer anderen wechseln.
+
+Beides brauchst du in Zelda und DOOM wieder.
+
+### 8.1 Ein Spielstand, der den Neustart überlebt
+
+Bisher setzt `reload_current_scene()` beim Sterben *alles* zurück, auch die Münzen des Helden. Leben, die nach jedem Tod wieder bei 3 anfangen, wären sinnlos. Wir brauchen also etwas, das *außerhalb* des Levels liegt.
+
+Das ist ein **Autoload**. Godot erzeugt ihn beim Spielstart einmal und hängt ihn ganz oben in den Baum, neben die Szene. Wird die Szene neu geladen, bleibt er unberührt.
+
+1. Im FileSystem: Rechtsklick → **New Script** → `spielstand.gd`, **Inherits** `Node`, **Template** Empty:
+
+```gdscript
+extends Node
+
+
+const START_LEBEN = 3
+
+var leben := START_LEBEN
+var muenzen := 0
+var meldung := ""   # was der Ende-Bildschirm zeigt
+
+
+# Alles auf Anfang, für ein neues Spiel
+func neues_spiel() -> void:
+	leben = START_LEBEN
+	muenzen = 0
+```
+
+2. *Project Settings* → Tab **Globals** → **Autoload**:
+   - Bei **Path** wählst du `spielstand.gd`.
+   - Bei **Node Name** trägst du `Spielstand` ein.
+   - Dann **Add**.
+
+Ab jetzt kennt jedes Skript den Namen `Spielstand`, so wie `Input` oder `Vector2`. In `held.gd` zählt die Münze jetzt dort:
+
+```gdscript
+# Eine Münze eingesammelt
+func muenze_einsammeln() -> void:
+	Spielstand.muenzen += 1
+	$MuenzeTon.pitch_scale = randf_range(0.9, 1.1)
+	$MuenzeTon.play()
+```
+
+`var muenzen` im Held kannst du löschen. Das `Debug`-Label übernimmt gleich die Anzeige, also kann es mitsamt seinen Zeilen ebenfalls weg.
+
+Bei Mario ist es genauso: Nach einem Tod sind die Münzen und Blöcke im Level wieder da, aber dein Münzzähler bleibt.
+
+### 8.2 Die Anzeige: ein CanvasLayer
+
+Die Kamera bewegt sich, also würde ein normales `Label` im Level wegscrollen. Ein **`CanvasLayer`** ist eine eigene Zeichenebene, die die Kamera nicht mitbewegt. Alles darin klebt am Bildschirm.
+
+1. In `level.tscn`: Rechtsklick auf `Level` → **Add Child Node** → `CanvasLayer` → umbenennen in `HUD` („Head-Up Display“).
+2. Darunter zwei `Label`: `Muenzen` und `Leben`.
+3. `Muenzen` auswählen → oben im 2D-Editor **Anchor Preset** (das grüne Kreuz-Symbol) → **Top Left**. `Leben` → **Top Right**. Schieb beide ein paar Pixel vom Rand weg.
+
+**Eine Pixel-Schrift:** Godots Standardschrift ist bei 384 × 216 verschwommen und zu groß. Kenney hat auch freie Schriften:
+1. Lade 🆓 **Kenney Fonts** (kenney.nl → Assets → Kenney Fonts, CC0).
+2. Kopier eine Pixel-Schrift, zum Beispiel `Kenney Pixel.ttf`, in deinen `Kenney`-Ordner.
+3. Wähl sie im FileSystem aus → Tab **Import**:
+   - **Antialiasing** auf `None`, **Hinting** auf `None`.
+   - Dann **Reimport**.
+
+Damit du Schrift, Größe und Rand nicht bei jedem Label einzeln einstellen musst, gibt es **LabelSettings**:
+
+1. Wähl `Muenzen` → **Label Settings** → **New LabelSettings** → darauf klicken.
+2. **Font**: deine Schrift. **Size**: probier `8` oder `16`. Pixel-Schriften sind nur bei bestimmten Größen scharf.
+3. **Outline**: Size `2`, Farbe dunkel. So bleibt die Schrift vor Himmel *und* Wolken lesbar.
+4. Rechtsklick auf die LabelSettings → **Save As…** → `schrift.tres`.
+5. Bei `Leben` und allen weiteren Labels ziehst du `schrift.tres` in **Label Settings**.
+
+Das ist dieselbe Idee wie die `SpriteFrames`: eine Resource, die mehrere Nodes gemeinsam benutzen. Änderst du die Größe in `schrift.tres`, ändern sich alle Labels.
+
+**Achtung, Umlaute:** Nicht jede Pixel-Schrift hat ein `Ü`. Wenn statt eines Buchstabens ein Kästchen erscheint, schreib `MUENZEN`. Schöner ist ein Münzbild: Häng eine `TextureRect` mit einer AtlasTexture der Münze vor das Label und schreib nur `x 05`.
+
+Skript an `HUD` (`hud.gd`):
+
+```gdscript
+extends CanvasLayer
+
+
+func _process(_delta: float) -> void:
+	$Muenzen.text = "MUENZEN %02d" % Spielstand.muenzen
+	$Leben.text = "LEBEN %d" % Spielstand.leben
+```
+
+- **`%02d`** ist wie `%d`, nur immer zweistellig mit führender Null: aus `5` wird `05`. Bei Mario steht da auch nie eine einzelne Ziffer.
+- **`_delta`** mit Unterstrich: Die Funktion bekommt `delta` mit, braucht es aber nicht. Der Unterstrich sagt Godot, dass das Absicht ist, und die gelbe Warnung verschwindet.
+- Jedes Bild den Text neu zu setzen ist für zwei Labels völlig in Ordnung. Bei hunderten Anzeigen würde man ein Signal schicken, sobald sich etwas ändert.
+
+### 8.3 Leben verlieren und Game Over
+
+Der Ende-Bildschirm ist eine **eigene Szene**. Er zeigt `Spielstand.meldung` an, damit dieselbe Szene „GAME OVER“ und „GESCHAFFT!“ sagen kann.
+
+1. *Scene → New Scene* → **User Interface** (`Control`) → umbenennen in `Ende`. Anchor Preset **Full Rect**.
+2. Kinder:
+   - `ColorRect`, ebenfalls **Full Rect**, Farbe schwarz. Sonst sieht man den Himmel.
+   - `VBoxContainer` mit Anchor Preset **Center**. Darin drei `Label`: `Meldung`, `Muenzen` und `Hinweis` (Text: `SPRUNGTASTE: NEUES SPIEL`). Bei allen dreien **Horizontal Alignment** `Center` und `schrift.tres`.
+3. Speichern als `ende.tscn`. Skript `ende.gd`:
+
+```gdscript
+extends Control
+
+
+var bereit := false   # erst nach einer Sekunde, sonst springt man versehentlich weiter
+
+
+func _ready() -> void:
+	$VBoxContainer/Meldung.text = Spielstand.meldung
+	$VBoxContainer/Muenzen.text = "MUENZEN %02d" % Spielstand.muenzen
+	$VBoxContainer/Hinweis.visible = false
+	await get_tree().create_timer(1.0).timeout
+	bereit = true
+	$VBoxContainer/Hinweis.visible = true
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if bereit and event.is_action_pressed("springen"):
+		Spielstand.neues_spiel()
+		get_tree().change_scene_to_file("res://level.tscn")
+```
+
+- **`_unhandled_input`** kennst du aus Flatterfisch. Godot ruft es bei jedem Tastendruck auf, statt dass man jedes Bild fragt.
+- **`change_scene_to_file`** wirft die aktuelle Szene weg und lädt eine andere. Der Autoload `Spielstand` bleibt dabei bestehen. Deshalb kennt der Ende-Bildschirm die Münzen noch.
+- **`bereit`:** Wer beim Sterben gerade die Sprungtaste drückt, soll nicht sofort im neuen Spiel landen.
+
+Jetzt der Held. In `sterben()` ersetzt du die letzte Zeile, also `reload_current_scene()` nach dem `await`:
+
+```gdscript
+		await get_tree().create_timer(1.5).timeout
+		Spielstand.leben -= 1
+		if Spielstand.leben > 0:
+			get_tree().reload_current_scene()
+		else:
+			Spielstand.meldung = "GAME OVER"
+			get_tree().change_scene_to_file("res://ende.tscn")
+```
+
+Test: Spring dreimal in ein Loch. Die Anzeige zählt herunter, dann kommt GAME OVER, und mit der Sprungtaste beginnt alles von vorn.
+
+### 8.4 Das Ziel
+
+Am Ende des Levels steht bei Mario eine Fahnenstange. Für uns reicht eine unsichtbare Fläche, und die Optik malst du dazu.
+
+1. **Aussehen:** Mal in `Deco` eine Fahnenstange auf das flache Stück hinter der großen Treppe (4.4, Abschnitt 8). Im Kachelblatt von Kenney gibt es Fahnen. Die Stange kannst du aus anderen Kacheln bauen oder in Piskel selbst zeichnen.
+2. **Fläche:** In `level.tscn` eine `Area2D` namens `Ziel` an `Level` hängen, mit **Mask** nur `2` (Held). Dazu eine `CollisionShape2D` als schmales, sehr **hohes** Rechteck an der Stange, zum Beispiel 6 × 216 von ganz oben bis zum Boden. So kann niemand über das Ziel hinwegspringen.
+3. Häng ein Skript an `Ziel` (`ziel.gd`) und verbinde dessen Signal `body_entered` mit `Ziel` selbst, wie bei der Münze:
+
+```gdscript
+extends Area2D
+
+
+func _on_body_entered(body: Node2D) -> void:
+	body.ziel_erreicht()
+```
+
+Im Held: eine Variable neben `tot`, eine neue Funktion und ein `ZielTon` (ein `AudioStreamPlayer` mit einer kleinen Fanfare aus 🆓 jsfxr):
+
+```gdscript
+var im_ziel := false
+```
+
+```gdscript
+# Die Fahne erreicht: kurz feiern, dann der Ende-Bildschirm
+func ziel_erreicht() -> void:
+	if im_ziel or tot:
+		return
+	im_ziel = true
+	velocity.x = 0
+	$Bild.play("stehen")
+	$ZielTon.play()
+	await get_tree().create_timer(3.0).timeout
+	Spielstand.meldung = "GESCHAFFT!"
+	get_tree().change_scene_to_file("res://ende.tscn")
+```
+
+Im Ziel soll der Held, wie im Tod, nicht mehr auf Tasten hören. Am Anfang von `_physics_process` wird deshalb aus `if tot:` das hier:
+
+```gdscript
+	if tot or im_ziel:
+```
+
+Im Ziel bleibt die Maske, anders als beim Sterben. Der Held fällt also nicht durch den Boden, sondern landet und bleibt stehen.
+
+Und ein Gegner darf den Held im Ziel nicht mehr erwischen. In `getroffen()`:
+
+```gdscript
+	if unverwundbar > 0 or im_ziel:
+		return
+```
+
+### 8.5 Export fürs Web
+
+Das kennst du aus Flatterfisch, Kapitel 6. Kurz:
+
+1. **Export Templates:** Hast du Godot seit Flatterfisch aktualisiert, brauchst du sie für die neue Version noch einmal (*Editor → Manage Export Templates*). Sonst sind sie schon da.
+2. Ordner **`web`** in `05-huepfheld` mit einer leeren **`.gdignore`** darin.
+3. *Project → Export → Add… → Web*:
+   - **Export Path** `web/index.html`
+   - **Thread Support** aus
+4. **Export Project**, ohne **Export With Debug**.
+5. Testen über den Webserver, im `games`-Ordner:
+
+```bash
+python -m http.server 8000
+```
+
+Dann `http://localhost:8000/05-huepfheld/web/` öffnen.
+
+Teste im Browser:
+- Tasten **und** Gamepad
+- Ton nach dem ersten Tastendruck
+- ob das Bild scharf bleibt, wenn du das Fenster größer und kleiner ziehst
+
+Dank **Integer**-Skalierung aus 1.2 bleibt jedes Pixel ein Quadrat.
+
+Vorher aufräumen: In `05-huepfheld` liegt noch eine `sprite_2d.tscn`, die nichts benutzt. Lösch sie, sonst wandert sie mit in den Export.
+
+### 8.6 Startseite, README und Lizenzen
+
+**Startseite:** In der `index.html` im `games`-Ordner ist Hüpfheld noch grau. Mach den Eintrag spielbar wie bei Flatterfisch: `folder`, `color` und `desc`. Trag das Spiel auch in die Tabelle der `README.md` im `games`-Ordner ein.
+
+**README für Hüpfheld:** Schreib sie wieder selbst, Gliederung wie bei Flatterfisch:
+- **Steuerung**: alle vier Aktionen, auch mit Gamepad
+- **Was ich gelernt habe**
+- **Was schwer war**
+- **Grafiken und Engine**
+
+Den letzten Abschnitt brauchst du diesmal für **drei** Lizenzen:
+
+```markdown
+## Grafiken, Schrift und Engine
+- Kacheln, Hintergründe und Gegner: [Pixel Platformer](https://kenney.nl/assets/pixel-platformer) von Kenney, CC0
+- Schrift: [Kenney Fonts](https://kenney.nl/assets/kenney-fonts) von Kenney, CC0
+- Erstellt mit der [Godot Engine](https://godotengine.org) (MIT-Lizenz). Der Web-Export in `web/` enthält die Engine. Lizenz und Hinweise: https://godotengine.org/license
+
+Für meinen eigenen Code, meine Spielfigur und meine Sounds gilt die [LICENSE](../LICENSE) im Hauptordner.
+```
+
+**CC0** heißt: Kenney verzichtet auf alle Rechte, du darfst die Grafiken für alles benutzen, ohne Pflicht zur Nennung. Genannt wird er trotzdem: Das ist fair, und jeder Leser sieht sofort, welche Grafiken *nicht* von dir sind. Denn deine „Alle Rechte vorbehalten“-Lizenz kann für Kenneys Grafiken nicht gelten. Die gehören niemandem.
+
+Fertig? Committen, und Projekt 05 ist abgeschlossen. 🎉
+
+### Übungsaufgaben zu Kapitel 8
+
+1. **Extraleben (leicht):** Bei Mario gibt es für 100 Münzen ein Leben dazu, und der Zähler fängt wieder bei 0 an. Bau das ein. Wo gehört der Code hin: in den Held, in die Münze oder in `Spielstand`? Bonus: ein eigener Ton dafür.
+2. **Rekord (leicht):** Speichere die meisten Münzen, die man je ins Ziel gebracht hat, wie den Highscore in Flatterfisch mit `ConfigFile` in `user://`. Zeig den Rekord auf dem Ende-Bildschirm.
+3. **Die Uhr läuft (mittel):** Mario hat 400 Sekunden für einen Level. Zeig im HUD eine Zeit an, die herunterzählt. Bei 0 stirbt der Held. Das HUD kennt den Held aber nicht. Erinnerst du dich an die **Gruppen** aus Flatterfisch? Steck den Held in eine Gruppe `held` und ruf `get_tree().call_group("held", "sterben")` auf. Was muss beim Neustart mit der Zeit passieren, und wohin gehört sie deshalb?
+4. **Zwischenbild (mittel):** Bei Mario kommt vor jedem Versuch kurz ein schwarzes Bild mit „WELT 1-1“ und der Zahl der Leben. Bau eine Szene `zwischenbild.tscn`, die das 2 Sekunden zeigt und dann mit `change_scene_to_file` den Level lädt. Sie wird zur Hauptszene (*Project Settings → Application → Run → Main Scene*). Und `sterben()` lädt jetzt nicht mehr den Level neu, sondern …?
+5. **Die Fahnenstange (knifflig):** Bei Mario rutscht der Held an der Stange herunter, landet, läuft von allein nach rechts in ein Häuschen und verschwindet. Tipps:
+   - Eine Variable für den Zustand im Ziel reicht nicht mehr. Du brauchst mehrere: rutschen, laufen, fertig. Das ist der Anfang einer **State Machine**, die in Zelda ein großes Thema wird.
+   - Rutschen: `velocity.x = 0`, `velocity.y` fest auf zum Beispiel `80`, bis `is_on_floor()`.
+   - Laufen: `velocity.x = SPEED`, die Animation `laufen`. Hinter dem Häuschen versteckst du ihn mit `visible = false`.
+   - Bonus: Je höher er die Stange trifft, desto mehr Punkte. Den Treffpunkt kennst du: `position.y` beim Berühren.

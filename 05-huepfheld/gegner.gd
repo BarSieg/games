@@ -4,7 +4,7 @@ extends CharacterBody2D
 const SPEED = 30.0
 const FALL_LIMIT = 224          # tiefer als das: in ein Loch gefallen
 const LEFT_MAX_DISTANZ = 372    # halbe Bildbreite + 10 Kacheln
-const JUMP_VELOCITY = -190.0 	# beim sterben
+const JUMP_VELOCITY = -190.0    # beim Sterben hochspringen
 
 var direction := -1.0   # startet nach links, dem Held entgegen
 @export var kantenerkennung := false
@@ -43,8 +43,9 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 
 	# Steckt der Held in mir? Jedes Bild pruefen, nicht nur beim ersten Kontakt
-	for body in $Treffer.get_overlapping_bodies():
-		treffer(body)
+	if $Treffer.monitoring:
+		for body in $Treffer.get_overlapping_bodies():
+			treffer(body)
 
 
 func plattmachen() -> void:

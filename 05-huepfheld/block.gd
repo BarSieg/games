@@ -52,13 +52,14 @@ func leer_machen() -> void:
 	$Bild.frame = FRAME_LEER
 
 
-# Tötet gegner auf dem Block
+# Wer oben auf dem Block steht, wird mit erwischt
 func oben_treffen(body: Node2D) -> void:
 	var gegner_liste: Array[Node2D] = $Oberseite.get_overlapping_bodies()
 	for gegner in gegner_liste:
 		gegner.plattmachen()
 	if gegner_liste.size() > 0:
 		body.plopp(0.8)
+
 
 # Kurz hochhüpfen und zurück
 func anstossen(body: Node2D) -> void:
