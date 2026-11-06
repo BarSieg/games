@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://c3lcab1dxdqb5"]
+
+[ext_resource type="Texture2D" uid="uid://bnaq88sngsy0o" path="res://tilemap_packed.png" id="1_im0tn"]
+[ext_resource type="Script" uid="uid://cu5w3y7li40vx" path="res://block.gd" id="1_xfwl5"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(18, 18)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0orc7"]
+size = Vector2(14, 8)
+
+[node name="Block" type="StaticBody2D" unique_id=812437048]
+script = ExtResource("1_xfwl5")
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=1910369231]
+texture = ExtResource("1_im0tn")
+hframes = 20
+vframes = 9
+frame = 9
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1149040431]
+shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Unterseite" type="Area2D" parent="." unique_id=1538758302]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Unterseite" unique_id=1511537822]
+position = Vector2(0, 13)
+shape = SubResource("RectangleShape2D_0orc7")
+
+[connection signal="body_entered" from="Unterseite" to="." method="_on_unterseite_body_entered"]
