@@ -56,7 +56,7 @@ func _on_treffer_body_entered(body: Node2D) -> void:
 		plattmachen()
 		body.abprallen()
 	else:
-		body.sterben()
+		body.getroffen()
 
 
 func _on_visible_on_screen_enabler_2d_screen_entered() -> void:

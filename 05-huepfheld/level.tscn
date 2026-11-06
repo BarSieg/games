@@ -731,6 +731,10 @@ kantenerkennung = true
 position = Vector2(1438, 164)
 kantenerkennung = true
 
+[node name="Gegner8" parent="." unique_id=1395348975 instance=ExtResource("2_0b4ue")]
+position = Vector2(3598, 160)
+kantenerkennung = true
+
 [node name="Muenze" parent="." unique_id=628381877 instance=ExtResource("5_f2txt")]
 position = Vector2(691, 153)
 
@@ -760,6 +764,7 @@ position = Vector2(4509, 99)
 
 [node name="Block" parent="." unique_id=812437048 instance=ExtResource("6_1ainy")]
 position = Vector2(513, 117)
+hat_power_up = true
 
 [node name="Block2" parent="." unique_id=898036790 instance=ExtResource("6_1ainy")]
 position = Vector2(549, 117)

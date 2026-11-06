@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://151krksf1vq4"]
+
+[ext_resource type="Script" uid="uid://cr1bucqalodp" path="res://power_up.gd" id="1_mkoic"]
+[ext_resource type="Texture2D" uid="uid://bnaq88sngsy0o" path="res://tilemap_packed.png" id="2_h1prs"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(12, 12)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0orc7"]
+size = Vector2(14, 14.25)
+
+[node name="PowerUp" type="CharacterBody2D" unique_id=668979535]
+collision_layer = 0
+script = ExtResource("1_mkoic")
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=190936308]
+texture = ExtResource("2_h1prs")
+offset = Vector2(5, 0)
+hframes = 20
+vframes = 9
+frame = 128
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1372465265]
+position = Vector2(5, 3)
+shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Einsammeln" type="Area2D" parent="." unique_id=1699104425]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Einsammeln" unique_id=88780688]
+position = Vector2(5, 2.125)
+shape = SubResource("RectangleShape2D_0orc7")
+
+[connection signal="body_entered" from="Einsammeln" to="." method="_on_einsammeln_body_entered"]

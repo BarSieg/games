@@ -3,7 +3,8 @@ extends CharacterBody2D
 
 const SPEED = 100.0
 const RUN_SPEED = 160.0
-const JUMP_VELOCITY = -376.0
+const JUMP_VELOCITY = -376.0      # 4 Kacheln
+const BOUNCE_VELOCITY = -420.0    # 5 Kacheln
 const MIN_JUMP_VELOCITY = -188.0  # kürzester Sprung, etwa 1 Kachel
 const JUMP_CUT = 0.4              # Taste früh losgelassen: restlichen Schwung kürzen
 const FALL_GRAVITY_FACTOR = 1.7   # beim Fallen stärker nach unten ziehen
@@ -20,6 +21,7 @@ const CAMERA_OFFSET_X = 54.0      # so weit schaut die Kamera voraus
 const CAMERA_TURN_SPEED = 60.0    # Pixel pro Sekunde, die die Kamera umschwenkt
 const BRAKE_SHOW_TIME = 0.15      # so lange bleibt das Bremsbild mindestens stehen
 const STOMP_BOUNCE = -220.0       # so hoch prallt der Held vom Gegner ab
+const INVINCIBLE_TIME = 1.5       # so lange ist der Held nach einem Treffer unverwundbar
 
 var coyote_timer := 0.0
 var jump_buffer_timer := 0.0
@@ -28,6 +30,8 @@ var prev_is_on_floor := true
 var brake_timer := 0.0
 var tot := false
 var muenzen := 0
+var stark := false
+var unverwundbar := 0.0
 
 
 func _ready() -> void:
@@ -55,10 +59,28 @@ func update_animation(direction: float) -> void:
 # Auf einen Gegner gesprungen: hochfedern
 func abprallen() -> void:
 	if Input.is_action_pressed("springen"):
-		velocity.y = JUMP_VELOCITY
+		velocity.y = BOUNCE_VELOCITY
 	else:
 		velocity.y = STOMP_BOUNCE
 	$GegnerPlopp.play()
+
+
+# Power-up eingesammelt
+func power_up() -> void:
+	stark = true
+	$Bild.modulate = Color(1, 0.8, 0.3)   # golden
+
+
+# Von einem Gegner erwischt
+func getroffen() -> void:
+	if unverwundbar > 0:
+		return
+	if stark:
+		stark = false
+		$Bild.modulate = Color.WHITE
+		unverwundbar = INVINCIBLE_TIME
+	else:
+		sterben()
 
 
 # Erwischt: Level von vorn
@@ -86,6 +108,13 @@ func _physics_process(delta: float) -> void:
 	else:
 		coyote_timer -= delta
 	brake_timer -= delta
+
+	# Nach einem Treffer kurz unverwundbar, und blinken
+	if unverwundbar > 0:
+		unverwundbar -= delta
+		$Bild.visible = int(unverwundbar * 10) % 2 == 0
+	else:
+		$Bild.visible = true
 
 	# Schwerkraft, beim Fallen stärker
 	if not is_on_floor():
