@@ -3,7 +3,7 @@ extends CharacterBody2D
 
 const SPEED = 30.0
 const FALL_LIMIT = 224          # tiefer als das: in ein Loch gefallen
-const LEFT_MAX_DISTANZ = 372    # halbe Bildbreite + 10 Kacheln
+const LEFT_MAX_DISTANZ = 180    #  10 Kacheln
 const JUMP_VELOCITY = -190.0    # beim Sterben hochspringen
 
 var direction := -1.0   # startet nach links, dem Held entgegen
@@ -39,7 +39,7 @@ func _physics_process(delta: float) -> void:
 
 	# Weit links hinter dem Bild: weg für immer
 	var camera := get_viewport().get_camera_2d()
-	if global_position.x + LEFT_MAX_DISTANZ < camera.get_screen_center_position().x:
+	if global_position.x + (get_viewport_rect().size.x / 2) + LEFT_MAX_DISTANZ < camera.get_screen_center_position().x:
 		queue_free()
 
 	# Steckt der Held in mir? Jedes Bild pruefen, nicht nur beim ersten Kontakt

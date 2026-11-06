@@ -13,7 +13,9 @@ config_version=5
 config/name="Hüpfheld"
 run/main_scene="uid://duvnp0q5q8kov"
 config/features=PackedStringArray("4.7", "GL Compatibility")
-config/icon="res://icon.svg"
+boot_splash/bg_color=Color(0.24843347, 0.68229485, 0.7471752, 1)
+boot_splash/image="uid://t6kelti6ila6"
+config/icon="uid://t6kelti6ila6"
 
 [autoload]
 
@@ -26,7 +28,6 @@ window/size/viewport_height=216
 window/size/window_width_override=1152
 window/size/window_height_override=648
 window/stretch/mode="viewport"
-window/stretch/aspect="expand"
 window/stretch/scale_mode="integer"
 
 [input]

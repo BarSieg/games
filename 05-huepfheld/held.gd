@@ -176,8 +176,8 @@ func _physics_process(delta: float) -> void:
 	$Bild.speed_scale = abs(velocity.x) / SPEED
 
 	# Kein Zurück für die Kamera
-	$Camera2D.limit_left = max($Camera2D.limit_left, $Camera2D.get_screen_center_position().x - 192)
-
+	var halbe_breite := get_viewport_rect().size.x / 2
+	$Camera2D.limit_left = max($Camera2D.limit_left, $Camera2D.get_screen_center_position().x - halbe_breite)
 	# Kamera schwenkt langsam in Laufrichtung
 	$Camera2D.position.x = move_toward($Camera2D.position.x, camera_target_x, CAMERA_TURN_SPEED * delta)
 
