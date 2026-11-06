@@ -1,6 +1,7 @@
 extends StaticBody2D
 
 const POWER_UP = preload("res://power_up.tscn")
+const MUENZE = preload("res://muenze.tscn")
 const FRAME_LEER = 29   # hier die Nummer deines leeren Blocks eintragen
 const FRAME_ZIEGEL = 6
 const FRAME_MUENZE = 9
@@ -26,6 +27,10 @@ func _on_unterseite_body_entered(body: Node2D) -> void:
 		Typ.MUENZE:
 			muenzen -= 1
 			body.muenze_einsammeln()
+			var muenze := MUENZE.instantiate()
+			muenze.aus_block = true
+			muenze.position = position # + Vector2(0, -18)
+			get_parent().add_child.call_deferred(muenze)
 			if muenzen == 0:
 				leer_machen()
 		Typ.POWER_UP:
