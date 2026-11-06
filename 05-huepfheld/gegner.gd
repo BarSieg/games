@@ -4,6 +4,7 @@ extends CharacterBody2D
 const SPEED = 30.0
 const FALL_LIMIT = 224          # tiefer als das: in ein Loch gefallen
 const LEFT_MAX_DISTANZ = 372    # halbe Bildbreite + 10 Kacheln
+const JUMP_VELOCITY = -190.0 	# beim sterben
 
 var direction := -1.0   # startet nach links, dem Held entgegen
 @export var kantenerkennung := false
@@ -48,10 +49,12 @@ func _physics_process(delta: float) -> void:
 
 func plattmachen() -> void:
 	$Bild.play("platt")
-	set_physics_process(false)                   # nicht mehr laufen
 	$Treffer.set_deferred("monitoring", false)   # nicht noch einmal treffen
-	await get_tree().create_timer(0.5).timeout
-	queue_free()
+	# Fliegt weg, wird vom FALL_LIMIT aufgeräumt
+	velocity.x = SPEED
+	velocity.y = JUMP_VELOCITY
+	collision_mask = 0
+	collision_layer = 0
 
 
 func treffer(body: Node2D) -> void:
