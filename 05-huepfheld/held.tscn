@@ -6,6 +6,7 @@
 [ext_resource type="AudioStream" uid="uid://c72rqiij70hth" path="res://plopp.wav" id="4_q6bl5"]
 [ext_resource type="AudioStream" uid="uid://sjxfgcxmv5uu" path="res://muenze.wav" id="5_kdfus"]
 [ext_resource type="Texture2D" uid="uid://dab4cmm1cw75k" path="res://ziegel.png" id="6_33x0v"]
+[ext_resource type="AudioStream" uid="uid://crkfst3dml0ly" path="res://hit.wav" id="7_g67po"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_1audq"]
 atlas = ExtResource("2_xw2dj")
@@ -176,3 +177,7 @@ angular_velocity_min = -720.0
 angular_velocity_max = 720.0
 color = Color(0.79607844, 0.5058824, 0.36862746, 1)
 hue_variation_min = -0.46
+
+[node name="Schaden" type="AudioStreamPlayer" parent="." unique_id=732645574]
+stream = ExtResource("7_g67po")
+volume_db = -5.0

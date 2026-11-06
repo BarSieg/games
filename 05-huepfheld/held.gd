@@ -75,6 +75,7 @@ func power_up() -> void:
 func getroffen() -> void:
 	if unverwundbar > 0:
 		return
+	$Schaden.play()
 	if stark:
 		stark = false
 		$Bild.modulate = Color.WHITE
