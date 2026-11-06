@@ -180,5 +180,10 @@ func _physics_process(delta: float) -> void:
 # Eine Muenze eingesammelt
 func muenze_einsammeln() -> void:
 	muenzen += 1
+	$MuenzeTon.pitch_scale = randf_range(0.9, 1.1)
 	$MuenzeTon.play()
 	$Debug.text = "%d" % muenzen
+
+
+func ziegel_brechen() -> void:
+	$Scherben.restart()

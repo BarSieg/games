@@ -10,10 +10,12 @@ size = Vector2(12, 12)
 size = Vector2(14, 14.25)
 
 [node name="PowerUp" type="CharacterBody2D" unique_id=668979535]
+z_index = -1
 collision_layer = 0
 script = ExtResource("1_mkoic")
 
 [node name="Bild" type="Sprite2D" parent="." unique_id=190936308]
+position = Vector2(-3, 0)
 texture = ExtResource("2_h1prs")
 offset = Vector2(5, 0)
 hframes = 20
@@ -21,7 +23,7 @@ vframes = 9
 frame = 128
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1372465265]
-position = Vector2(5, 3)
+position = Vector2(2, 3)
 shape = SubResource("RectangleShape2D_s017u")
 
 [node name="Einsammeln" type="Area2D" parent="." unique_id=1699104425]
@@ -29,7 +31,7 @@ collision_layer = 0
 collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Einsammeln" unique_id=88780688]
-position = Vector2(5, 2.125)
+position = Vector2(2, 2)
 shape = SubResource("RectangleShape2D_0orc7")
 
 [connection signal="body_entered" from="Einsammeln" to="." method="_on_einsammeln_body_entered"]

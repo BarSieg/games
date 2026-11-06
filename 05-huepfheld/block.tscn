@@ -9,6 +9,9 @@ size = Vector2(18, 18)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_0orc7"]
 size = Vector2(14, 8)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_uaosu"]
+size = Vector2(14, 2)
+
 [node name="Block" type="StaticBody2D" unique_id=812437048]
 script = ExtResource("1_xfwl5")
 
@@ -28,5 +31,13 @@ collision_mask = 2
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Unterseite" unique_id=1511537822]
 position = Vector2(0, 13)
 shape = SubResource("RectangleShape2D_0orc7")
+
+[node name="Oberseite" type="Area2D" parent="." unique_id=744920622]
+collision_layer = 0
+collision_mask = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Oberseite" unique_id=1089120907]
+position = Vector2(0, -10)
+shape = SubResource("RectangleShape2D_uaosu")
 
 [connection signal="body_entered" from="Unterseite" to="." method="_on_unterseite_body_entered"]
