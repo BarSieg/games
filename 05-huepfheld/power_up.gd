@@ -12,7 +12,7 @@ func _ready() -> void:
 	var tween := create_tween()
 	tween.tween_property($Bild, "position:y", 0.0, 0.5)
 	tween.tween_callback(set_physics_process.bind(true))
-	z_index = 0 # zur Sicherheit
+	tween.tween_property(self, "z_index", 0, 0.0)
 
 
 func _physics_process(delta: float) -> void:

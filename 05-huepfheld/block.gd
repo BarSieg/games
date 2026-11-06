@@ -35,6 +35,7 @@ func _on_unterseite_body_entered(body: Node2D) -> void:
 			leer_machen()
 		Typ.ZIEGEL:
 			if body.stark:
+				oben_treffen()
 				body.ziegel_brechen()
 				queue_free()
 				return
@@ -46,10 +47,14 @@ func leer_machen() -> void:
 	$Bild.frame = FRAME_LEER
 
 
+# Tötet gegner auf dem Block
+func oben_treffen() -> void:
+	for gegner in $Oberseite.get_overlapping_bodies():
+		gegner.plattmachen()
+
 # Kurz hochhüpfen und zurück
 func anstossen() -> void:
 	var tween := create_tween()
 	tween.tween_property($Bild, "position:y", -4.0, 0.08)
 	tween.tween_property($Bild, "position:y", 0.0, 0.08)
-	for gegner in $Oberseite.get_overlapping_bodies():
-		gegner.plattmachen()
+	oben_treffen()
