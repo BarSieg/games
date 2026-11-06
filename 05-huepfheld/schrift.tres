@@ -6,4 +6,4 @@
 font = ExtResource("1_pa2yn")
 font_size = 24
 font_color = Color(0.23384479, 0.053582326, 0.30695376, 1)
-outline_size = 2
+outline_size = 4

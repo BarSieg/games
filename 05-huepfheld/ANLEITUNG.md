@@ -1212,10 +1212,10 @@ var bereit := false   # erst nach einer Sekunde, sonst springt man versehentlich
 func _ready() -> void:
 	$VBoxContainer/Meldung.text = Spielstand.meldung
 	$VBoxContainer/Muenzen.text = "MUENZEN %02d" % Spielstand.muenzen
-	$VBoxContainer/Hinweis.visible = false
+	$VBoxContainer/Hinweis.modulate.a = 0.0   # unsichtbar, nimmt aber schon Platz ein
 	await get_tree().create_timer(1.0).timeout
 	bereit = true
-	$VBoxContainer/Hinweis.visible = true
+	$VBoxContainer/Hinweis.modulate.a = 1.0
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1227,6 +1227,7 @@ func _unhandled_input(event: InputEvent) -> void:
 - **`_unhandled_input`** kennst du aus Flatterfisch. Godot ruft es bei jedem Tastendruck auf, statt dass man jedes Bild fragt.
 - **`change_scene_to_file`** wirft die aktuelle Szene weg und lädt eine andere. Der Autoload `Spielstand` bleibt dabei bestehen. Deshalb kennt der Ende-Bildschirm die Münzen noch.
 - **`bereit`:** Wer beim Sterben gerade die Sprungtaste drückt, soll nicht sofort im neuen Spiel landen.
+- **`modulate.a` statt `visible`:** Ein Container ordnet nur sichtbare Kinder an. Mit `visible = false` wäre `Hinweis` gar nicht da, und wenn er erscheint, rutschen die anderen Labels nach oben. Mit `modulate.a = 0.0` ist er nur durchsichtig, sein Platz ist aber schon reserviert.
 
 Jetzt der Held. In `sterben()` ersetzt du die letzte Zeile, also `reload_current_scene()` nach dem `await`:
 

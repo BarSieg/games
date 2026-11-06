@@ -31,6 +31,7 @@ var brake_timer := 0.0
 var tot := false
 var stark := false
 var unverwundbar := 0.0
+var im_ziel := false
 
 
 func _ready() -> void:
@@ -79,7 +80,7 @@ func power_up() -> void:
 
 # Von einem Gegner erwischt
 func getroffen() -> void:
-	if unverwundbar > 0:
+	if unverwundbar > 0 or im_ziel:
 		return
 	$Schaden.play()
 	if stark:
@@ -99,12 +100,17 @@ func sterben() -> void:
 		collision_mask = 0
 		collision_layer = 0
 		await get_tree().create_timer(1.5).timeout
-		get_tree().reload_current_scene()
+		Spielstand.leben -= 1
+		if Spielstand.leben > 0:
+			get_tree().reload_current_scene()
+		else:
+			Spielstand.meldung = "GAME OVER"
+			get_tree().change_scene_to_file("res://ende.tscn")
 
 
 func _physics_process(delta: float) -> void:
 	var gravity := get_gravity()
-	if tot:
+	if im_ziel or tot:
 		velocity += gravity * delta
 		move_and_slide()
 		return
@@ -194,3 +200,15 @@ func muenze_einsammeln() -> void:
 # Ziegel zerschlagen: Scherben fliegen
 func ziegel_brechen() -> void:
 	$Scherben.restart()
+
+
+# Die Fahne erreicht: kurz feiern, dann der Ende-Bildschirm
+func ziel_erreicht() -> void:
+	if im_ziel or tot:
+		return
+	im_ziel = true
+	velocity.x = 0
+	$Bild.play("stehen")
+	await get_tree().create_timer(3.0).timeout
+	Spielstand.meldung = "GESCHAFFT!"
+	get_tree().change_scene_to_file("res://ende.tscn")
