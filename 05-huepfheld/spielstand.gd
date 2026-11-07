@@ -1,5 +1,6 @@
 extends Node
 
+enum RoehrenRichtung { UNTEN, RECHTS }
 
 const EXTRA_LEBEN_TON = preload("res://extraLive.wav")
 const START_LEBEN = 3

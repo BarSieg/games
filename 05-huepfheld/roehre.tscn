@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://b6hl7gdbi2jfi" path="res://roehre.gd" id="1_a13rh"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
-size = Vector2(6, 4)
+size = Vector2(4, 4)
 
 [node name="Roehre" type="Area2D" unique_id=1793078618]
 collision_layer = 0

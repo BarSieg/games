@@ -251,7 +251,7 @@ func ziel_erreicht() -> void:
 
 
 # In eine Röhre hinabsteigen, dann in eine andere Szene
-func roehre_betreten(szene: String) -> void:
+func roehre_betreten(szene: String, richting: Spielstand.RoehrenRichtung) -> void:
 	if in_roehre or tot or im_ziel:
 		return
 	in_roehre = true
@@ -260,7 +260,11 @@ func roehre_betreten(szene: String) -> void:
 	$Bild.play("stehen")
 	$Schaden.play()
 	var tween := create_tween()
-	tween.tween_property(self, "position:y", position.y + ROEHRE_TIEFE, ROEHRE_ZEIT)
+	if richting == Spielstand.RoehrenRichtung.UNTEN:
+		tween.tween_property(self, "position:y", position.y + ROEHRE_TIEFE, ROEHRE_ZEIT)
+	else:
+		# dann bleibt nur rechts
+		tween.tween_property(self, "position:x", position.x + ROEHRE_TIEFE, ROEHRE_ZEIT)
 	await tween.finished
 	Spielstand.stark = stark
 	get_tree().change_scene_to_file(szene)

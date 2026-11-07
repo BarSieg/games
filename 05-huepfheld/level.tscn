@@ -528,7 +528,7 @@ stream = ExtResource("5_8cye3")
 [node name="Roehre" parent="." unique_id=1793078618 instance=ExtResource("9_aicyk")]
 position = Vector2(1611, 162)
 ziel_szene = "uid://ddfdkhdma4rvg"
-Nur_ein_mal_betreten = true
+nur_ein_mal_betreten = true
 
 [node name="Gegner" parent="." unique_id=953975202 instance=ExtResource("2_0b4ue")]
 position = Vector2(1034, 161)
