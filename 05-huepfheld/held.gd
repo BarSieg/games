@@ -26,6 +26,8 @@ const BRAKE_SHOW_TIME = 0.15      # so lange bleibt das Bremsbild mindestens ste
 const STOMP_BOUNCE = -220.0       # so hoch prallt der Held vom Gegner ab
 const INVINCIBLE_TIME = 1.5       # so lange ist der Held nach einem Treffer unverwundbar
 const FLAGGE_TOP = 45.0           # so hoch ist die Stange
+const ROEHRE_TIEFE = 24.0         # so tief verschwindet der Held in der Röhre
+const ROEHRE_ZEIT = 0.8           # so lange dauert das Hinab- und Heraussteigen
 
 var coyote_timer := 0.0
 var jump_buffer_timer := 0.0
@@ -36,9 +38,16 @@ var tot := false
 var stark := false
 var unverwundbar := 0.0
 var im_ziel := false
+var in_roehre := false
 
 
 func _ready() -> void:
+	stark = Spielstand.stark
+	if stark:
+		$Bild.modulate = Color(1, 0.8, 0.3)   # golden
+	if Spielstand.rueckkehr != Vector2.ZERO:
+		roehre_verlassen(Spielstand.rueckkehr)
+		Spielstand.rueckkehr = Vector2.ZERO   # nur einmal, beim nächsten Tod geht es wieder vom Anfang los
 	$Camera2D.reset_smoothing()
 
 
@@ -84,7 +93,7 @@ func power_up() -> void:
 
 # Von einem Gegner erwischt
 func getroffen() -> void:
-	if unverwundbar > 0 or im_ziel:
+	if unverwundbar > 0 or im_ziel or in_roehre:
 		return
 	$Schaden.play()
 	if stark:
@@ -106,6 +115,7 @@ func sterben() -> void:
 		await get_tree().create_timer(1.5).timeout
 		Spielstand.leben -= 1
 		if Spielstand.leben > 0:
+			Spielstand.neuer_versuch()
 			get_tree().change_scene_to_file("res://start.tscn")
 		else:
 			Spielstand.meldung = "GAME OVER"
@@ -238,3 +248,34 @@ func ziel_erreicht() -> void:
 				state = ZielStates.FERTIG
 				Spielstand.meldung = "GESCHAFFT!"
 				get_tree().change_scene_to_file("res://ende.tscn")
+
+
+# In eine Röhre hinabsteigen, dann in eine andere Szene
+func roehre_betreten(szene: String) -> void:
+	if in_roehre or tot or im_ziel:
+		return
+	in_roehre = true
+	set_physics_process(false)
+	z_index = -1
+	$Bild.play("stehen")
+	$Schaden.play()
+	var tween := create_tween()
+	tween.tween_property(self, "position:y", position.y + ROEHRE_TIEFE, ROEHRE_ZEIT)
+	await tween.finished
+	Spielstand.stark = stark
+	get_tree().change_scene_to_file(szene)
+
+
+# Aus einer Röhre nach oben herauskommen
+func roehre_verlassen(ausgang: Vector2) -> void:
+	in_roehre = true
+	set_physics_process(false)
+	z_index = -1
+	position = ausgang + Vector2(0, ROEHRE_TIEFE)
+	$Schaden.play()
+	var tween := create_tween()
+	tween.tween_property(self, "position:y", ausgang.y, ROEHRE_ZEIT)
+	await tween.finished
+	z_index = 0
+	set_physics_process(true)
+	in_roehre = false

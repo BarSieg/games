@@ -1,0 +1,101 @@
+[gd_scene format=3 uid="uid://ol6kg1fiisr3"]
+
+[ext_resource type="Script" uid="uid://b0aeai7vfy6is" path="res://hud.gd" id="1_8sq4i"]
+[ext_resource type="LabelSettings" uid="uid://bo7rfkypyk7k3" path="res://schrift.tres" id="2_640wx"]
+[ext_resource type="Texture2D" uid="uid://bnaq88sngsy0o" path="res://tilemap_packed.png" id="3_a2258"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_km5ld"]
+atlas = ExtResource("3_a2258")
+region = Rect2(198, 126, 18, 18)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i2t4f"]
+atlas = ExtResource("3_a2258")
+region = Rect2(216, 126, 18, 18)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_s017u"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_km5ld")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i2t4f")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 4.0
+}]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8cye3"]
+atlas = ExtResource("3_a2258")
+region = Rect2(72, 36, 18, 18)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2orkt"]
+atlas = ExtResource("3_a2258")
+region = Rect2(90, 36, 18, 18)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aicyk"]
+atlas = ExtResource("3_a2258")
+region = Rect2(108, 36, 18, 18)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_0orc7"]
+animations = [{
+"frames": [{
+"duration": 7.0,
+"texture": SubResource("AtlasTexture_8cye3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2orkt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_aicyk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2orkt")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 6.0
+}]
+
+[node name="HUD" type="CanvasLayer" unique_id=1978485741]
+script = ExtResource("1_8sq4i")
+
+[node name="Muenzen" type="Label" parent="." unique_id=198702636]
+offset_left = 25.0
+offset_top = 2.0
+offset_right = 65.0
+offset_bottom = 25.0
+label_settings = ExtResource("2_640wx")
+
+[node name="MuenzenBild" type="AnimatedSprite2D" parent="." unique_id=1638714312]
+position = Vector2(13, 12)
+sprite_frames = SubResource("SpriteFrames_s017u")
+autoplay = "default"
+
+[node name="Leben" type="Label" parent="." unique_id=1215435371]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -16.0
+offset_top = 2.0
+offset_bottom = 25.0
+grow_horizontal = 0
+label_settings = ExtResource("2_640wx")
+
+[node name="LebenBild" type="AnimatedSprite2D" parent="." unique_id=581249155]
+position = Vector2(353, 12)
+rotation = 0.00032676596
+sprite_frames = SubResource("SpriteFrames_0orc7")
+autoplay = "default"
+frame_progress = 0.63527024
+
+[node name="Timer" type="Label" parent="." unique_id=1081105628]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_right = 20.0
+offset_bottom = 23.0
+grow_horizontal = 2
+label_settings = ExtResource("2_640wx")

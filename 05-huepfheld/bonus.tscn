@@ -1,0 +1,178 @@
+[gd_scene format=4 uid="uid://ddfdkhdma4rvg"]
+
+[ext_resource type="TileSet" uid="uid://crt82ww0clgf4" path="res://kacheln.tres" id="1_7ah8e"]
+[ext_resource type="PackedScene" uid="uid://dlwrwxefdhv3f" path="res://muenze.tscn" id="2_fix7m"]
+[ext_resource type="PackedScene" uid="uid://bfa3ccrbrl0ja" path="res://held.tscn" id="3_0idmp"]
+[ext_resource type="PackedScene" uid="uid://ol6kg1fiisr3" path="res://hud.tscn" id="4_pqir0"]
+[ext_resource type="PackedScene" uid="uid://uf0dq84vke34" path="res://roehre.tscn" id="5_43kgr"]
+
+[node name="Bonus" type="Node2D" unique_id=1452034661]
+
+[node name="Dunkel" type="ColorRect" parent="." unique_id=1618656415]
+z_index = -2
+offset_right = 384.0
+offset_bottom = 216.0
+color = Color(0.016010894, 0.111156024, 0.14972389, 1)
+
+[node name="Boden" type="TileMapLayer" parent="." unique_id=1363376760]
+tile_map_data = PackedByteArray("AAAAAAAAAAAGAAAAAAAAAAEAAAAGAAAAAAAAAAIAAAAGAAAAAAAAAAMAAAAGAAAAAAAAAAQAAAAGAAAAAAAAAAUAAAAGAAAAAAAAAAYAAAAGAAAAAAAAAAcAAAAGAAAAAAAAAAgAAAAGAAAAAAAAAAkAAAAGAAAAAAAAAAoAAAAGAAAAAAAAAAsAAAAGAAAAAAABAAsAAAAGAAAAAAACAAsAAAAGAAAAAAADAAsAAAAGAAAAAAAEAAsAAAAGAAAAAAAFAAsAAAAGAAAAAAAGAAsAAAAGAAAAAAAHAAsAAAAGAAAAAAAIAAsAAAAGAAAAAAAJAAsAAAAGAAAAAAAKAAsAAAAGAAAAAAALAAsAAAAGAAAAAAAMAAsAAAAGAAAAAAANAAsAAAAGAAAAAAAOAAsAAAAGAAAAAAAPAAsAAAAGAAAAAAAQAAsAAAAGAAAAAAARAAsAAAAGAAAAAAASAAsAAAAGAAAAAAATAAsAAAAGAAAAAAAUAAsAAAAGAAAAAAAUAAoAAAAGAAAAAAAUAAkAAAAGAAAAAAAUAAgAAAAGAAAAAAAUAAcAAAAGAAAAAAAUAAYAAAAGAAAAAAAUAAUAAAAGAAAAAAAUAAQAAAAGAAAAAAAUAAMAAAAGAAAAAAAUAAIAAAAGAAAAAAAUAAEAAAAGAAAAAAATAAEAAAAGAAAAAAATAAAAAAAGAAAAAAAUAAAAAAAGAAAAAAAVAAAAAAAGAAAAAAAVAAEAAAAGAAAAAAAVAAIAAAAGAAAAAAAVAAMAAAAGAAAAAAAVAAQAAAAGAAAAAAAVAAUAAAAGAAAAAAAVAAYAAAAGAAAAAAAVAAcAAAAGAAAAAAAVAAgAAAAGAAAAAAAVAAkAAAAGAAAAAAAVAAoAAAAGAAAAAAAVAAsAAAAGAAAAAAATAAIAAAAGAAAAAAATAAMAAAAGAAAAAAATAAQAAAAGAAAAAAATAAUAAAAGAAAAAAATAAYAAAAGAAAAAAATAAcAAAAGAAAAAAATAAgAAAAGAAAAAAATAAkAAAAGAAAAAAATAAoAAAAGAAAAAAASAAoAAAAGAAAAAAARAAoAAAAGAAAAAAAQAAoAAAAGAAAAAAAPAAoAAAAGAAAAAAAOAAoAAAAGAAAAAAANAAoAAAAGAAAAAAAMAAoAAAAGAAAAAAALAAoAAAAGAAAAAAAKAAoAAAAGAAAAAAAJAAoAAAAGAAAAAAAIAAoAAAAGAAAAAAAHAAoAAAAGAAAAAAAGAAoAAAAGAAAAAAAFAAoAAAAGAAAAAAAEAAoAAAAGAAAAAAADAAoAAAAGAAAAAAACAAoAAAAGAAAAAAABAAAAAAAGAAAAAAABAAEAAAAGAAAAAAABAAIAAAAGAAAAAAABAAMAAAAGAAAAAAABAAQAAAAGAAAAAAABAAUAAAAGAAAAAAABAAYAAAAGAAAAAAABAAcAAAAGAAAAAAABAAgAAAAGAAAAAAABAAkAAAAGAAAAAAABAAoAAAAGAAAAAAAEAAAAAAAGAAAAAAAEAAEAAAAGAAAAAAAFAAEAAAAGAAAAAAAGAAEAAAAGAAAAAAAHAAEAAAAGAAAAAAAIAAEAAAAGAAAAAAAJAAEAAAAGAAAAAAAKAAEAAAAGAAAAAAALAAEAAAAGAAAAAAAMAAEAAAAGAAAAAAANAAEAAAAGAAAAAAAOAAEAAAAGAAAAAAAPAAEAAAAGAAAAAAAQAAEAAAAGAAAAAAARAAEAAAAGAAAAAAASAAEAAAAGAAAAAAASAAAAAAAGAAAAAAARAAAAAAAGAAAAAAAQAAAAAAAGAAAAAAAPAAAAAAAGAAAAAAAOAAAAAAAGAAAAAAANAAAAAAAGAAAAAAAMAAAAAAAGAAAAAAALAAAAAAAGAAAAAAAKAAAAAAAGAAAAAAAJAAAAAAAGAAAAAAAIAAAAAAAGAAAAAAAHAAAAAAAGAAAAAAAGAAAAAAAGAAAAAAAFAAAAAAAGAAAAAAASAAkAAAAPAAQAAAA=")
+tile_set = ExtResource("1_7ah8e")
+
+[node name="Muenze" parent="." unique_id=628381877 instance=ExtResource("2_fix7m")]
+position = Vector2(99, 99)
+
+[node name="Muenze2" parent="." unique_id=1524297761 instance=ExtResource("2_fix7m")]
+position = Vector2(99, 117)
+
+[node name="Muenze3" parent="." unique_id=1234549354 instance=ExtResource("2_fix7m")]
+position = Vector2(99, 135)
+
+[node name="Muenze4" parent="." unique_id=704184451 instance=ExtResource("2_fix7m")]
+position = Vector2(99, 153)
+
+[node name="Muenze5" parent="." unique_id=1696919980 instance=ExtResource("2_fix7m")]
+position = Vector2(117, 99)
+
+[node name="Muenze6" parent="." unique_id=851317450 instance=ExtResource("2_fix7m")]
+position = Vector2(117, 117)
+
+[node name="Muenze7" parent="." unique_id=1678257719 instance=ExtResource("2_fix7m")]
+position = Vector2(117, 135)
+
+[node name="Muenze8" parent="." unique_id=2091406256 instance=ExtResource("2_fix7m")]
+position = Vector2(117, 153)
+
+[node name="Muenze9" parent="." unique_id=615773062 instance=ExtResource("2_fix7m")]
+position = Vector2(135, 99)
+
+[node name="Muenze10" parent="." unique_id=1601975438 instance=ExtResource("2_fix7m")]
+position = Vector2(135, 117)
+
+[node name="Muenze11" parent="." unique_id=790365367 instance=ExtResource("2_fix7m")]
+position = Vector2(135, 135)
+
+[node name="Muenze12" parent="." unique_id=1158898399 instance=ExtResource("2_fix7m")]
+position = Vector2(135, 153)
+
+[node name="Muenze13" parent="." unique_id=1641453919 instance=ExtResource("2_fix7m")]
+position = Vector2(153, 99)
+
+[node name="Muenze14" parent="." unique_id=1573050754 instance=ExtResource("2_fix7m")]
+position = Vector2(153, 117)
+
+[node name="Muenze15" parent="." unique_id=663183013 instance=ExtResource("2_fix7m")]
+position = Vector2(153, 135)
+
+[node name="Muenze16" parent="." unique_id=1150260172 instance=ExtResource("2_fix7m")]
+position = Vector2(153, 153)
+
+[node name="Muenze17" parent="." unique_id=1927104202 instance=ExtResource("2_fix7m")]
+position = Vector2(171, 99)
+
+[node name="Muenze18" parent="." unique_id=108536873 instance=ExtResource("2_fix7m")]
+position = Vector2(171, 117)
+
+[node name="Muenze19" parent="." unique_id=224597680 instance=ExtResource("2_fix7m")]
+position = Vector2(171, 135)
+
+[node name="Muenze20" parent="." unique_id=843273148 instance=ExtResource("2_fix7m")]
+position = Vector2(171, 153)
+
+[node name="Muenze21" parent="." unique_id=459636783 instance=ExtResource("2_fix7m")]
+position = Vector2(189, 99)
+
+[node name="Muenze22" parent="." unique_id=1729226508 instance=ExtResource("2_fix7m")]
+position = Vector2(189, 117)
+
+[node name="Muenze23" parent="." unique_id=1247552031 instance=ExtResource("2_fix7m")]
+position = Vector2(189, 135)
+
+[node name="Muenze24" parent="." unique_id=1100097257 instance=ExtResource("2_fix7m")]
+position = Vector2(189, 153)
+
+[node name="Muenze25" parent="." unique_id=1398519574 instance=ExtResource("2_fix7m")]
+position = Vector2(207, 99)
+
+[node name="Muenze26" parent="." unique_id=1363814363 instance=ExtResource("2_fix7m")]
+position = Vector2(207, 117)
+
+[node name="Muenze27" parent="." unique_id=535573753 instance=ExtResource("2_fix7m")]
+position = Vector2(207, 135)
+
+[node name="Muenze28" parent="." unique_id=1287747430 instance=ExtResource("2_fix7m")]
+position = Vector2(207, 153)
+
+[node name="Muenze29" parent="." unique_id=77216506 instance=ExtResource("2_fix7m")]
+position = Vector2(225, 99)
+
+[node name="Muenze30" parent="." unique_id=1959304785 instance=ExtResource("2_fix7m")]
+position = Vector2(225, 117)
+
+[node name="Muenze31" parent="." unique_id=1957727480 instance=ExtResource("2_fix7m")]
+position = Vector2(225, 135)
+
+[node name="Muenze32" parent="." unique_id=1111321711 instance=ExtResource("2_fix7m")]
+position = Vector2(225, 153)
+
+[node name="Muenze33" parent="." unique_id=329927081 instance=ExtResource("2_fix7m")]
+position = Vector2(243, 99)
+
+[node name="Muenze34" parent="." unique_id=822187490 instance=ExtResource("2_fix7m")]
+position = Vector2(243, 117)
+
+[node name="Muenze35" parent="." unique_id=1586848915 instance=ExtResource("2_fix7m")]
+position = Vector2(243, 135)
+
+[node name="Muenze36" parent="." unique_id=1759468395 instance=ExtResource("2_fix7m")]
+position = Vector2(243, 153)
+
+[node name="Muenze37" parent="." unique_id=1965499793 instance=ExtResource("2_fix7m")]
+position = Vector2(261, 99)
+
+[node name="Muenze38" parent="." unique_id=1793636072 instance=ExtResource("2_fix7m")]
+position = Vector2(261, 117)
+
+[node name="Muenze39" parent="." unique_id=582101299 instance=ExtResource("2_fix7m")]
+position = Vector2(261, 135)
+
+[node name="Muenze40" parent="." unique_id=770663422 instance=ExtResource("2_fix7m")]
+position = Vector2(261, 153)
+
+[node name="Muenze41" parent="." unique_id=64975154 instance=ExtResource("2_fix7m")]
+position = Vector2(279, 99)
+
+[node name="Muenze42" parent="." unique_id=1279315872 instance=ExtResource("2_fix7m")]
+position = Vector2(279, 117)
+
+[node name="Muenze43" parent="." unique_id=464260891 instance=ExtResource("2_fix7m")]
+position = Vector2(279, 135)
+
+[node name="Muenze44" parent="." unique_id=978482769 instance=ExtResource("2_fix7m")]
+position = Vector2(279, 153)
+
+[node name="Muenze45" parent="." unique_id=537973229 instance=ExtResource("2_fix7m")]
+position = Vector2(297, 99)
+
+[node name="Muenze46" parent="." unique_id=1631285760 instance=ExtResource("2_fix7m")]
+position = Vector2(297, 117)
+
+[node name="Muenze47" parent="." unique_id=132238951 instance=ExtResource("2_fix7m")]
+position = Vector2(297, 135)
+
+[node name="Muenze48" parent="." unique_id=877384497 instance=ExtResource("2_fix7m")]
+position = Vector2(297, 153)
+
+[node name="Held" parent="." unique_id=2053799237 instance=ExtResource("3_0idmp")]
+position = Vector2(55, 20)
+
+[node name="Camera2D" parent="Held" index="4" unique_id=283332041]
+limit_right = 384
+
+[node name="HUD" parent="." unique_id=1978485741 instance=ExtResource("4_pqir0")]
+
+[node name="Roehre" parent="." unique_id=1793078618 instance=ExtResource("5_43kgr")]
+position = Vector2(333, 162)
+ziel_szene = "uid://duvnp0q5q8kov"
+ausgang = Vector2(1611, 152)
+
+[editable path="Held"]

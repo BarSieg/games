@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://uf0dq84vke34"]
+
+[ext_resource type="Script" uid="uid://b6hl7gdbi2jfi" path="res://roehre.gd" id="1_a13rh"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(6, 4)
+
+[node name="Roehre" type="Area2D" unique_id=1793078618]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_a13rh")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1723565013]
+position = Vector2(0, -2)
+shape = SubResource("RectangleShape2D_s017u")
