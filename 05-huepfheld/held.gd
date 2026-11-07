@@ -102,7 +102,7 @@ func sterben() -> void:
 		await get_tree().create_timer(1.5).timeout
 		Spielstand.leben -= 1
 		if Spielstand.leben > 0:
-			get_tree().reload_current_scene()
+			get_tree().change_scene_to_file("res://start.tscn")
 		else:
 			Spielstand.meldung = "GAME OVER"
 			get_tree().change_scene_to_file("res://ende.tscn")

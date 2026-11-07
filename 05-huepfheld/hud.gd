@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-const START_TIMER = 4
+const START_TIMER = 400
 
 var time_left = START_TIMER
 

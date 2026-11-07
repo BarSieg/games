@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Hüpfheld"
-run/main_scene="uid://duvnp0q5q8kov"
+run/main_scene="uid://c8yjdsg34hbn4"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 boot_splash/bg_color=Color(0.24843347, 0.68229485, 0.7471752, 1)
 boot_splash/image="uid://t6kelti6ila6"

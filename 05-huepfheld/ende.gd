@@ -16,4 +16,4 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if bereit and event.is_action_pressed("springen"):
 		Spielstand.neues_spiel()
-		get_tree().change_scene_to_file("res://level.tscn")
+		get_tree().change_scene_to_file("res://start.tscn")
