@@ -1,6 +1,8 @@
 extends Control
 
+
 const WELT = "1-1"
+
 
 func _ready() -> void:
 	$VBoxContainer/Welt.text = "Welt " + WELT

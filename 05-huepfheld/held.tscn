@@ -105,7 +105,7 @@ script = ExtResource("1_7usdt")
 
 [node name="Bild" type="AnimatedSprite2D" parent="." unique_id=479849996]
 sprite_frames = SubResource("SpriteFrames_0orc7")
-animation = &"stehen"
+animation = &"springen"
 autoplay = "stehen"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2098115707]

@@ -3,7 +3,7 @@ extends CharacterBody2D
 
 const SPEED = 30.0
 const FALL_LIMIT = 224          # tiefer als das: in ein Loch gefallen
-const LEFT_MAX_DISTANZ = 180    #  10 Kacheln
+const LEFT_MAX_DISTANZ = 180    # 10 Kacheln hinter dem linken Bildrand
 const JUMP_VELOCITY = -190.0    # beim Sterben hochspringen
 
 var direction := -1.0   # startet nach links, dem Held entgegen

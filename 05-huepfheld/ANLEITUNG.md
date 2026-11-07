@@ -12,7 +12,8 @@ Das Projekt ist größer als Flatterfisch (die Roadmap rechnet mit 2–3 Wochen)
 5. Animationen: stehen, laufen, springen ✔
 6. Gegner: patrouillieren und plattgesprungen werden ✔
 7. Blöcke und Items: Münzen und ein Power-up ✔
-8. Ziel, Leben, Anzeige und Web-Export ← *du bist hier*
+8. Ziel, Leben, Anzeige und Web-Export ✔
+9. Bonuslevel: durch die Röhre in einen anderen Raum ← *du bist hier*
 
 ---
 
@@ -1344,7 +1345,7 @@ Für meinen eigenen Code, meine Spielfigur und meine Sounds gilt die [LICENSE](.
 
 **CC0** heißt: Kenney verzichtet auf alle Rechte, du darfst die Grafiken für alles benutzen, ohne Pflicht zur Nennung. Genannt wird er trotzdem: Das ist fair, und jeder Leser sieht sofort, welche Grafiken *nicht* von dir sind. Denn deine „Alle Rechte vorbehalten“-Lizenz kann für Kenneys Grafiken nicht gelten. Die gehören niemandem.
 
-Fertig? Committen, und Projekt 05 ist abgeschlossen. 🎉
+Fertig? Committen und Bescheid geben. Ein Kapitel kommt noch: der Bonuslevel.
 
 ### Übungsaufgaben zu Kapitel 8
 
@@ -1357,3 +1358,245 @@ Fertig? Committen, und Projekt 05 ist abgeschlossen. 🎉
    - Rutschen: `velocity.x = 0`, `velocity.y` fest auf zum Beispiel `80`, bis `is_on_floor()`.
    - Laufen: `velocity.x = SPEED`, die Animation `laufen`. Hinter dem Häuschen versteckst du ihn mit `visible = false`.
    - Bonus: Je höher er die Stange trifft, desto mehr Punkte. Den Treffpunkt kennst du: `position.y` beim Berühren.
+
+---
+
+## Kapitel 9: Bonuslevel
+
+Bei Mario kann man in manche Röhren hinabsteigen. Unten wartet ein dunkler Raum voller Münzen, und durch eine zweite Röhre kommt man weiter hinten im Level wieder heraus. Genau das baust du in diesem Kapitel.
+
+Technisch ist das ein **Raumwechsel**: von einer Szene in eine andere und wieder zurück, ohne dass etwas verloren geht. In Zelda wird daraus ein ganzer Dungeon aus Räumen, und dafür ist dieses Kapitel die Vorübung.
+
+### 9.1 Was überlebt welchen Wechsel?
+
+Bisher gab es zwei Wechsel: Tod (Start-Bildschirm, dann der Level von vorn) und neues Spiel. Jetzt kommt die Röhre dazu, und die soll *anders* sein. Wer aus dem Bonusraum zurückkommt, darf weder die Zeit noch das Power-up verlieren.
+
+| Wert | Neues Spiel | Tod | Röhre |
+|---|---|---|---|
+| Leben | 3 | eins weniger | bleibt |
+| Münzen | 0 | bleibt | bleibt |
+| Zeit | 400 | 400 | **bleibt** |
+| Stark | nein | nein | **bleibt** |
+| Startpunkt | Levelanfang | Levelanfang | **Ausgangsröhre** |
+
+Alles, was einen Szenenwechsel überleben soll, muss in den Autoload. Die Zeit steht im Moment im HUD, `stark` steht im Held, und beide werden beim Wechsel gelöscht. Sie ziehen also um in `spielstand.gd`:
+
+```gdscript
+const START_ZEIT = 400.0
+
+var zeit := START_ZEIT
+var stark := false
+var rueckkehr := Vector2.ZERO   # wo der Held nach einer Röhre auftaucht, ZERO heißt: am Levelanfang
+```
+
+```gdscript
+# Alles auf Anfang, für ein neues Spiel
+func neues_spiel() -> void:
+	leben = START_LEBEN
+	muenzen = 0
+	neuer_versuch()
+
+
+# Nach einem Tod: Zeit und Kraft zurück, Start am Levelanfang
+func neuer_versuch() -> void:
+	zeit = START_ZEIT
+	stark = false
+	rueckkehr = Vector2.ZERO
+```
+
+`neues_spiel()` ruft `neuer_versuch()` auf, denn ein neues Spiel setzt alles zurück, was ein Tod auch zurücksetzt, und noch mehr.
+
+In `held.gd` in `sterben()` gleich nach `Spielstand.leben -= 1`:
+
+```gdscript
+		Spielstand.neuer_versuch()
+```
+
+Im `hud.gd` zählt die Uhr jetzt im Spielstand. `time_left` und `START_TIMER` fallen weg:
+
+```gdscript
+	if Spielstand.zeit > 0:
+		Spielstand.zeit -= delta
+	else:
+		get_tree().call_group("held", "sterben")
+	$Timer.text = "%03d" % Spielstand.zeit
+```
+
+`stark` bleibt im Held, denn dort wird es ständig gebraucht. Nur beim Wechsel wird es übergeben: Der Held schreibt es vor dem Abstieg in den Spielstand (9.3) und liest es in `_ready()` wieder heraus (9.4).
+
+### 9.2 Eine Taste für „runter“
+
+*Project Settings* → **Input Map** → neue Aktion `runter`:
+- Pfeil runter und `S`
+- Gamepad: D-Pad runter (*Joypad Button* 12) und der linke Stick nach unten (*Joypad Axis* 1, positiv)
+
+### 9.3 Die Röhre zum Hineingehen
+
+Die Röhren sind Kacheln im `Boden`, und Kacheln haben kein Skript. Also kommt wieder eine unsichtbare Fläche obendrauf, wie beim Ziel.
+
+1. *Scene → New Scene* → `Area2D` → umbenennen in `Roehre`. **Layer:** keine, **Mask:** nur `2`.
+2. Eine `CollisionShape2D` als flaches Rechteck, etwa **10 × 4**, bei Position `0, -2`. Damit liegt die Unterkante der Form genau am Ursprung der Szene. Später setzt du die `Roehre` mit ihrem Ursprung auf die Oberkante einer Röhren-Kachel. Die Form ist schmaler als die Röhre, so muss der Held ungefähr mittig stehen.
+3. Speichern als `roehre.tscn`. Skript `roehre.gd`:
+
+```gdscript
+extends Area2D
+
+
+@export_file("*.tscn") var ziel_szene: String
+@export var ausgang := Vector2.ZERO   # wo der Held in der Ziel-Szene herauskommt, ZERO: wo er dort steht
+
+
+func _physics_process(_delta: float) -> void:
+	if not Input.is_action_pressed("runter"):
+		return
+	for body in get_overlapping_bodies():
+		if body.is_on_floor():
+			Spielstand.rueckkehr = ausgang
+			body.roehre_betreten(ziel_szene)
+```
+
+- **`@export_file("*.tscn")`** ist ein `@export` für einen Dateipfad. Im Inspector erscheint ein Ordner-Symbol, über das du die Szene auswählst, statt den Pfad abzutippen.
+- **Jedes Bild prüfen statt `body_entered`:** Diese Lehre kennst du von den Gegnern. Der Held steht oft schon auf der Röhre, *bevor* er runter drückt. Das Signal wäre dann längst vorbei.
+- **`is_on_floor()`:** Im Sprung über die Röhre hinweg zählt es nicht.
+
+Jetzt der Held. Oben bei den Konstanten:
+
+```gdscript
+const ROEHRE_TIEFE = 24.0         # so tief verschwindet der Held in der Röhre
+const ROEHRE_ZEIT = 0.8           # so lange dauert das Hinab- und Heraussteigen
+```
+
+Bei den Variablen:
+
+```gdscript
+var in_roehre := false
+```
+
+Und die Funktion:
+
+```gdscript
+# In eine Röhre hinabsteigen, dann in eine andere Szene
+func roehre_betreten(szene: String) -> void:
+	if in_roehre or tot or im_ziel:
+		return
+	in_roehre = true
+	set_physics_process(false)
+	z_index = -1
+	$Bild.play("stehen")
+	$Schaden.play()
+	var tween := create_tween()
+	tween.tween_property(self, "position:y", position.y + ROEHRE_TIEFE, ROEHRE_ZEIT)
+	await tween.finished
+	Spielstand.stark = stark
+	get_tree().change_scene_to_file(szene)
+```
+
+- **`set_physics_process(false)`:** Ohne `_physics_process` gibt es keine Schwerkraft, keine Steuerung und kein `move_and_slide()`. Der Held bewegt sich nur noch durch den Tween und sinkt dabei auch durch die Röhren-Kachel. Das klappt, weil nur `move_and_slide()` auf Kollisionen achtet. Ein Tween setzt die Position einfach.
+- **`z_index = -1`** schiebt den Held hinter die Kacheln, er verschwindet *in* der Röhre. Das ist derselbe Trick wie beim Power-up.
+- **`await tween.finished`:** Ein Tween hat ein Signal, wenn er fertig ist. Bisher hast du mit `tween_callback` etwas ans Ende gehängt, `await` geht genauso.
+- **`$Schaden.play()`:** Bei Mario klingt die Röhre tatsächlich genauso wie ein Treffer. Wenn du willst, kannst du dir mit 🆓 jsfxr einen eigenen Ton machen.
+
+Damit ein Gegner den Held in der Röhre nicht noch erwischt, kommt `in_roehre` in die erste Zeile von `getroffen()`:
+
+```gdscript
+	if unverwundbar > 0 or im_ziel or in_roehre:
+		return
+```
+
+### 9.4 Aus der Röhre wieder herauskommen
+
+Kommt der Held im Level aus dem Bonusraum zurück, wird `level.tscn` neu geladen. Ohne weitere Hilfe stünde er dann am Levelanfang. Deshalb steht in `Spielstand.rueckkehr` der Punkt, an dem er auftauchen soll. Der Held schaut in `_ready()` nach:
+
+```gdscript
+func _ready() -> void:
+	stark = Spielstand.stark
+	if stark:
+		$Bild.modulate = Color(1, 0.8, 0.3)   # golden
+	if Spielstand.rueckkehr != Vector2.ZERO:
+		roehre_verlassen(Spielstand.rueckkehr)
+		Spielstand.rueckkehr = Vector2.ZERO   # nur einmal, beim nächsten Tod geht es wieder vom Anfang los
+	$Camera2D.reset_smoothing()
+```
+
+```gdscript
+# Aus einer Röhre nach oben herauskommen
+func roehre_verlassen(ausgang: Vector2) -> void:
+	in_roehre = true
+	set_physics_process(false)
+	z_index = -1
+	position = ausgang + Vector2(0, ROEHRE_TIEFE)
+	$Schaden.play()
+	var tween := create_tween()
+	tween.tween_property(self, "position:y", ausgang.y, ROEHRE_ZEIT)
+	await tween.finished
+	z_index = 0
+	set_physics_process(true)
+	in_roehre = false
+```
+
+Es ist dieselbe Bewegung wie beim Hinabsteigen, nur rückwärts: unten in der Röhre anfangen und nach oben steigen.
+
+Jetzt wird auch das `reset_smoothing()` aus Kapitel 4 wieder wichtig. Es steht **nach** dem Versetzen, damit die Kamera sofort an der Ausgangsröhre ist, statt vom Levelanfang durch den halben Level zu gleiten. „Kein Zurück“ funktioniert danach von allein: `limit_left` wird im ersten Bild an die neue Bildkante gesetzt.
+
+### 9.5 Der Bonusraum
+
+Zuerst zwei Vorbereitungen in `level.tscn`, damit du Teile wiederverwenden kannst:
+
+1. **Das TileSet als Datei:** Im Moment steckt es *in* `level.tscn`, und eine andere Szene kommt nicht heran. Wähl `Boden` → im Inspector beim **Tile Set** auf den Pfeil → **Save As…** → `kacheln.tres`. Dasselbe Prinzip wie bei `schrift.tres`.
+2. **Das HUD als eigene Szene:** Rechtsklick auf `HUD` → **Save Branch as Scene** → `hud.tscn`. Im Level ändert sich nichts, aber jetzt kannst du das HUD auch woanders einsetzen.
+3. **Die Gruppe `held`** steht im Moment an der Held-*Instanz* in `level.tscn`. Im Bonusraum gäbe es sie nicht, und die Uhr könnte den Held dort nicht erreichen. Nimm sie in `level.tscn` heraus (Node → Groups) und füge sie in `held.tscn` am `Held` selbst hinzu. Dann hat jeder Held die Gruppe, egal wo er steht.
+
+Jetzt der Raum:
+
+1. *Scene → New Scene* → **2D Scene** → umbenennen in `Bonus`. Speichern als `bonus.tscn`.
+2. Ein `ColorRect` namens `Dunkel` als erstes Kind, Position `0, 0`, Größe `384 × 216`, Farbe ein dunkles Blau oder Schwarz. Als erstes Kind wird es zuerst gezeichnet, also hinter allem.
+3. Eine `TileMapLayer` namens `Boden` mit **Tile Set** `kacheln.tres`. Mal einen Raum von einem Bildschirm: Boden unten, Wände links und rechts. Rechts kommt eine Röhre hin, das ist der Ausgang. Wenn es im Kachelblatt dunklere Steine gibt, passen sie gut zum Keller-Gefühl.
+4. Münzen: Zieh `muenze.tscn` hinein und vervielfältige sie mit **Ctrl+D**, zum Beispiel als Block von 3 Reihen mal 7.
+5. Der Held: Zieh `held.tscn` links oben hinein. Er fällt beim Start herunter, wie bei Mario. Seine Kamera hat noch die Grenzen vom langen Level. Rechtsklick auf die Instanz → **Editable Children** → `Camera2D` → **Limit → Right** `384`. Jetzt steht die Kamera still.
+6. Das HUD: `hud.tscn` hineinziehen.
+7. Der Ausgang: `roehre.tscn` auf die Oberkante der Röhre rechts setzen.
+
+### 9.6 Die Röhren verbinden
+
+Zwei Röhren brauchen Einstellungen:
+
+**Im Level, der Eingang:** Such dir eine Röhre aus und setz eine `roehre.tscn` darauf. **Ziel Szene:** `bonus.tscn`. **Ausgang** bleibt `0, 0`: Im Bonusraum taucht der Held dort auf, wo er in `bonus.tscn` steht.
+
+**Im Bonusraum, der Ausgang:** **Ziel Szene:** `level.tscn`. **Ausgang:** die Stelle auf der Ausgangsröhre im Level, an der der Held stehen soll. Diese Koordinate musst du ablesen. Am einfachsten geht das so:
+1. In `level.tscn` den `Held` auf die Ausgangsröhre ziehen.
+2. Im Inspector die **Position** ablesen.
+3. Mit **Ctrl+Z** zurück.
+
+So stimmt auch die Höhe, denn der Ursprung des Helden liegt in der Mitte seines Körpers, nicht an den Füßen.
+
+**Wohin mit der Ausgangsröhre?** Weiter hinten im Level, und zwar **mehr als einen Bildschirm** hinter dem Eingang. Dann ist der Eingang beim Herauskommen schon links aus dem Bild, und „Kein Zurück“ verhindert, dass man noch einmal hinunter kann und sich die Münzen ein zweites Mal holt.
+
+### 9.7 Ausprobieren
+
+**F5**:
+- Auf die Eingangsröhre stellen, runter drücken. Der Held sinkt ein, im Bonusraum fällt er von oben herein.
+- Münzen sammeln, der Zähler zählt weiter.
+- Die Uhr läuft weiter und fängt nicht bei 400 an.
+- Auf die Ausgangsröhre, runter. Der Held steigt im Level aus der Ausgangsröhre, und die Kamera ist sofort da.
+- Mit Power-up hineingehen: Kommt er golden zurück?
+- Nach dem Bonusraum sterben: Der nächste Versuch beginnt am Levelanfang.
+
+Eins wird dir auffallen: Nach dem Bonusraum sind im Level alle Gegner und Blöcke wieder da, auch die schon erledigten. Der Level wird ja neu geladen. Bei Mario passiert das nicht. Wie man das löst, ist die knifflige Übung.
+
+Zum Schluss: Exportiere das Spiel neu (*Project → Export → Export Project*) und teste den Bonusraum auch im Browser.
+
+Fertig? Committen, und Projekt 05 ist abgeschlossen. 🎉
+
+### Übungsaufgaben zu Kapitel 9
+
+1. **Die Uhr im Ziel (leicht):** Bei Mario bleibt die Uhr stehen, sobald man die Fahne berührt. Bei uns läuft sie weiter. Läuft sie während der Fahnen-Animation ab, ruft das HUD `sterben()` auf, obwohl der Held im Ziel ist. Halte die Uhr an. Tipp: `get_tree().get_first_node_in_group("held")` liefert den Held, dann kannst du `im_ziel` fragen. Bonus: Bei Mario wird die Restzeit am Ende in Punkte umgerechnet.
+2. **Nur einmal hinein (leicht):** Falls man doch noch zurück zum Eingang kommt, soll die Röhre beim zweiten Mal nicht mehr funktionieren. Merk dir in `Spielstand`, dass der Bonusraum besucht wurde. Wann muss dieser Wert zurückgesetzt werden: bei einem Tod, bei einem neuen Spiel oder bei beidem?
+3. **Seitliche Röhre (mittel):** Bei Mario verlässt man den Bonusraum durch eine Röhre, die zur Seite zeigt: hinlaufen und **rechts** drücken. Gib der `Roehre` ein `enum Richtung { UNTEN, RECHTS }` als `@export`. Bei `RECHTS` prüft sie die Aktion `rechts`, und der Held gleitet waagerecht hinein, mit `position:x` statt `position:y`. Wie sagst du `roehre_betreten()`, in welche Richtung es gehen soll?
+4. **Musik im Keller (mittel):** Mach mit 🆓 BeepBox eine kurze, dunkle Schleife für den Bonusraum. Häng einen `AudioStreamPlayer` mit **Autoplay** an `Bonus`. Damit die Musik in Schleife läuft: im FileSystem die WAV-Datei auswählen → Tab **Import** → **Loop Mode** auf `Forward` → **Reimport**.
+5. **Erledigt bleibt erledigt (knifflig):** Nach dem Bonusraum sollen besiegte Gegner weg und leere Blöcke leer bleiben. Tipps:
+   - Jeder Node im Level hat einen eindeutigen Namen (`Gegner3`, `Block7`). Merk dir die erledigten in einer Liste in `Spielstand`: `var erledigt: Array[String] = []`.
+   - Ein Gegner trägt beim Plattmachen seinen `name` ein. In `_ready()` prüft er: Steht er in der Liste, dann `queue_free()`.
+   - Bei einem Block mit mehreren Münzen reicht der Name nicht, dort zählt die Zahl der übrigen Münzen. Ein `Dictionary` kann zu jedem Namen einen Wert speichern: `var bloecke := {}` und `Spielstand.bloecke[name] = muenzen`.
+   - Wann muss die Liste geleert werden?
+
+   Das ist im Kleinen genau das, was in Zelda **Speichern und Laden** heißt.

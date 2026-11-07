@@ -238,7 +238,3 @@ func ziel_erreicht() -> void:
 				state = ZielStates.FERTIG
 				Spielstand.meldung = "GESCHAFFT!"
 				get_tree().change_scene_to_file("res://ende.tscn")
-
-
-func _on_flagge_hochziehen(hoehe: float) -> void:
-	pass # Replace with function body.
