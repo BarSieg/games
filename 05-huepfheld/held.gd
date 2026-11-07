@@ -1,5 +1,8 @@
 extends CharacterBody2D
 
+enum ZielStates { STANGE, LAUF, SPRUNG, FERTIG }
+
+signal flagge_hochziehen(hoehe: float)
 
 const SPEED = 100.0
 const RUN_SPEED = 160.0
@@ -22,6 +25,7 @@ const CAMERA_TURN_SPEED = 60.0    # Pixel pro Sekunde, die die Kamera umschwenkt
 const BRAKE_SHOW_TIME = 0.15      # so lange bleibt das Bremsbild mindestens stehen
 const STOMP_BOUNCE = -220.0       # so hoch prallt der Held vom Gegner ab
 const INVINCIBLE_TIME = 1.5       # so lange ist der Held nach einem Treffer unverwundbar
+const FLAGGE_TOP = 45.0           # so hoch ist die Stange
 
 var coyote_timer := 0.0
 var jump_buffer_timer := 0.0
@@ -111,7 +115,8 @@ func sterben() -> void:
 func _physics_process(delta: float) -> void:
 	var gravity := get_gravity()
 	if im_ziel or tot:
-		velocity += gravity * delta
+		if tot:
+			velocity += gravity * delta
 		move_and_slide()
 		return
 
@@ -207,8 +212,33 @@ func ziel_erreicht() -> void:
 	if im_ziel or tot:
 		return
 	im_ziel = true
-	velocity.x = 0
-	$Bild.play("stehen")
-	await get_tree().create_timer(3.0).timeout
-	Spielstand.meldung = "GESCHAFFT!"
-	get_tree().change_scene_to_file("res://ende.tscn")
+	var landung := position
+	velocity = Vector2(0, 60)
+	var state := ZielStates.STANGE
+	while state != ZielStates.FERTIG:
+		match state:
+			ZielStates.STANGE:
+				$Bild.play("bremsen")
+				await get_tree().create_timer(0.1).timeout
+				flagge_hochziehen.emit(position.y - landung.y)
+				if is_on_floor():
+					state = ZielStates.LAUF
+					velocity = Vector2(SPEED, 0)
+			ZielStates.LAUF:
+				$Bild.play("laufen")
+				await get_tree().create_timer(0.1).timeout
+				if position.x > landung.x + 100:
+					state = ZielStates.SPRUNG
+					velocity = Vector2(0, JUMP_VELOCITY)
+			ZielStates.SPRUNG:
+				$Bild.play("springen")
+				await get_tree().create_timer(0.3).timeout
+				visible = false
+				await get_tree().create_timer(1.2).timeout
+				state = ZielStates.FERTIG
+				Spielstand.meldung = "GESCHAFFT!"
+				get_tree().change_scene_to_file("res://ende.tscn")
+
+
+func _on_flagge_hochziehen(hoehe: float) -> void:
+	pass # Replace with function body.
