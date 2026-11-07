@@ -12,7 +12,7 @@ var ton := AudioStreamPlayer.new()
 var zeit := START_ZEIT
 var stark := false
 var rueckkehr := Vector2.ZERO   # wo der Held nach einer Röhre auftaucht, ZERO heißt: am Levelanfang
-
+var bonus := false
 
 # Den Ton für das Extraleben einrichten und anhängen
 func _ready() -> void:
@@ -24,6 +24,7 @@ func _ready() -> void:
 func neues_spiel() -> void:
 	leben = START_LEBEN
 	muenzen = 0
+	bonus = false
 	neuer_versuch()
 
 

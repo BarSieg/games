@@ -99,7 +99,7 @@ size = Vector2(12, 15)
 [sub_resource type="Gradient" id="Gradient_xw2dj"]
 colors = PackedColorArray(0.9882353, 0.9882353, 0.99607843, 1, 1, 1, 1, 0)
 
-[node name="Held" type="CharacterBody2D" unique_id=2053799237]
+[node name="Held" type="CharacterBody2D" unique_id=2053799237 groups=["held"]]
 collision_layer = 2
 script = ExtResource("1_7usdt")
 
