@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://c3lcab1dxdqb5" path="res://block.tscn" id="6_1ainy"]
 [ext_resource type="PackedScene" uid="uid://ol6kg1fiisr3" path="res://hud.tscn" id="8_aicyk"]
 [ext_resource type="PackedScene" uid="uid://uf0dq84vke34" path="res://roehre.tscn" id="9_aicyk"]
+[ext_resource type="AudioStream" uid="uid://8sds4klcw7n" path="res://musik_level.wav" id="13_8b0r0"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_f2txt"]
 texture = ExtResource("1_u52ul")
@@ -508,7 +509,7 @@ color_initial_ramp = SubResource("Gradient_0orc7")
 
 [node name="Deco" type="TileMapLayer" parent="." unique_id=95967495]
 z_index = -1
-tile_map_data = PackedByteArray("AAAIAAkAAAAEAAYAAAAEAAkAAAAIAAQAAAAWAAkAAAANAAQAAAAXAAkAAAAOAAQAAAAZAAkAAAAFAAYAAABKAAkAAAAIAAQAAABEAAkAAAAFAAYAAAA8AAkAAAAEAAYAAAAsAAkAAAAEAAYAAABiAAkAAAAFAAYAAABrAAkAAAAEAAYAAABnAAkAAAAOAAQAAABmAAkAAAANAAQAAACcAAkAAAAEAAYAAAC9AAkAAAAFAAYAAADdAAkAAAAEAAYAAADoAAkAAAAIAAQAAADpAAkAAAAIAAQAAAAJAAEAAAALAAgAAAALAAEAAAALAAgAAAAKAAEAAAARAAcAAADhAAkAAAAFAAYAAADMAAkAAAAEAAYAAACnAAkAAAAEAAYAAAD7AAkAAAAEAAYAAAAMAQkAAAAEAAYAAAABAAkAAAAPAAQAAAAQAQIAAAALAAYAAAAQAQMAAAALAAYAAAAQAQQAAAALAAYAAAAQAQUAAAALAAYAAAAQAQYAAAALAAYAAAAQAQcAAAALAAYAAAAQAQgAAAALAAYAAAAQAQkAAAALAAYAAAA=")
+tile_map_data = PackedByteArray("AAAIAAkAAAAEAAYAAAAEAAkAAAAIAAQAAAAWAAkAAAANAAQAAAAXAAkAAAAOAAQAAAAZAAkAAAAFAAYAAABKAAkAAAAIAAQAAABEAAkAAAAFAAYAAAA8AAkAAAAEAAYAAAAsAAkAAAAEAAYAAABiAAkAAAAFAAYAAABrAAkAAAAEAAYAAABnAAkAAAAOAAQAAABmAAkAAAANAAQAAACcAAkAAAAEAAYAAAC9AAkAAAAFAAYAAADdAAkAAAAEAAYAAADoAAkAAAAIAAQAAADpAAkAAAAIAAQAAADhAAkAAAAFAAYAAADMAAkAAAAEAAYAAACnAAkAAAAEAAYAAAD7AAkAAAAEAAYAAAAMAQkAAAAEAAYAAAABAAkAAAAPAAQAAAAQAQIAAAALAAYAAAAQAQMAAAALAAYAAAAQAQQAAAALAAYAAAAQAQUAAAALAAYAAAAQAQYAAAALAAYAAAAQAQcAAAALAAYAAAAQAQgAAAALAAYAAAAQAQkAAAALAAYAAACKAAkAAAAPAAQAAAA=")
 tile_set = SubResource("TileSet_0orc7")
 
 [node name="Ziel" type="Area2D" parent="." unique_id=1040420798]
@@ -648,6 +649,11 @@ typ = 2
 [node name="Block15" parent="." unique_id=350250089 instance=ExtResource("6_1ainy")]
 position = Vector2(3087, 117)
 typ = 2
+
+[node name="Musik" type="AudioStreamPlayer" parent="." unique_id=1091770255]
+stream = ExtResource("13_8b0r0")
+volume_db = -5.0
+autoplay = true
 
 [connection signal="flagge_hochziehen" from="Held" to="Flagge" method="_on_held_flagge_hochziehen"]
 [connection signal="body_entered" from="Ziel" to="Ziel" method="_on_body_entered"]

@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://bfa3ccrbrl0ja" path="res://held.tscn" id="3_0idmp"]
 [ext_resource type="PackedScene" uid="uid://ol6kg1fiisr3" path="res://hud.tscn" id="4_pqir0"]
 [ext_resource type="PackedScene" uid="uid://uf0dq84vke34" path="res://roehre.tscn" id="5_43kgr"]
+[ext_resource type="AudioStream" uid="uid://dhh1d5cbxxkrd" path="res://musik_bonus.wav" id="6_pqir0"]
 
 [node name="Bonus" type="Node2D" unique_id=1452034661]
 
@@ -25,7 +26,6 @@ position = Vector2(340, 173)
 eingangsrichtung = 1
 ziel_szene = "uid://duvnp0q5q8kov"
 ausgang = Vector2(1611, 152)
-nur_ein_mal_betreten = null
 
 [node name="Held" parent="." unique_id=2053799237 instance=ExtResource("3_0idmp")]
 position = Vector2(55, 20)
@@ -176,5 +176,10 @@ position = Vector2(297, 135)
 
 [node name="Muenze48" parent="." unique_id=877384497 instance=ExtResource("2_fix7m")]
 position = Vector2(297, 153)
+
+[node name="Musik" type="AudioStreamPlayer" parent="." unique_id=304554132]
+stream = ExtResource("6_pqir0")
+volume_db = -5.0
+autoplay = true
 
 [editable path="Held"]
