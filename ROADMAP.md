@@ -96,6 +96,7 @@ Jetzt kommt die erste echte Engine. Du wirst merken, wie viel schneller es geht,
 ### 06 · Zelda – erster Dungeon (3–4 Wochen)
 - **Du lernst:** **State Machines** (Gegner: Patrouille → Verfolgen → Angriff), Top-Down-Steuerung, Inventar, Schlüssel & verschlossene Türen, Dialoge, **Speichern und Laden**, Raumwechsel
 - **Neue Tools:** 🆓 **Krita** (zum Malen, z. B. Titelbild), 🆓 **LMMS** oder 🆓 **BeepBox** (Musik machen)
+- **Die Welt merkt sich Erledigtes:** Truhen bleiben offen, Türen bleiben auf, besiegte Bosse kommen nicht wieder, auch wenn man den Raum verlässt. Dazu Speichern in eine Datei. (Bei Hüpfheld war das unnötig: Die Kamera lässt den Helden nicht zurück.)
 - **Warum wichtig für DOOM:** Gegner-KI als State Machine, Keycards und Türen – das brauchst du 1:1 wieder
 
 ### 07 · Vampire Survivors (light) (≈ 2 Wochen)

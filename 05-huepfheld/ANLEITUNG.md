@@ -1593,10 +1593,3 @@ Fertig? Committen, und Projekt 05 ist abgeschlossen. 🎉
 2. **Nur einmal hinein (leicht):** Falls man doch noch zurück zum Eingang kommt, soll die Röhre beim zweiten Mal nicht mehr funktionieren. Merk dir in `Spielstand`, dass der Bonusraum besucht wurde. Wann muss dieser Wert zurückgesetzt werden: bei einem Tod, bei einem neuen Spiel oder bei beidem?
 3. **Seitliche Röhre (mittel):** Bei Mario verlässt man den Bonusraum durch eine Röhre, die zur Seite zeigt: hinlaufen und **rechts** drücken. Gib der `Roehre` ein `enum Richtung { UNTEN, RECHTS }` als `@export`. Bei `RECHTS` prüft sie die Aktion `rechts`, und der Held gleitet waagerecht hinein, mit `position:x` statt `position:y`. Wie sagst du `roehre_betreten()`, in welche Richtung es gehen soll?
 4. **Musik im Keller (mittel):** Mach mit 🆓 BeepBox eine kurze, dunkle Schleife für den Bonusraum. Häng einen `AudioStreamPlayer` mit **Autoplay** an `Bonus`. Damit die Musik in Schleife läuft: im FileSystem die WAV-Datei auswählen → Tab **Import** → **Loop Mode** auf `Forward` → **Reimport**.
-5. **Erledigt bleibt erledigt (knifflig):** Nach dem Bonusraum sollen besiegte Gegner weg und leere Blöcke leer bleiben. Tipps:
-   - Jeder Node im Level hat einen eindeutigen Namen (`Gegner3`, `Block7`). Merk dir die erledigten in einer Liste in `Spielstand`: `var erledigt: Array[String] = []`.
-   - Ein Gegner trägt beim Plattmachen seinen `name` ein. In `_ready()` prüft er: Steht er in der Liste, dann `queue_free()`.
-   - Bei einem Block mit mehreren Münzen reicht der Name nicht, dort zählt die Zahl der übrigen Münzen. Ein `Dictionary` kann zu jedem Namen einen Wert speichern: `var bloecke := {}` und `Spielstand.bloecke[name] = muenzen`.
-   - Wann muss die Liste geleert werden?
-
-   Das ist im Kleinen genau das, was in Zelda **Speichern und Laden** heißt.
