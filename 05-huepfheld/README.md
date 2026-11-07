@@ -12,6 +12,7 @@ Dieses Spiel habe ich auch selbst im Editor gebaut, Kapitel für Kapitel. Wie es
 **Steuerung:**
 - **Tastatur:** Links/A und Rechts/D: Laufen · Leertaste/W: Springen · Shift: Schneller laufen · Nach Game Over: Leertaste für ein neues Spiel
 - **Xbox-Controller:** Links und Rechts (Stick oder D-Pad): Laufen · A: Springen · LT: Schneller laufen · Nach Game Over: A für ein neues Spiel
+- **Handy und Tablet:** Steuerkreuz links: Laufen · A: Springen · B: Schneller laufen · Nach Game Over: A für ein neues Spiel
 
 ## Was ich gelernt habe
 - **Tilemap:** Eine PNG-Datei enthält mehrere Grafiken, die als Kacheln zusammengesetzt werden können. So kann der Level als Raster aufgebaut werden.

@@ -15,10 +15,11 @@ var stark := false
 var rueckkehr := Vector2.ZERO   # wo der Held nach einer Röhre auftaucht, ZERO heißt: am Levelanfang
 var bonus := false
 
-# Den Ton für das Extraleben einrichten und anhängen
+# Den Ton für das Extraleben einrichten und anhängen, dazu die Touch-Knöpfe fürs Handy
 func _ready() -> void:
 	ton.stream = EXTRA_LEBEN_TON
 	add_child(ton)
+	add_child(preload("res://touch.gd").new())
 
 
 # Alles auf Anfang, für ein neues Spiel
