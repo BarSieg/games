@@ -190,9 +190,13 @@ func _physics_process(delta: float) -> void:
 	velocity.x = move_toward(velocity.x, direction * max_speed, accel * delta)
 	$Bild.speed_scale = abs(velocity.x) / SPEED
 
-	# Kein Zurück für die Kamera
+	# Kein Zurück für die Kamera. Gerechnet wird mit dem Ziel der Kamera (Held + Vorausschau),
+	# nicht mit ihrer geglätteten Position: Die kann auf langsamen Handys übers Ziel hinausschießen.
+	# Und nie weiter, als der rechte Rand zulässt (wichtig im kurzen Bonusraum).
 	var halbe_breite := get_viewport_rect().size.x / 2
-	$Camera2D.limit_left = max($Camera2D.limit_left, $Camera2D.get_screen_center_position().x - halbe_breite)
+	var linker_rand: float = global_position.x + $Camera2D.position.x - halbe_breite
+	linker_rand = min(linker_rand, $Camera2D.limit_right - 2 * halbe_breite)
+	$Camera2D.limit_left = max($Camera2D.limit_left, int(linker_rand))
 	# Kamera schwenkt langsam in Laufrichtung
 	$Camera2D.position.x = move_toward($Camera2D.position.x, camera_target_x, CAMERA_TURN_SPEED * delta)
 
