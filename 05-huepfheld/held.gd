@@ -192,7 +192,7 @@ func _physics_process(delta: float) -> void:
 
 # Eine Muenze eingesammelt
 func muenze_einsammeln() -> void:
-	Spielstand.muenzen += 1
+	Spielstand.muenze_sammeln()
 	$MuenzeTon.pitch_scale = randf_range(0.9, 1.1)
 	$MuenzeTon.play()
 

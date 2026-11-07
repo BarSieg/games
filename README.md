@@ -15,6 +15,7 @@ Alle Spiele laufen direkt im Browser, ohne Installation und ohne Bibliotheken. S
 | 02 | [Insekteninvasion](02-insekteninvasion/) | Eine Insekten-Formation abwehren, hinter zerbröselnder Deckung | Sprites, Sprite-Animation, Pixel-Kollision, eigene Grafik und Sounds |
 | 03 | [Weltraumsteine](03-weltraumsteine/) | Mit Schub und Trägheit durchs Asteroidenfeld | Vektoren, Rotation mit sin/cos, Trägheit, Kreis-Kollision |
 | 04 | [Flatterfisch](04-flatterfisch/web/) | Ein Fisch zwischen Korallen | Das erste Spiel mit der Godot-Engine |
+| 05 | [Hüpfheld](05-huepfheld/web/) | Jump’n’Run: Laufen, springen, Gegner plattmachen | Bewegliche Gegner, Kamera, Tween Animation |
 
 Jeder Ordner hat eine eigene `README.md` mit Steuerung, Lernnotizen und Übungsaufgaben.
 
