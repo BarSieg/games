@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://cey7qqoxo4xqn"]
+
+[ext_resource type="Script" uid="uid://coewl4wcfkh3o" path="res://held.gd" id="1_7usdt"]
+[ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="2_xw2dj"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(10, 6)
+
+[node name="Held" type="CharacterBody2D" unique_id=1612745786]
+collision_layer = 2
+motion_mode = 1
+script = ExtResource("1_7usdt")
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=971135696]
+texture = ExtResource("2_xw2dj")
+hframes = 12
+vframes = 11
+frame = 85
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=400025648]
+position = Vector2(0, 5)
+shape = SubResource("RectangleShape2D_s017u")
