@@ -3,6 +3,7 @@
 [ext_resource type="TileSet" uid="uid://b4w0q7q16jkae" path="res://kacheln.tres" id="1_uli7q"]
 [ext_resource type="PackedScene" uid="uid://cey7qqoxo4xqn" path="res://held.tscn" id="2_hro6a"]
 [ext_resource type="PackedScene" uid="uid://rfqtsgcksg4l" path="res://saeule.tscn" id="3_8pwu0"]
+[ext_resource type="PackedScene" uid="uid://b7lsyt27fn45e" path="res://topf.tscn" id="4_8mj5u"]
 
 [node name="Raum" type="Node2D" unique_id=964547647]
 y_sort_enabled = true
@@ -27,3 +28,13 @@ position = Vector2(40, 40)
 
 [node name="Saeule2" parent="." unique_id=343907575 instance=ExtResource("3_8pwu0")]
 position = Vector2(72, 40)
+
+[node name="Topf" parent="." unique_id=404548848 instance=ExtResource("4_8mj5u")]
+position = Vector2(200, 136)
+
+[node name="Topf2" parent="." unique_id=1027663443 instance=ExtResource("4_8mj5u")]
+position = Vector2(232, 24)
+bewohnt = true
+
+[node name="Topf3" parent="." unique_id=1486422539 instance=ExtResource("4_8mj5u")]
+position = Vector2(232, 136)

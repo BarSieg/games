@@ -1,15 +1,20 @@
 extends CharacterBody2D
 
+enum Zustand { LAUFEN, ANGRIFF }
 
 const SPEED = 80.0
 const BESCHLEUNIGUNG = 1200.0   # Pixel pro Sekunde², volle Geschwindigkeit nach 1/15 Sekunde
 const ECKEN_HILFE = 6         # so viele Pixel neben einer Lücke hilft der Held noch nach
 const ECKEN_TEMPO = 60.0      # so schnell rutscht er dabei zur Seite
-const UNGEDULDIG_MIN = 60     # so viele Sekunden wartet der Held ruhig
-const UNGEDULDIG_MAX = 360    # ab so vielen Sekunden wird der Held ganz unruhig
+const UNGEDULDIG_MIN = 10     # so viele Sekunden wartet der Held ruhig
+const UNGEDULDIG_MAX = 30     # ab so vielen Sekunden wird der Held ganz unruhig
+const ANGRIFF_BUFFER = 0.1    # so lange wird ein zu früher Angriff gemerkt
 
 var blick := Vector2.DOWN   # wohin der Held schaut, nur vier Richtungen
-var szenen_zeit := 0.0
+var steh_zeit := 0.0
+var geduld_zeit := 0.0
+var zustand := Zustand.LAUFEN
+var angriff_buffer_timer := 0.0
 
 
 # Stößt der Held gerade gegen eine Kante, und daneben ist frei: zur Seite rutschen
@@ -34,29 +39,51 @@ func vier_richtungen(v: Vector2) -> Vector2:
 	return Vector2(0, sign(v.y))
 
 
-# Vorläufig: ein Punkt zeigt die Blickrichtung. In Kapitel 3 übernimmt das das Schwert.
-func _draw() -> void:
-	draw_rect(Rect2(blick * 10 - Vector2(1, 1), Vector2(2, 2)), Color.WHITE)
-
-
 func schritt() -> void:
 	$Schritt.pitch_scale = randf_range(0.9, 1.1)
 	$Schritt.play()
 
 
 func _physics_process(delta: float) -> void:
-	szenen_zeit += delta
+	match zustand:
+		Zustand.LAUFEN:
+			laufen(delta)
+			if Input.is_action_just_pressed("angriff") or angriff_buffer_timer > 0:
+				angreifen()
+		Zustand.ANGRIFF:
+			if Input.is_action_just_pressed("angriff"):
+				angriff_buffer_timer = ANGRIFF_BUFFER
+			# Beim Zustechen abbremsen, nicht weiterlaufen
+			velocity = velocity.move_toward(Vector2.ZERO, BESCHLEUNIGUNG * delta)
+			move_and_slide()
+	angriff_buffer_timer -= delta
+
+
+# Zustechen in Blickrichtung, danach wieder laufen
+func angreifen() -> void:
+	zustand = Zustand.ANGRIFF
+	$Schwert.rotation = blick.angle() + PI / 2
+	$AnimationPlayer.play("angriff")
+	await $AnimationPlayer.animation_finished
+	zustand = Zustand.LAUFEN
+
+
+func laufen(delta: float) -> void:
 	var richtung := vier_richtungen(Input.get_vector("links", "rechts", "hoch", "runter"))
 	velocity = velocity.move_toward(richtung * SPEED, BESCHLEUNIGUNG * delta)
 	move_and_slide()
 	ecke_umrunden(richtung, delta)
 
 	if richtung != Vector2.ZERO:
+		steh_zeit = 0.0
+		geduld_zeit = 0.0
 		blick = vier_richtungen(richtung)
-		queue_redraw()
 		$AnimationPlayer.play("laufen")
 	else:
-		if randf() < remap(szenen_zeit, UNGEDULDIG_MIN, UNGEDULDIG_MAX, 0.0, 1.0):
+		steh_zeit += delta
+		if geduld_zeit == 0:
+			geduld_zeit = randf_range(UNGEDULDIG_MIN, UNGEDULDIG_MAX)
+		if steh_zeit > geduld_zeit:
 			$AnimationPlayer.play("ungeduldig")
 		else:
 			$AnimationPlayer.play("stehen")

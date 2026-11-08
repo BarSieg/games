@@ -6,15 +6,15 @@ Vieles kennst du schon: TileMapLayer, Kollisionsebenen, Tweens, Autoload, HUD, S
 
 **Geplante Kapitel:**
 1. Projekt, Grafiken und der erste Raum ✔
-2. Laufen in vier Richtungen, mit Animation ← *du bist hier*
-3. Das Schwert: Angriff, Hitbox und Hurtbox
+2. Laufen in vier Richtungen, mit Animation ✔
+3. Das Schwert: Angriff, Hitbox und Hurtbox ← *du bist hier*
 4. Gegner mit State Machine: umherlaufen, verfolgen, angreifen
 5. Mehrere Räume: Die Kamera schaltet um wie im Original
 6. Herzen, Schaden und die Anzeige oben
 7. Schlüssel, Truhen und verschlossene Türen (Inventar)
 8. Dialoge: Schilder und ein alter Mann
 9. Die Welt merkt sich alles: Speichern und Laden
-10. Boss, Titelbild, Musik und Web-Export
+10. Boss, Titelbild mit Optionen (z. B. schräg laufen ja/nein), Musik und Web-Export
 
 ---
 
@@ -380,3 +380,186 @@ Fertig? Committen und Bescheid geben.
 2. Der Schatten muss in der Node-Liste vor dem Bild stehen, sonst überdeckt er den Helden.
 5. Bei 12 läuft er brav um die Säulen, wie es ein normaler Mensch auch machen würde. Aber eine Spielfigur muss an Hindernissen stecken bleiben, sonst sind es gar keine Hindernisse.
 
+---
+
+## Kapitel 3: Das Schwert
+
+Jetzt bekommt der Held eine Waffe. Wie im ersten Zelda sticht er geradeaus in Blickrichtung, und solange er sticht, bleibt er stehen. Damit wir etwas zum Draufhauen haben, bauen wir einen Topf, der zerbricht.
+
+Neu sind vor allem zwei Ideen: **Hitbox und Hurtbox**, und ein erster kleiner **Zustand** (State) für den Helden.
+
+### 3.1 Hitbox und Hurtbox
+
+Bisher hatte jedes Ding genau eine Kollisionsform: die Füße. Die bestimmen, wo man stehen und laufen kann. Für Kämpfe reicht das nicht:
+
+- Die **Hitbox** ist die Fläche, die **Schaden macht**. Hier: die Klinge des Schwerts.
+- Die **Hurtbox** ist die Fläche, die **Schaden bekommt**. Beim Topf ist das der ganze Topf, nicht nur sein Fuß.
+
+Beide sind `Area2D`, also Flächen, die nichts aufhalten, sondern nur melden: „Da ist etwas in mir.“ Damit sich Hitbox und Hurtbox finden, bekommen sie eine eigene Kollisionsebene. *Project Settings → Layer Names → 2D Physics*:
+
+| Ebene | Name |
+|---|---|
+| 4 | `Schwert` |
+
+Die Hitbox **liegt** auf Ebene 4. Die Hurtbox **schaut** auf Ebene 4. Das ist dasselbe Prinzip wie bei der Münze in Hüpfheld, nur zwischen zwei Areas statt zwischen Area und Körper.
+
+### 3.2 Das Schwert am Helden
+
+Auf dem Kachelblatt sind bei den Frames **103 bis 107** Schwerter. Sie zeigen alle **nach oben**: Klinge oben, Griff unten. Das ist praktisch.
+
+Der Aufbau in `held.tscn`, als Kinder von `Held`:
+
+```
+Held
+├── Schatten
+├── Bild
+├── Schwert          (Node2D)        ← dreht sich in Blickrichtung
+│   └── Klinge       (Sprite2D)      ← sticht nach vorn
+│       └── Hitbox   (Area2D)
+│           └── CollisionShape2D
+├── CollisionShape2D
+├── AnimationPlayer
+└── Schritt
+```
+
+1. `Schwert`: ein einfacher **Node2D**, Position `0, 0`. Er macht nichts anderes, als sich zu drehen.
+2. `Klinge`: ein **Sprite2D**, Texture `tilemap_packed.png`, Hframes `12`, Vframes `11`, ein Schwert-Frame deiner Wahl. **Offset** `0, -8`: Damit liegt der Griff am Ursprung, und die Klinge ragt nach oben. **Visible** aus.
+3. `Hitbox`: eine **Area2D**. **Collision → Layer** nur `4` (Schwert), **Mask** leer. **Monitoring** aus (sie selbst muss niemanden bemerken), **Monitorable** an (sie soll bemerkt werden).
+4. Deren `CollisionShape2D`: **New RectangleShape2D**, Size `4, 12`, Position `0, -9`, also da, wo die Klinge ist. **Disabled** an.
+
+Warum zwei Nodes, `Schwert` und `Klinge`? Das ist der Trick des Kapitels:
+
+- `Schwert` **dreht** sich in die Blickrichtung: 0° nach oben, 90° nach rechts, 180° nach unten, 270° nach links.
+- `Klinge` **bewegt** sich in der Animation immer nur nach „oben“, also von `0, -4` nach `0, -8`.
+
+Weil die Klinge ein Kind des gedrehten `Schwert` ist, heißt ihr „oben“ in Wahrheit „in Blickrichtung“. Eine einzige Animation reicht so für alle vier Richtungen.
+
+### 3.3 Die Animation `angriff`
+
+Im AnimationPlayer: **Animation → New** → `angriff`. Länge `0.25`, **kein** Loop.
+
+| Zeit | Klinge: Visible | Klinge: Position | Hitbox/CollisionShape2D: Disabled |
+|---|---|---|---|
+| 0.0 | an | `0, -4` | aus |
+| 0.05 | | `0, -8` | |
+| 0.2 | | `0, -8` | an |
+| 0.25 | aus | `0, -4` | |
+
+Zuerst schießt die Klinge nach vorn, dann bleibt sie kurz stehen, dann ist sie weg. Die Hitbox ist nur so lange aktiv, wie die Klinge wirklich draußen ist.
+
+Dazu noch drei Keys für das `Bild` bei 0.0: **Position** `0, 8`, **Rotation** `0`, **Scale** `1, 1`. Sonst friert der Held beim Zustechen mitten im Watscheln ein, schief und halb in der Luft.
+
+Das ist die allgemeine Regel beim AnimationPlayer: **Eine Animation verändert nur, wofür sie Tracks hat.** Alles andere bleibt, wie die vorige Animation es hinterlassen hat. Merk dir das, in den Übungen wird es noch einmal wichtig.
+
+### 3.4 Ein Zustand für den Helden
+
+Solange der Held sticht, soll er nicht laufen. Das könnte man mit einer Variable `sticht := true/false` lösen. Wir nehmen aber gleich ein `enum`, wie bei `ZielStates` in Hüpfheld. In Kapitel 4 bekommen die Gegner genau so etwas, nur mit mehr Zuständen.
+
+1. Alles, was bisher in `_physics_process` stand, wandert in eine neue Funktion `laufen(delta: float)`. Am Inhalt änderst du nichts.
+2. Neues `_physics_process`:
+
+```gdscript
+enum Zustand { LAUFEN, ANGRIFF }
+
+var zustand := Zustand.LAUFEN
+
+
+func _physics_process(delta: float) -> void:
+	match zustand:
+		Zustand.LAUFEN:
+			laufen(delta)
+			if Input.is_action_just_pressed("angriff"):
+				angreifen()
+		Zustand.ANGRIFF:
+			# Beim Zustechen abbremsen, nicht weiterlaufen
+			velocity = velocity.move_toward(Vector2.ZERO, BESCHLEUNIGUNG * delta)
+			move_and_slide()
+
+
+# Zustechen in Blickrichtung, danach wieder laufen
+func angreifen() -> void:
+	zustand = Zustand.ANGRIFF
+	$Schwert.rotation = blick.angle() + PI / 2
+	$AnimationPlayer.play("angriff")
+	await $AnimationPlayer.animation_finished
+	zustand = Zustand.LAUFEN
+```
+
+3. Der weiße Punkt hat ausgedient: `_draw()` und `queue_redraw()` löschen.
+
+Zu `blick.angle() + PI / 2`: `angle()` liefert den Winkel eines Vektors im Bogenmaß, gemessen ab „rechts“. Rechts ist 0, unten ist π/2, links ist π, oben ist −π/2. Unser Schwert-Bild zeigt aber nach oben. Damit es bei „oben“ ungedreht bleibt, rechnen wir π/2 dazu. Erinnerst du dich an das Raumschiff in Weltraumsteine? Dort war es dasselbe Problem.
+
+Und `await $AnimationPlayer.animation_finished`: Die Funktion wartet hier, bis die Animation fertig ist, und macht dann weiter. Das kennst du von `await tween.finished`.
+
+### 3.5 Ein Topf zum Zerschlagen
+
+Neue Szene:
+
+```
+Topf (StaticBody2D)
+├── Bild (Sprite2D)
+├── CollisionShape2D
+└── Hurtbox (Area2D)
+    └── CollisionShape2D
+```
+
+1. `Topf`: **StaticBody2D**, Layer `1` (Welt), Mask leer. Er steht im Weg wie eine Säule.
+2. `Bild`: Kachelblatt, Hframes/Vframes wie immer, ein Frame, der zerbrechlich aussieht, zum Beispiel `66`.
+3. `CollisionShape2D`: unten am Fuß, wie bei der Säule, etwa `12, 6` auf Position `0, 5`.
+4. `Hurtbox`: **Area2D**, Layer leer, **Mask** nur `4` (Schwert). Ihre Form deckt den **ganzen** Topf ab, also `14, 14`.
+5. Skript an `Topf`, dann bei `Hurtbox` das Signal **area_entered** mit dem Topf verbinden:
+
+```gdscript
+extends StaticBody2D
+
+
+func _on_hurtbox_area_entered(_area: Area2D) -> void:
+	zerbrechen()
+
+
+# Kurz plattdrücken, dann weg
+func zerbrechen() -> void:
+	$CollisionShape2D.set_deferred("disabled", true)
+	$Hurtbox.set_deferred("monitoring", false)
+	var tween := create_tween()
+	tween.tween_property($Bild, "scale", Vector2(1.5, 0.2), 0.1)
+	tween.tween_callback(queue_free)
+```
+
+6. Speichern als `topf.tscn`, drei Töpfe in den Raum stellen.
+
+Warum `set_deferred`? Das Signal kommt mitten aus der Physik-Berechnung, da darf man nichts an der Physik ändern. Das kennst du vom Block in Hüpfheld.
+
+Warum ein Signal und nicht in jedem Bild prüfen, wie beim Gegner in Hüpfheld? Dort war das Problem: Bleibt der Held im Gegner stehen, kommt kein neues Signal. Hier ist genau das gewollt. Jeder Stich schaltet die Hitbox neu ein, also kommt pro Stich genau ein Signal.
+
+### 3.6 Ausprobieren
+
+- Angriffstaste: Die Klinge schießt in Blickrichtung heraus, in alle vier Richtungen.
+- Beim Zustechen bleibt der Held stehen und richtet sich gerade auf.
+- Dauerhaft gedrückt halten sticht nur einmal (`is_action_just_pressed`).
+- Stich gegen einen Topf: Er wird platt und verschwindet. Daneben vorbeistechen: nichts passiert.
+- Stich von allen Seiten. Weil die Hurtbox den ganzen Topf abdeckt, trifft man auch von oben, obwohl der Fuß des Topfs weiter unten liegt.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 3
+
+1. **Ungeduldig, aber richtig (mittel):** Deine Ungeduld aus Kapitel 2 hat drei Haken:
+   - `szenen_zeit` zählt, seit die Szene läuft, nicht, seit der Held steht. Nach einer Minute Spielen wird er sofort ungeduldig, sobald er anhält.
+   - `randf()` wird **jedes Bild** neu gewürfelt. Dann wechselt `play()` ständig zwischen `stehen` und `ungeduldig`, und beide fangen jedes Mal von vorn an. Von der Ungeduld sieht man so fast nichts.
+   - `laufen` und `ungeduldig` haben keine Tracks für alles, was die anderen verändern (siehe 3.3). Wer aus `ungeduldig` losläuft, bleibt platt gedrückt. Wer aus `laufen` ungeduldig wird, bleibt schief.
+
+   Bau es so um: eine Variable `steh_zeit`, die beim Laufen auf 0 springt und im Stehen hochzählt. Ab einer bestimmten Zeit (zum Beispiel 5 Sekunden, nicht 60) spielt `ungeduldig`. Und jede Animation bekommt bei 0.0 Keys für Position, Rotation und Scale des Bildes.
+2. **Wusch (leicht):** Mach mit 🆓 jsfxr ein kurzes „Wusch“ für das Schwert. Diesmal nicht mit einer Funktion wie beim Schritt, sondern direkt in der Animation: einen `AudioStreamPlayer` namens `Schwung` an den Held hängen, dann in `angriff` **Add Track → Audio Playback Track** → `Schwung` wählen und bei 0.0 die WAV-Datei als Key einfügen (Rechtsklick → Insert Key).
+3. **Scherben (leicht):** Beim Zerbrechen sollen Scherben fliegen, wie die Ziegel in Hüpfheld. Häng einen `CPUParticles2D` an den Topf. Aber Vorsicht: `queue_free()` löscht den Topf samt Partikeln, bevor man sie sieht. Wie kannst du das Bild verstecken, die Partikel abspielen und den Topf erst danach löschen? (Tipp: `one_shot`, `emitting` und das Signal `finished`.)
+4. **Angriff vormerken (mittel):** Drückst du die Angriffstaste, während der Held noch sticht, passiert nichts. In schnellen Kämpfen fühlt sich das an, als hätte das Spiel den Knopfdruck verschluckt. Merk dir den Druck wie beim Jump Buffering in Hüpfheld und stich sofort noch einmal, sobald der erste Stich fertig ist.
+5. **Überraschung (mittel):** In manchen Töpfen wohnt jemand. Gib dem Topf `@export var bewohnt := false`. Ist er bewohnt, krabbelt beim Zerbrechen eine Spinne heraus (Frame `122`): ein neues `Sprite2D` an der Stelle des Topfs, das mit einem Tween schnell aus dem Raum flitzt und dann verschwindet. Bonus: Sie quiekt empört. 🕷️
+6. **Treffer-Stopp (mittel):** Fühlt sich ein Treffer kräftiger an, wenn das Spiel für einen winzigen Moment einfriert? Probier im Topf beim Zerbrechen:
+
+   ```gdscript
+   Engine.time_scale = 0.0
+   await get_tree().create_timer(0.06, true, false, true).timeout
+   Engine.time_scale = 1.0
+   ```
+
+   Das vierte `true` heißt: Dieser Timer läuft weiter, obwohl die Zeit angehalten ist. Was passiert ohne? DOOM (2016) macht so etwas bei jedem Glory Kill. Das heißt **Hit Stop**.

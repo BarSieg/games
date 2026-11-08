@@ -3,7 +3,11 @@
 [ext_resource type="Script" uid="uid://coewl4wcfkh3o" path="res://held.gd" id="1_7usdt"]
 [ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="2_xw2dj"]
 [ext_resource type="Texture2D" uid="uid://di6u0fvdww6pp" path="res://schatten.png" id="3_xw2dj"]
+[ext_resource type="AudioStream" uid="uid://bymnt18bblrjb" path="res://schwung.wav" id="4_kdfus"]
 [ext_resource type="AudioStream" uid="uid://b3j5sj16rxvbq" path="res://schritt.wav" id="4_q6bl5"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0orc7"]
+size = Vector2(4, 12)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
 size = Vector2(10, 6)
@@ -20,7 +24,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [-0.10471976]
+"values": [0.0]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -32,7 +36,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [Vector2(0, 0)]
+"values": [Vector2(0, 8)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -46,10 +50,146 @@ tracks/2/keys = {
 "update": 0,
 "values": [Vector2(1, 1)]
 }
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Schwert/Klinge:visible")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Schwert/Klinge/Hitbox/CollisionShape2D:disabled")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Schwert/Klinge:position")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(0, -4)]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Schwung:playing")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(-0.13333334),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
+[sub_resource type="Animation" id="Animation_33x0v"]
+resource_name = "angriff"
+length = 0.25
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Schwert/Klinge:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.25),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [true, false]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Schwert/Klinge/Hitbox/CollisionShape2D:disabled")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [false, true]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Schwert/Klinge:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.05, 0.2, 0.25),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 1,
+"values": [Vector2(0, -4), Vector2(0, -8), Vector2(0, -8), Vector2(0, -4)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Bild:position")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(0, 8)]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Bild:rotation")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0.0]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Bild:scale")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(1, 1)]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Schwung:playing")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
 
 [sub_resource type="Animation" id="Animation_xw2dj"]
 resource_name = "laufen"
-length = 0.39999999999999997
+length = 0.4
 loop_mode = 1
 tracks/0/type = "value"
 tracks/0/imported = false
@@ -92,10 +232,22 @@ tracks/2/keys = {
 "method": &"schritt"
 }]
 }
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Bild:scale")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(1, 1)]
+}
 
 [sub_resource type="Animation" id="Animation_q6bl5"]
 resource_name = "stehen"
-length = 1.5999999999999999
+length = 1.6
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -149,10 +301,35 @@ tracks/0/keys = {
 "update": 1,
 "values": [Vector2(1, 1), Vector2(1.125, 0.938)]
 }
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Bild:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Bild:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(0, 8)]
+}
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_kdfus"]
 _data = {
 &"RESET": SubResource("Animation_7usdt"),
+&"angriff": SubResource("Animation_33x0v"),
 &"laufen": SubResource("Animation_xw2dj"),
 &"stehen": SubResource("Animation_q6bl5"),
 &"ungeduldig": SubResource("Animation_kdfus")
@@ -169,12 +346,33 @@ position = Vector2(0, 7)
 texture = ExtResource("3_xw2dj")
 
 [node name="Bild" type="Sprite2D" parent="." unique_id=971135696]
-rotation = -0.10471976
+position = Vector2(0, 8)
 texture = ExtResource("2_xw2dj")
 offset = Vector2(0, -8)
 hframes = 12
 vframes = 11
 frame = 85
+
+[node name="Schwert" type="Node2D" parent="." unique_id=1885608960]
+
+[node name="Klinge" type="Sprite2D" parent="Schwert" unique_id=1892306062]
+visible = false
+position = Vector2(0, -4)
+texture = ExtResource("2_xw2dj")
+offset = Vector2(0, -4)
+hframes = 12
+vframes = 11
+frame = 107
+
+[node name="Hitbox" type="Area2D" parent="Schwert/Klinge" unique_id=517461262]
+collision_layer = 8
+collision_mask = 0
+monitoring = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Schwert/Klinge/Hitbox" unique_id=233335865]
+position = Vector2(0, -9)
+shape = SubResource("RectangleShape2D_0orc7")
+disabled = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=400025648]
 position = Vector2(0, 5)
@@ -186,3 +384,7 @@ libraries/ = SubResource("AnimationLibrary_kdfus")
 [node name="Schritt" type="AudioStreamPlayer" parent="." unique_id=160451003]
 stream = ExtResource("4_q6bl5")
 volume_db = -15.0
+
+[node name="Schwung" type="AudioStreamPlayer" parent="." unique_id=1635468426]
+stream = ExtResource("4_kdfus")
+volume_db = -5.0

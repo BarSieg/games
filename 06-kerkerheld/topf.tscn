@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://b7lsyt27fn45e"]
+
+[ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="1_4w8vx"]
+[ext_resource type="Script" uid="uid://b2xfnsiuphnnu" path="res://topf.gd" id="1_kgl6q"]
+[ext_resource type="AudioStream" uid="uid://g31x3v545lpm" path="res://quiek.wav" id="3_1sf0e"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(12, 8)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0orc7"]
+size = Vector2(14, 14)
+
+[node name="Topf" type="StaticBody2D" unique_id=404548848]
+collision_mask = 0
+script = ExtResource("1_kgl6q")
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=759331986]
+texture = ExtResource("1_4w8vx")
+hframes = 12
+vframes = 11
+frame = 66
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1479509388]
+position = Vector2(0, 4)
+shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=1638475673]
+collision_layer = 0
+collision_mask = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=1874428611]
+shape = SubResource("RectangleShape2D_0orc7")
+
+[node name="Scherben" type="CPUParticles2D" parent="." unique_id=1342168350]
+position = Vector2(0, 4)
+emitting = false
+amount = 12
+one_shot = true
+explosiveness = 0.24
+emission_shape = 2
+emission_sphere_radius = 3.0
+direction = Vector2(0, -1)
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 5.0
+initial_velocity_max = 5.0
+color = Color(0.7411765, 0.42352942, 0.2901961, 1)
+
+[node name="Bewohner" type="AudioStreamPlayer" parent="." unique_id=1584956711]
+stream = ExtResource("3_1sf0e")
+volume_db = -6.0
+
+[connection signal="area_entered" from="Hurtbox" to="." method="_on_hurtbox_area_entered"]
