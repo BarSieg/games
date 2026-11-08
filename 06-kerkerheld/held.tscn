@@ -6,12 +6,103 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
 size = Vector2(10, 6)
 
+[sub_resource type="Animation" id="Animation_7usdt"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Bild:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [-0.10471976]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Bild:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(0, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_xw2dj"]
+resource_name = "laufen"
+length = 0.39999999999999997
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Bild:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [-0.10471976, 0.10471976, -0.10471976]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Bild:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(0, 0), Vector2(0, -1), Vector2(0, 0), Vector2(0, -1), Vector2(0, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_q6bl5"]
+resource_name = "stehen"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Bild:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Bild:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_kdfus"]
+_data = {
+&"RESET": SubResource("Animation_7usdt"),
+&"laufen": SubResource("Animation_xw2dj"),
+&"stehen": SubResource("Animation_q6bl5")
+}
+
 [node name="Held" type="CharacterBody2D" unique_id=1612745786]
 collision_layer = 2
 motion_mode = 1
 script = ExtResource("1_7usdt")
 
 [node name="Bild" type="Sprite2D" parent="." unique_id=971135696]
+rotation = -0.10471976
 texture = ExtResource("2_xw2dj")
 hframes = 12
 vframes = 11
@@ -20,3 +111,6 @@ frame = 85
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=400025648]
 position = Vector2(0, 5)
 shape = SubResource("RectangleShape2D_s017u")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1498252318]
+libraries/ = SubResource("AnimationLibrary_kdfus")

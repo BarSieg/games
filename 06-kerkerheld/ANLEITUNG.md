@@ -5,8 +5,8 @@ Ein Dungeon von oben, nach dem Vorbild des ersten Dungeons aus The Legend of Zel
 Vieles kennst du schon: TileMapLayer, Kollisionsebenen, Tweens, Autoload, HUD, Szenenwechsel, Web-Export. Dafür geht es in den ersten Kapiteln schneller. Neu sind vor allem **State Machines**, **Räume**, ein **Inventar** und **Speichern in eine Datei**.
 
 **Geplante Kapitel:**
-1. Projekt, Grafiken und der erste Raum ← *du bist hier*
-2. Laufen in vier Richtungen, mit Animation
+1. Projekt, Grafiken und der erste Raum ✔
+2. Laufen in vier Richtungen, mit Animation ← *du bist hier*
 3. Das Schwert: Angriff, Hitbox und Hurtbox
 4. Gegner mit State Machine: umherlaufen, verfolgen, angreifen
 5. Mehrere Räume: Die Kamera schaltet um wie im Original
@@ -136,7 +136,7 @@ Schaut deine Figur auf dem Kachelblatt nach links statt nach rechts? Dann dreh d
 2. **F5** → Hauptszene: `raum.tscn` → **Select Current**.
 3. Laufen in alle Richtungen, auch schräg.
 
-Der Held sollte an den Wänden stoppen und schräg an ihnen entlanggleiten. Lauf an die Wand oben: Sein Kopf verschwindet halb in der Wand, die Füße bleiben davor. Durch die Lücke oben kommt er hinaus ins Leere. Darum kümmern wir uns in Kapitel 5.
+Der Held sollte an den Wänden stoppen und schräg an ihnen entlanggleiten. Lauf an die Wand oben: Sein Kopf ragt ein Stück über die Wand, die Füße bleiben davor. So sieht es aus, als stünde er vor der Wand. Durch die Lücke oben kommt er hinaus ins Leere. Darum kümmern wir uns in Kapitel 5.
 
 ### 1.9 Was ist neu?
 
@@ -156,5 +156,220 @@ Fertig? Committen und Bescheid geben.
 
 ### Antworten zu Kapitel 1
 
-1. Wie erwarte, der Held läuft schräg schneller. Mit .normalized() ist alles wie früher.
-3. Paar Pixel weiter zu laufen sieht besser aus. Bei Beschleunigung = 1 läuft der Held wie auf dem Eis!
+1. Wie erwartet, läuft der Held schräg schneller. Mit `.normalized()` ist alles wie vorher.
+3. Ein paar Pixel weiterzulaufen, sieht besser aus. Bei `BESCHLEUNIGUNG = 1` läuft der Held wie auf Eis!
+
+---
+
+## Kapitel 2: Laufen in vier Richtungen, mit Animation
+
+Der Held läuft, aber er gleitet steif wie eine Schachfigur über den Boden. Und für das Schwert in Kapitel 3 müssen wir wissen, **wohin er schaut**. Außerdem bekommt er eine kleine Hilfe an Türkanten, die fast jedes Top-Down-Spiel heimlich eingebaut hat.
+
+### 2.1 Beschleunigung mit `delta`
+
+Erst eine Korrektur an deiner Übung 3. Du hast geschrieben:
+
+```gdscript
+velocity = velocity.move_toward(richtung * SPEED, BESCHLEUNIGUNG)
+```
+
+Das funktioniert, aber `BESCHLEUNIGUNG` ist so „Pixel pro Bild“, nicht „Pixel pro Sekunde“. Weil `_physics_process` immer 60-mal pro Sekunde läuft, fällt das nicht auf. Ändert man aber mal die Physik-Rate (Project Settings → Physics → Common → **Physics Ticks per Second**), läuft der Held plötzlich anders. Mit `delta` bleibt es immer gleich. Aus 20 pro Bild werden 20 × 60 = **1200 pro Sekunde**:
+
+```gdscript
+const BESCHLEUNIGUNG = 1200.0   # Pixel pro Sekunde², volle Geschwindigkeit nach 1/15 Sekunde
+
+func _physics_process(delta: float) -> void:
+	var richtung := Input.get_vector("links", "rechts", "hoch", "runter")
+	velocity = velocity.move_toward(richtung * SPEED, BESCHLEUNIGUNG * delta)
+```
+
+Aus `_delta` wird dabei `delta`: Der Unterstrich sagt Godot nur „den Parameter benutze ich nicht“, damit es nicht warnt.
+
+### 2.2 Die Blickrichtung
+
+Der Held läuft in acht Richtungen, aber er **schaut** nur in vier: hoch, runter, links, rechts. Das Schwert schlägt später in genau diese Richtung. Läuft er schräg, gewinnt die stärkere Richtung.
+
+Neue Variable oben und eine kleine Funktion:
+
+```gdscript
+var blick := Vector2.DOWN   # wohin der Held schaut, nur vier Richtungen
+
+
+# Aus einer beliebigen Richtung wird eine der vier: die stärkere Achse gewinnt
+func vier_richtungen(v: Vector2) -> Vector2:
+	if abs(v.x) > abs(v.y):
+		return Vector2(sign(v.x), 0)
+	return Vector2(0, sign(v.y))
+```
+
+In `_physics_process` nach `move_and_slide()`:
+
+```gdscript
+	if richtung != Vector2.ZERO:
+		blick = vier_richtungen(richtung)
+		queue_redraw()
+```
+
+Warum `if richtung != Vector2.ZERO`? Lässt man los, soll der Held weiter dahin schauen, wohin er zuletzt gelaufen ist, und nicht nach (0, 0).
+
+### 2.3 Die Blickrichtung sichtbar machen
+
+Die Figur von Kenney hat nur ein Bild, sie kann nicht nach oben oder unten schauen. Bis das Schwert kommt, zeigt ein kleiner Punkt, wohin der Held schaut. Jeder Node, den man sieht, kann sich mit `_draw()` selbst bemalen:
+
+```gdscript
+# Vorläufig: ein Punkt zeigt die Blickrichtung. In Kapitel 3 übernimmt das das Schwert.
+func _draw() -> void:
+	draw_rect(Rect2(blick * 10 - Vector2(1, 1), Vector2(2, 2)), Color.WHITE)
+```
+
+`_draw()` wird nicht jedes Bild aufgerufen, sondern nur einmal. Godot merkt sich das Gemalte. Deshalb steht oben `queue_redraw()`: „Bitte beim nächsten Bild neu malen.“
+
+### 2.4 Watscheln mit dem AnimationPlayer
+
+Bei Hüpfheld hattest du für jede Bewegung eigene Bilder (AnimatedSprite2D). Hier gibt es nur ein Bild. Wir bewegen es stattdessen: ein bisschen hüpfen und hin und her kippen. Das macht der **AnimationPlayer**. Er kann **jede Eigenschaft** jedes Nodes über die Zeit verändern: Position, Drehung, Farbe, sogar Funktionen aufrufen. Ein Tween ist für eine Bewegung, die man im Code anstößt. Der AnimationPlayer ist für Abläufe, die man im Editor gestaltet und immer wieder abspielt.
+
+1. In `held.tscn`: Kind von `Held` → `AnimationPlayer`.
+2. Unten öffnet sich der Tab **Animation**. Dort auf **Animation → New** → Name `laufen`.
+3. Rechts in der Leiste des Tabs: Länge auf `0.4` Sekunden stellen (das Feld mit der Uhr) und **Loop** einschalten (die Pfeile im Kreis).
+4. **Keyframes setzen:** Wähl den Node `Bild`. Im Inspector steht jetzt neben jeder Eigenschaft ein kleiner **Schlüssel**. Ein Klick darauf setzt an der aktuellen Stelle der Zeitleiste einen Keyframe. Beim ersten Mal fragt Godot nach einem **RESET-Track** → **Create**. Der merkt sich die Ausgangswerte.
+
+   Setz diese Keyframes (die Zeitleiste mit dem blauen Strich verschieben, Wert im Inspector ändern, Schlüssel klicken):
+
+   | Zeit | Position | Rotation |
+   |---|---|---|
+   | 0.0 | `0, 0` | `-6` |
+   | 0.1 | `0, -1` | |
+   | 0.2 | `0, 0` | `6` |
+   | 0.3 | `0, -1` | |
+   | 0.4 | `0, 0` | `-6` |
+
+   Zwei kleine Hüpfer pro Durchgang, einer pro Fuß, und dabei kippt er von links nach rechts.
+5. Zweite Animation: **Animation → New** → `stehen`. Bei 0.0 einen Keyframe für Position `0, 0` und einen für Rotation `0`. Länge und Loop sind hier egal.
+6. Ausprobieren: Oben im Tab auf **Play** drücken. Der Held watschelt schon im Editor.
+
+Im Skript, wieder in `_physics_process`:
+
+```gdscript
+	if richtung != Vector2.ZERO:
+		blick = vier_richtungen(richtung)
+		queue_redraw()
+		$AnimationPlayer.play("laufen")
+	else:
+		$AnimationPlayer.play("stehen")
+```
+
+`play()` jedes Bild aufzurufen ist kein Problem. Läuft die Animation schon, macht Godot einfach weiter und fängt nicht von vorn an.
+
+### 2.5 Hilfe an Ecken
+
+Probier mal: Stell dich unter die Tür-Lücke, aber ein paar Pixel zu weit links, und lauf nach oben. Der Held bleibt an der Kante hängen und du musst nachkorrigieren. Das nervt, vor allem mit dem Controller.
+
+Fast jedes Top-Down-Spiel hilft hier heimlich: Stößt der Held gerade gegen eine Kante, und ein paar Pixel daneben wäre frei, dann rutscht er von selbst zur Seite. Wie Coyote Time bei Hüpfheld merkt man es nicht, man vermisst es nur, wenn es fehlt.
+
+```gdscript
+const ECKEN_HILFE = 6         # so viele Pixel neben einer Lücke hilft der Held noch nach
+const ECKEN_TEMPO = 60.0      # so schnell rutscht er dabei zur Seite
+
+
+# Stößt der Held gerade gegen eine Kante, und daneben ist frei: zur Seite rutschen
+func ecke_umrunden(richtung: Vector2, delta: float) -> void:
+	# Nur wenn er gegen etwas läuft, und nur fast gerade (nicht schräg)
+	if get_slide_collision_count() == 0 or min(abs(richtung.x), abs(richtung.y)) > 0.2:
+		return
+	var vor := vier_richtungen(richtung) * 2   # zwei Pixel nach vorn
+	var seite := Vector2(vor.y, vor.x).normalized()   # quer zur Laufrichtung
+	for abstand in range(1, ECKEN_HILFE + 1):
+		for s: Vector2 in [seite, -seite]:
+			# Wäre der Held hier, um abstand zur Seite versetzt: Käme er dann nach vorn?
+			if not test_move(global_transform.translated(s * abstand), vor):
+				position += s * ECKEN_TEMPO * delta
+				return
+```
+
+Aufruf in `_physics_process` direkt nach `move_and_slide()`:
+
+```gdscript
+	ecke_umrunden(richtung, delta)
+```
+
+Neu daran:
+- **`test_move(von, bewegung)`** probiert eine Bewegung aus, **ohne** den Held zu bewegen. Es antwortet nur: Würde er irgendwo anstoßen? Damit tastet die Funktion die Seiten ab, erst 1 Pixel daneben, dann 2 … bis 6.
+- **`Vector2(vor.y, vor.x)`**: x und y vertauschen ergibt die Richtung quer dazu. Aus „hoch“ (0, −2) wird (−2, 0), also eine Seite. Die andere Seite ist das Minus davon.
+- **`for s: Vector2 in [...]`**: Eine Schleife über eine kleine Liste. Das `: Vector2` sagt Godot, welcher Typ drin ist (sonst kann es den Typ nicht ableiten, wie damals bei `gegner_liste`).
+- **`min(abs(richtung.x), abs(richtung.y)) > 0.2`**: Mit dem Controller ist die Richtung fast nie genau (0, −1), sondern eher (0,05, −0,98). Deshalb nicht `!= 0` prüfen, sondern „ist die schwächere Achse fast null“.
+
+### 2.6 Das ganze Skript
+
+```gdscript
+extends CharacterBody2D
+
+
+const SPEED = 80.0
+const BESCHLEUNIGUNG = 1200.0   # Pixel pro Sekunde², volle Geschwindigkeit nach 1/15 Sekunde
+const ECKEN_HILFE = 6           # so viele Pixel neben einer Lücke hilft der Held noch nach
+const ECKEN_TEMPO = 60.0        # so schnell rutscht er dabei zur Seite
+
+var blick := Vector2.DOWN       # wohin der Held schaut, nur vier Richtungen
+
+
+func _physics_process(delta: float) -> void:
+	var richtung := Input.get_vector("links", "rechts", "hoch", "runter")
+	velocity = velocity.move_toward(richtung * SPEED, BESCHLEUNIGUNG * delta)
+	move_and_slide()
+	ecke_umrunden(richtung, delta)
+
+	if richtung != Vector2.ZERO:
+		blick = vier_richtungen(richtung)
+		queue_redraw()
+		$AnimationPlayer.play("laufen")
+	else:
+		$AnimationPlayer.play("stehen")
+
+	# Nach links und rechts schauen
+	if richtung.x != 0:
+		$Bild.flip_h = richtung.x < 0
+
+
+# Aus einer beliebigen Richtung wird eine der vier: die stärkere Achse gewinnt
+func vier_richtungen(v: Vector2) -> Vector2:
+	if abs(v.x) > abs(v.y):
+		return Vector2(sign(v.x), 0)
+	return Vector2(0, sign(v.y))
+
+
+# Stößt der Held gerade gegen eine Kante, und daneben ist frei: zur Seite rutschen
+func ecke_umrunden(richtung: Vector2, delta: float) -> void:
+	# Nur wenn er gegen etwas läuft, und nur fast gerade (nicht schräg)
+	if get_slide_collision_count() == 0 or min(abs(richtung.x), abs(richtung.y)) > 0.2:
+		return
+	var vor := vier_richtungen(richtung) * 2   # zwei Pixel nach vorn
+	var seite := Vector2(vor.y, vor.x).normalized()   # quer zur Laufrichtung
+	for abstand in range(1, ECKEN_HILFE + 1):
+		for s: Vector2 in [seite, -seite]:
+			# Wäre der Held hier, um abstand zur Seite versetzt: Käme er dann nach vorn?
+			if not test_move(global_transform.translated(s * abstand), vor):
+				position += s * ECKEN_TEMPO * delta
+				return
+
+
+# Vorläufig: ein Punkt zeigt die Blickrichtung. In Kapitel 3 übernimmt das das Schwert.
+func _draw() -> void:
+	draw_rect(Rect2(blick * 10 - Vector2(1, 1), Vector2(2, 2)), Color.WHITE)
+```
+
+### 2.7 Ausprobieren
+
+- Laufen: Der Held watschelt, im Stehen steht er gerade.
+- Der weiße Punkt zeigt immer in eine der vier Richtungen, auch beim Schräglaufen.
+- Stell dich knapp neben die Tür-Lücke und lauf hinein: Der Held rutscht von selbst hinein. Steht er zu weit daneben (mehr als 6 Pixel), bleibt er hängen.
+- Dasselbe an den Säulen: Läuft er knapp an der Kante dagegen, rutscht er drumherum.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 2
+
+1. **Wie im Original (leicht):** Im ersten Zelda konnte Link nicht schräg laufen. Bau das ein: Bevor `velocity` berechnet wird, mach aus `richtung` mit deiner neuen Funktion eine der vier Richtungen. Wie fühlt es sich an? Was passiert, wenn du schräg drückst? Danach entscheidest du, welche Variante bleibt.
+2. **Ein Schatten (leicht):** Mal in Pixelorama einen kleinen ovalen Schatten, etwa 12 × 4 Pixel, schwarz. Als `Sprite2D` namens `Schatten` an die Füße des Helden, **Modulate** mit Alpha etwa 80. Probier aus: Was passiert, wenn der Schatten in der Node-Liste unter `Bild` steht, und was, wenn darüber? Warum? Watschelt der Schatten mit?
+3. **Schritte hören (mittel):** Mach mit 🆓 jsfxr ein ganz kurzes, leises Tapsen und häng es als `AudioStreamPlayer` namens `Schritt` an den Held. Schreib eine Funktion `schritt()`, die die Tonhöhe (`pitch_scale`) zufällig zwischen 0,9 und 1,1 wählt und den Ton abspielt. Im AnimationPlayer bei `laufen`: **Add Track → Call Method Track** → Node `Held` → an den Stellen 0.1 und 0.3 einen Key mit der Methode `schritt`. So passen die Schritte immer genau zu den Hüpfern. Warum die zufällige Tonhöhe?
+4. **Atmen (leicht):** Im Stehen soll der Held ganz leicht atmen: `stehen` mit Loop und 1,6 Sekunden Länge, **Scale** des Bildes von `1, 1` auf `1, 1.06` und zurück. Du wirst merken, dass er dabei mit den Füßen vom Boden abhebt, weil das Bild von seiner Mitte aus wächst. Wie bekommst du die Mitte an die Füße? (Tipp: **Offset** und **Position** am Bild, wie bei der Y-Sort-Übung.)
+5. **Wie viel Hilfe (leicht):** Stell `ECKEN_HILFE` testweise auf `0`, dann auf `12`. Wann fühlt es sich wie Hilfe an, wann wie Schummeln?
