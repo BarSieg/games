@@ -5,8 +5,11 @@ const SPEED = 80.0
 const BESCHLEUNIGUNG = 1200.0   # Pixel pro Sekunde², volle Geschwindigkeit nach 1/15 Sekunde
 const ECKEN_HILFE = 6         # so viele Pixel neben einer Lücke hilft der Held noch nach
 const ECKEN_TEMPO = 60.0      # so schnell rutscht er dabei zur Seite
+const UNGEDULDIG_MIN = 60     # so viele Sekunden wartet der Held ruhig
+const UNGEDULDIG_MAX = 360    # ab so vielen Sekunden wird der Held ganz unruhig
 
 var blick := Vector2.DOWN   # wohin der Held schaut, nur vier Richtungen
+var szenen_zeit := 0.0
 
 
 # Stößt der Held gerade gegen eine Kante, und daneben ist frei: zur Seite rutschen
@@ -36,8 +39,14 @@ func _draw() -> void:
 	draw_rect(Rect2(blick * 10 - Vector2(1, 1), Vector2(2, 2)), Color.WHITE)
 
 
+func schritt() -> void:
+	$Schritt.pitch_scale = randf_range(0.9, 1.1)
+	$Schritt.play()
+
+
 func _physics_process(delta: float) -> void:
-	var richtung := Input.get_vector("links", "rechts", "hoch", "runter")
+	szenen_zeit += delta
+	var richtung := vier_richtungen(Input.get_vector("links", "rechts", "hoch", "runter"))
 	velocity = velocity.move_toward(richtung * SPEED, BESCHLEUNIGUNG * delta)
 	move_and_slide()
 	ecke_umrunden(richtung, delta)
@@ -47,7 +56,10 @@ func _physics_process(delta: float) -> void:
 		queue_redraw()
 		$AnimationPlayer.play("laufen")
 	else:
-		$AnimationPlayer.play("stehen")
+		if randf() < remap(szenen_zeit, UNGEDULDIG_MIN, UNGEDULDIG_MAX, 0.0, 1.0):
+			$AnimationPlayer.play("ungeduldig")
+		else:
+			$AnimationPlayer.play("stehen")
 
 	# Nach links und rechts schauen
 	if richtung.x != 0:

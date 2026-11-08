@@ -373,3 +373,10 @@ Fertig? Committen und Bescheid geben.
 3. **Schritte hören (mittel):** Mach mit 🆓 jsfxr ein ganz kurzes, leises Tapsen und häng es als `AudioStreamPlayer` namens `Schritt` an den Held. Schreib eine Funktion `schritt()`, die die Tonhöhe (`pitch_scale`) zufällig zwischen 0,9 und 1,1 wählt und den Ton abspielt. Im AnimationPlayer bei `laufen`: **Add Track → Call Method Track** → Node `Held` → an den Stellen 0.1 und 0.3 einen Key mit der Methode `schritt`. So passen die Schritte immer genau zu den Hüpfern. Warum die zufällige Tonhöhe?
 4. **Atmen (leicht):** Im Stehen soll der Held ganz leicht atmen: `stehen` mit Loop und 1,6 Sekunden Länge, **Scale** des Bildes von `1, 1` auf `1, 1.06` und zurück. Du wirst merken, dass er dabei mit den Füßen vom Boden abhebt, weil das Bild von seiner Mitte aus wächst. Wie bekommst du die Mitte an die Füße? (Tipp: **Offset** und **Position** am Bild, wie bei der Y-Sort-Übung.)
 5. **Wie viel Hilfe (leicht):** Stell `ECKEN_HILFE` testweise auf `0`, dann auf `12`. Wann fühlt es sich wie Hilfe an, wann wie Schummeln?
+
+### Antworten zu Kapitel 2
+
+1. Schräg laufen fühlt sich besser an. Ich möchte das (in den nächsten Kapiteln) als eine Einstellungsoption machen, so dass der Spieler selbst entscheiden kann, ob der Held schräg laufen soll oder nicht.
+2. Der Schatten muss in der Node-Liste vor dem Bild stehen, sonst überdeckt er den Helden.
+5. Bei 12 läuft er brav um die Säulen, wie es ein normaler Mensch auch machen würde. Aber eine Spielfigur muss an Hindernissen stecken bleiben, sonst sind es gar keine Hindernisse.
+
