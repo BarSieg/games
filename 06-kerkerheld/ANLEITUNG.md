@@ -7,9 +7,9 @@ Vieles kennst du schon: TileMapLayer, Kollisionsebenen, Tweens, Autoload, HUD, S
 **Geplante Kapitel:**
 1. Projekt, Grafiken und der erste Raum ✔
 2. Laufen in vier Richtungen, mit Animation ✔
-3. Das Schwert: Angriff, Hitbox und Hurtbox ← *du bist hier*
-4. Gegner mit State Machine: umherlaufen, verfolgen, angreifen
-5. Mehrere Räume: Die Kamera schaltet um wie im Original
+3. Das Schwert: Angriff, Hitbox und Hurtbox ✔
+4. Gegner mit State Machine: umherlaufen, verfolgen, angreifen ← *du bist hier*
+5. Mehrere Räume: Die Kamera schaltet um wie im Original, Monster bleiben in ihrem Raum
 6. Herzen, Schaden und die Anzeige oben
 7. Schlüssel, Truhen und verschlossene Türen (Inventar)
 8. Dialoge: Schilder und ein alter Mann
@@ -563,3 +563,205 @@ Fertig? Committen und Bescheid geben.
    ```
 
    Das vierte `true` heißt: Dieser Timer läuft weiter, obwohl die Zeit angehalten ist. Was passiert ohne? DOOM (2016) macht so etwas bei jedem Glory Kill. Das heißt **Hit Stop**.
+
+---
+
+## Kapitel 4: Gegner mit State Machine
+
+Zeit für den ersten Bewohner des Dungeons: der **Glibber**, ein grüner Schleimgeist (Frame `108`). Er schlendert ziellos herum, bis er den Helden bemerkt. Dann kriecht er ihm nach, zittert kurz und springt ihn an. Wer ihn mit dem Schwert trifft, schleudert ihn zurück. Nach zwei Treffern macht es *plopp*.
+
+Dass der Glibber dem Helden schon wehtut, kommt erst in Kapitel 6 mit den Herzen. Heute geht es um sein **Verhalten**.
+
+### 4.1 Was ist eine State Machine?
+
+Der Glibber tut immer genau **eine** Sache: herumlaufen **oder** verfolgen **oder** zum Sprung ansetzen. Jede dieser Sachen ist ein **Zustand** (State). Eine **State Machine** (Zustandsautomat) besteht aus zwei Dingen:
+
+1. **Was tue ich in jedem Zustand?** Das steht im `match` in `_physics_process`, wie beim Helden mit LAUFEN und ANGRIFF.
+2. **Wann wechsle ich wohin?** Die Übergänge.
+
+Bevor man programmiert, zeichnet man das am besten auf. Für den Glibber:
+
+```
+               Held näher als 64                Held näher als 28
+   WANDERN  ─────────────────────▶  JAGEN  ─────────────────────▶  ANLAUF
+      ▲      ◀─────────────────────    ▲                              │
+      │        Held weiter als 96      │                              │ nach 0,4 s
+      │                                │ nach 0,6 s                   ▼
+      │                              RUHE  ◀───────────────────────  SPRUNG
+      │                                                nach 0,25 s
+      │
+  (Zeit um oder an die Wand: neue Richtung würfeln)
+
+   Von überall: Schwerttreffer ─▶ GETROFFEN ─▶ nach 0,3 s ─▶ JAGEN
+```
+
+Ein paar Ideen stecken da drin:
+
+- **Zwei verschiedene Weiten:** Der Glibber bemerkt den Helden bei 64 Pixeln, vergisst ihn aber erst bei 96. Wäre es dieselbe Zahl, würde er an der Grenze in jedem Bild hin- und herschalten. Diesen Abstand zwischen zwei Schwellen nennt man **Hysterese**. Ein Thermostat macht das auch, sonst würde die Heizung ständig an- und ausgehen.
+- **ANLAUF ist eine Warnung:** Bevor er springt, bleibt er stehen und zittert. Der Spieler sieht: Gleich passiert was! Das heißt **Telegraphing**, und gute Spiele machen es bei jedem Angriff. In DOOM (2016) holt ein Imp sichtbar mit dem Feuerball aus, bevor er wirft.
+- **RUHE ist eine Atempause:** Nach dem Sprung ist der Glibber kurz erschöpft. Das ist das Zeitfenster, in dem der Spieler zuschlagen kann. Ohne Pause würde er pausenlos springen, und das macht keinen Spaß.
+
+### 4.2 Die Szene
+
+Kollisionsebenen zuerst: Der Glibber liegt auf Ebene 3 (Gegner).
+
+```
+Glibber (CharacterBody2D)
+├── Bild (Sprite2D)
+├── CollisionShape2D
+├── Hurtbox (Area2D)
+│   └── CollisionShape2D
+└── Anzeige (Label)
+```
+
+1. `Glibber`: **CharacterBody2D**, **Motion Mode** `Floating`. **Layer** nur `3` (Gegner), **Mask** `1` (Welt) und `3` (Gegner). So stoßen Glibber an Wände und aneinander, laufen aber durch den Helden hindurch. Das ändern wir in Kapitel 6.
+2. `Bild`: Kachelblatt, Hframes `12`, Vframes `11`, Frame `108`.
+3. `CollisionShape2D`: an die Füße, `10, 6` auf `0, 5`, wie beim Helden.
+4. `Hurtbox`: **Area2D**, Layer leer, **Mask** nur `4` (Schwert). Form `14, 14`, deckt den ganzen Glibber ab. Signal **area_entered** mit dem Glibber verbinden.
+5. `Anzeige`: ein **Label** über dem Kopf, Position etwa `-24, -20`, Size `48, 10`, **Horizontal Alignment** `Center`. Es zeigt den aktuellen Zustand an. Das ist nur zum Lernen und Testen, später schalten wir es aus.
+
+   Die Standardschrift ist bei 256 Pixeln Bildbreite viel zu groß. Kopier aus Hüpfheld den Ordner `Kenney` mit `Kenney Pixel.ttf` ins Projekt und gib dem Label eine **New LabelSettings** mit dieser Schrift und **Size** `16`. Kenney Pixel ist für genau diese Größe gezeichnet.
+
+6. Damit der Glibber den Helden finden kann, kommt der Held in eine Gruppe: `held.tscn` öffnen, `Held` auswählen, rechts neben dem Inspector der Tab **Node → Groups** → `held` eintippen → **Add**. Das kennst du aus Hüpfheld.
+
+### 4.3 Das Skript
+
+```gdscript
+extends CharacterBody2D
+
+enum Zustand { WANDERN, JAGEN, ANLAUF, SPRUNG, RUHE, GETROFFEN }
+
+const WANDER_TEMPO = 25.0
+const JAGD_TEMPO = 40.0
+const SPRUNG_TEMPO = 160.0
+const RUECKSTOSS = 180.0      # so schnell fliegt er nach einem Treffer zurück
+const BREMSE = 600.0          # so schnell kommt er danach zum Stehen
+const SEHWEITE = 64.0         # so nah muss der Held kommen, damit der Glibber ihn bemerkt
+const VERGESSWEITE = 96.0     # so weit weg muss der Held sein, damit er ihn wieder vergisst
+const SPRUNGWEITE = 28.0      # aus dieser Nähe springt er an
+
+@export var leben := 2
+
+var zustand := Zustand.WANDERN
+var zustand_zeit := 0.0       # wie lange der aktuelle Zustand noch dauert
+var richtung := Vector2.ZERO
+
+@onready var held: Node2D = get_tree().get_first_node_in_group("held")
+
+
+func _ready() -> void:
+	wechseln(Zustand.WANDERN)
+
+
+func _physics_process(delta: float) -> void:
+	zustand_zeit -= delta
+	var abstand := global_position.distance_to(held.global_position)
+
+	match zustand:
+		Zustand.WANDERN:
+			velocity = richtung * WANDER_TEMPO
+			if abstand < SEHWEITE:
+				wechseln(Zustand.JAGEN)
+			elif zustand_zeit <= 0 or is_on_wall():
+				wechseln(Zustand.WANDERN)   # neue Richtung würfeln
+		Zustand.JAGEN:
+			velocity = global_position.direction_to(held.global_position) * JAGD_TEMPO
+			if abstand > VERGESSWEITE:
+				wechseln(Zustand.WANDERN)
+			elif abstand < SPRUNGWEITE:
+				wechseln(Zustand.ANLAUF)
+		Zustand.ANLAUF:
+			velocity = Vector2.ZERO
+			$Bild.position.x = randi_range(-1, 1)   # zittern: Gleich passiert was!
+			if zustand_zeit <= 0:
+				wechseln(Zustand.SPRUNG)
+		Zustand.SPRUNG:
+			velocity = richtung * SPRUNG_TEMPO
+			if zustand_zeit <= 0:
+				wechseln(Zustand.RUHE)
+		Zustand.RUHE, Zustand.GETROFFEN:
+			velocity = velocity.move_toward(Vector2.ZERO, BREMSE * delta)
+			if zustand_zeit <= 0:
+				wechseln(Zustand.JAGEN)
+
+	move_and_slide()
+	$Anzeige.text = Zustand.keys()[zustand]
+
+
+# Einen Zustand betreten: alles einstellen, was zu ihm gehört
+func wechseln(neu: Zustand) -> void:
+	zustand = neu
+	$Bild.position.x = 0
+	match neu:
+		Zustand.WANDERN:
+			# Stehen bleiben gehört auch zum Herumlaufen
+			richtung = [Vector2.ZERO, Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT].pick_random()
+			zustand_zeit = randf_range(0.5, 1.5)
+		Zustand.ANLAUF:
+			zustand_zeit = 0.4
+		Zustand.SPRUNG:
+			# Die Richtung wird beim Absprung festgelegt. Wer jetzt ausweicht, wird verfehlt.
+			richtung = global_position.direction_to(held.global_position)
+			zustand_zeit = 0.25
+		Zustand.RUHE:
+			zustand_zeit = 0.6
+		Zustand.GETROFFEN:
+			zustand_zeit = 0.3
+
+
+func _on_hurtbox_area_entered(_area: Area2D) -> void:
+	if zustand == Zustand.GETROFFEN:
+		return
+	leben -= 1
+	velocity = held.global_position.direction_to(global_position) * RUECKSTOSS   # weg vom Helden
+	wechseln(Zustand.GETROFFEN)
+	var tween := create_tween()
+	tween.tween_property($Bild, "modulate", Color.RED, 0.05)
+	tween.tween_property($Bild, "modulate", Color.WHITE, 0.2)
+	if leben <= 0:
+		sterben()
+
+
+# Zusammenschrumpfen und weg
+func sterben() -> void:
+	set_physics_process(false)
+	$CollisionShape2D.set_deferred("disabled", true)
+	$Hurtbox.set_deferred("monitoring", false)
+	$Anzeige.hide()
+	var tween := create_tween()
+	tween.tween_property($Bild, "scale", Vector2.ZERO, 0.3)
+	tween.tween_callback(queue_free)
+```
+
+Speichern als `glibber.tscn`, zwei Glibber in den Raum stellen.
+
+### 4.4 Lies das Skript
+
+Das meiste kennst du. Neu ist vor allem der Aufbau:
+
+- **`_physics_process` sagt, was in jedem Zustand passiert**, und prüft die Übergänge. Gewechselt wird aber nie mit `zustand = ...`, sondern immer mit **`wechseln()`**.
+- **`wechseln()` macht alles, was beim Betreten eines Zustands einmal passieren muss**: Zeit stellen, Richtung würfeln, das Zittern zurücksetzen. Stünde das verstreut an jeder Stelle, an der gewechselt wird, würde man es garantiert irgendwo vergessen. So steht alles, was zu SPRUNG gehört, an genau zwei Stellen: was er *tut* (oben) und wie er *anfängt* (unten).
+- **`Zustand.RUHE, Zustand.GETROFFEN:`** Zwei Zustände, die dasselbe tun, teilen sich einen Zweig im `match`. Sie unterscheiden sich nur in der Dauer, und die steht in `wechseln()`.
+- **`Zustand.keys()[zustand]`**: `keys()` liefert die Namen eines `enum` als Liste: `["WANDERN", "JAGEN", ...]`. Ein `enum` ist in Wahrheit nur eine Zahl (WANDERN = 0, JAGEN = 1 …), also holt `[zustand]` den passenden Namen heraus.
+- **`pick_random()`** sucht sich ein zufälliges Element aus einer Liste aus.
+- **`randi_range(-1, 1)`** statt `randf_range`: ganze Zahlen, also ganze Pixel. Bei Pixel-Art zittert es sonst unscharf.
+- **`@onready var held`**: `get_first_node_in_group` gibt es erst, wenn der Glibber im Szenenbaum hängt. `@onready` wartet genau bis dahin. Ohne `@onready` würde die Zeile schon beim Erzeugen des Glibbers ausgeführt, bevor er im Szenenbaum hängt. Dann ist `get_tree()` noch `null`, und es gibt einen Fehler.
+
+### 4.5 Ausprobieren
+
+- Bleib weit weg: Die Glibber schlendern herum, bleiben mal stehen und drehen an Wänden um. Die Anzeige zeigt `WANDERN`.
+- Geh näher heran: `JAGEN`. Der Glibber kriecht dir nach.
+- Lauf weg: Erst ein ganzes Stück weiter vergisst er dich wieder.
+- Bleib stehen: `ANLAUF`, er zittert, dann `SPRUNG`. Weich während des Zitterns zur Seite aus, dann springt er ins Leere.
+- Stich zu, am besten in der `RUHE` nach seinem Sprung: Er wird rot und fliegt zurück. Beim zweiten Treffer schrumpft er weg.
+- Treib einen Glibber in eine Ecke: Der Rückstoß hört an der Wand auf, weil `move_and_slide` ihn bremst.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 4
+
+1. **Anzeige aus (leicht):** Die Zustands-Anzeige ist zum Lernen gut, im fertigen Spiel stört sie. Bau ein `@export var zeige_zustand := false` ein, mit dem man sie pro Glibber im Inspector einschalten kann.
+2. **Glibber-Matsch (leicht):** Der Glibber ist ein Schleim, also soll er auch so aussehen: Beim Wandern und Jagen wabbelt er mit einem AnimationPlayer (Scale abwechselnd breit und schmal, Discrete, wie beim ungeduldigen Helden). Im ANLAUF drückt er sich platt, bevor er springt. Welche Animation spielt in welchem Zustand? Wo im Skript gehört `play()` hin: oben in `_physics_process` oder unten in `wechseln()`?
+3. **Hit Stop auch hier (leicht):** Bau den Treffer-Stopp aus dem Topf auch beim Glibber ein. Fühlt sich der Kampf anders an? Tipp: Der Stopp sollte das Letzte sein, was beim Treffer passiert, damit der Rückstoß schon eingestellt ist.
+4. **Er sieht nicht durch Wände (mittel):** Steht eine Säule zwischen dir und dem Glibber, bemerkt er dich trotzdem. Gib ihm einen `RayCast2D`, der jedes Bild auf den Helden zeigt (`target_position = held.global_position - global_position`, Mask nur `1` Welt). Trifft der Strahl eine Wand (`is_colliding()`), sieht er dich nicht. Wo im Skript muss das geprüft werden?
+5. **Die Fledermaus (knifflig):** Bau mit dem, was du gelernt hast, einen zweiten Gegner: die Fledermaus (Frame `120`). Sie hat ganz andere Zustände: FLATTERN (wilde Zickzack-Bewegung, alle 0,2 Sekunden eine neue zufällige Richtung, auch schräg), SITZEN (hängt eine Weile still) und dann wieder FLATTERN. Den Helden beachtet sie gar nicht, sie ist einfach nur lästig. Zeichne zuerst die Zustände und Übergänge auf, wie in 4.1, dann programmiere sie. Und: Sollte eine Fledermaus an Wänden abprallen oder über alles hinwegfliegen? Was musst du dafür an der Mask ändern?

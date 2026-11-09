@@ -335,7 +335,7 @@ _data = {
 &"ungeduldig": SubResource("Animation_kdfus")
 }
 
-[node name="Held" type="CharacterBody2D" unique_id=1612745786]
+[node name="Held" type="CharacterBody2D" unique_id=1612745786 groups=["held"]]
 collision_layer = 2
 motion_mode = 1
 script = ExtResource("1_7usdt")

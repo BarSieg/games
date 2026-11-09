@@ -2,6 +2,7 @@ extends StaticBody2D
 
 @export var bewohnt := false
 
+
 func _on_hurtbox_area_entered(_area: Area2D) -> void:
 	zerbrechen()
 

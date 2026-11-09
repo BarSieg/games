@@ -1,0 +1,108 @@
+[gd_scene format=3 uid="uid://dcynd8rmy15w3"]
+
+[ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="1_0haoc"]
+[ext_resource type="Script" uid="uid://cky7fhbd8vqct" path="res://glibber.gd" id="1_obd2g"]
+[ext_resource type="FontFile" uid="uid://dlkjlgec87e21" path="res://Kenney/Kenney Pixel.ttf" id="3_a2s3j"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(10, 6)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0orc7"]
+size = Vector2(14, 12)
+
+[sub_resource type="LabelSettings" id="LabelSettings_x5jaa"]
+font = ExtResource("3_a2s3j")
+
+[sub_resource type="Animation" id="Animation_obd2g"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Bild:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_a2s3j"]
+resource_name = "springen"
+length = 0.25
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Bild:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [Vector2(1.2, 0.5)]
+}
+
+[sub_resource type="Animation" id="Animation_n32v6"]
+resource_name = "wabbeln"
+length = 0.8
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Bild:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2, 0.4, 0.6, 0.8),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [Vector2(1, 1), Vector2(1.1, 0.9), Vector2(1, 1), Vector2(0.9, 1.1), Vector2(1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_c25oi"]
+_data = {
+&"RESET": SubResource("Animation_obd2g"),
+&"springen": SubResource("Animation_a2s3j"),
+&"wabbeln": SubResource("Animation_n32v6")
+}
+
+[node name="Glibber" type="CharacterBody2D" unique_id=1953441129]
+collision_layer = 4
+collision_mask = 5
+motion_mode = 1
+script = ExtResource("1_obd2g")
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=1520144884]
+texture = ExtResource("1_0haoc")
+hframes = 12
+vframes = 11
+frame = 108
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=422739951]
+position = Vector2(0, 4)
+shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=1387942421]
+collision_layer = 0
+collision_mask = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=1382870332]
+shape = SubResource("RectangleShape2D_0orc7")
+
+[node name="Anzeige" type="Label" parent="." unique_id=489307837]
+offset_left = -24.0
+offset_top = -20.0
+offset_right = 44.0
+offset_bottom = 3.0
+text = "<Status>"
+label_settings = SubResource("LabelSettings_x5jaa")
+horizontal_alignment = 1
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1739108100]
+libraries/ = SubResource("AnimationLibrary_c25oi")
+
+[node name="RayCast2D" type="RayCast2D" parent="." unique_id=289021700]
+
+[connection signal="area_entered" from="Hurtbox" to="." method="_on_hurtbox_area_entered"]

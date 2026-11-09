@@ -6,8 +6,8 @@ const SPEED = 80.0
 const BESCHLEUNIGUNG = 1200.0   # Pixel pro Sekunde², volle Geschwindigkeit nach 1/15 Sekunde
 const ECKEN_HILFE = 6         # so viele Pixel neben einer Lücke hilft der Held noch nach
 const ECKEN_TEMPO = 60.0      # so schnell rutscht er dabei zur Seite
-const UNGEDULDIG_MIN = 10     # so viele Sekunden wartet der Held ruhig
-const UNGEDULDIG_MAX = 30     # ab so vielen Sekunden wird der Held ganz unruhig
+const UNGEDULDIG_MIN = 10     # so viele Sekunden wartet der Held mindestens ruhig
+const UNGEDULDIG_MAX = 30     # spätestens nach so vielen Sekunden wird der Held unruhig
 const ANGRIFF_BUFFER = 0.1    # so lange wird ein zu früher Angriff gemerkt
 
 var blick := Vector2.DOWN   # wohin der Held schaut, nur vier Richtungen
