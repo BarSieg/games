@@ -35,6 +35,7 @@ func _physics_process(delta: float) -> void:
 			velocity = richtung * WANDER_TEMPO
 			if abstand < SEHWEITE:
 				$RayCast2D.target_position = held.global_position - global_position
+				$RayCast2D.force_raycast_update()
 				if not $RayCast2D.is_colliding():
 					wechseln(Zustand.JAGEN)
 			elif zustand_zeit <= 0 or is_on_wall():
@@ -58,6 +59,7 @@ func _physics_process(delta: float) -> void:
 			velocity = velocity.move_toward(Vector2.ZERO, BREMSE * delta)
 			if zustand_zeit <= 0:
 				$RayCast2D.target_position = held.global_position - global_position
+				$RayCast2D.force_raycast_update()
 				if not $RayCast2D.is_colliding():
 					wechseln(Zustand.JAGEN)
 				else:

@@ -70,7 +70,7 @@ _data = {
 
 [node name="Glibber" type="CharacterBody2D" unique_id=1953441129]
 collision_layer = 4
-collision_mask = 5
+collision_mask = 21
 motion_mode = 1
 script = ExtResource("1_obd2g")
 
@@ -92,9 +92,9 @@ collision_mask = 8
 shape = SubResource("RectangleShape2D_0orc7")
 
 [node name="Anzeige" type="Label" parent="." unique_id=489307837]
-offset_left = -24.0
+offset_left = -34.0
 offset_top = -20.0
-offset_right = 44.0
+offset_right = 34.0
 offset_bottom = 3.0
 text = "<Status>"
 label_settings = SubResource("LabelSettings_x5jaa")
@@ -104,5 +104,7 @@ horizontal_alignment = 1
 libraries/ = SubResource("AnimationLibrary_c25oi")
 
 [node name="RayCast2D" type="RayCast2D" parent="." unique_id=289021700]
+
+[node name="VisibleOnScreenEnabler2D" type="VisibleOnScreenEnabler2D" parent="." unique_id=1689619529]
 
 [connection signal="area_entered" from="Hurtbox" to="." method="_on_hurtbox_area_entered"]

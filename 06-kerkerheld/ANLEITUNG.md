@@ -8,8 +8,8 @@ Vieles kennst du schon: TileMapLayer, Kollisionsebenen, Tweens, Autoload, HUD, S
 1. Projekt, Grafiken und der erste Raum ✔
 2. Laufen in vier Richtungen, mit Animation ✔
 3. Das Schwert: Angriff, Hitbox und Hurtbox ✔
-4. Gegner mit State Machine: umherlaufen, verfolgen, angreifen ← *du bist hier*
-5. Mehrere Räume: Die Kamera schaltet um wie im Original, Monster bleiben in ihrem Raum
+4. Gegner mit State Machine: umherlaufen, verfolgen, angreifen ✔
+5. Mehrere Räume: Die Kamera schaltet um wie im Original, Monster bleiben in ihrem Raum ← *du bist hier*
 6. Herzen, Schaden und die Anzeige oben
 7. Schlüssel, Truhen und verschlossene Türen (Inventar)
 8. Dialoge: Schilder und ein alter Mann
@@ -765,3 +765,166 @@ Fertig? Committen und Bescheid geben.
 3. **Hit Stop auch hier (leicht):** Bau den Treffer-Stopp aus dem Topf auch beim Glibber ein. Fühlt sich der Kampf anders an? Tipp: Der Stopp sollte das Letzte sein, was beim Treffer passiert, damit der Rückstoß schon eingestellt ist.
 4. **Er sieht nicht durch Wände (mittel):** Steht eine Säule zwischen dir und dem Glibber, bemerkt er dich trotzdem. Gib ihm einen `RayCast2D`, der jedes Bild auf den Helden zeigt (`target_position = held.global_position - global_position`, Mask nur `1` Welt). Trifft der Strahl eine Wand (`is_colliding()`), sieht er dich nicht. Wo im Skript muss das geprüft werden?
 5. **Die Fledermaus (knifflig):** Bau mit dem, was du gelernt hast, einen zweiten Gegner: die Fledermaus (Frame `120`). Sie hat ganz andere Zustände: FLATTERN (wilde Zickzack-Bewegung, alle 0,2 Sekunden eine neue zufällige Richtung, auch schräg), SITZEN (hängt eine Weile still) und dann wieder FLATTERN. Den Helden beachtet sie gar nicht, sie ist einfach nur lästig. Zeichne zuerst die Zustände und Übergänge auf, wie in 4.1, dann programmiere sie. Und: Sollte eine Fledermaus an Wänden abprallen oder über alles hinwegfliegen? Was musst du dafür an der Mask ändern?
+
+---
+
+## Kapitel 5: Mehrere Räume
+
+Ein Dungeon mit nur einem Raum ist eine Abstellkammer. In diesem Kapitel wird daraus ein richtiger Dungeon mit mehreren Räumen. Läuft der Held durch eine Tür, schiebt sich das Bild wie im Original zum nächsten Raum, und solange steht alles still. Und die Monster bleiben, wo sie hingehören.
+
+### 5.1 Wie die Räume liegen
+
+Alle Räume kommen in **dieselbe Szene**, auf dieselben zwei TileMapLayer, wie Kästchen auf Karopapier. Jeder Raum ist genau 16 × 11 Kacheln groß, also 256 × 176 Pixel:
+
+```
+            x = 0          x = 256        x = 512
+  y = -176  ┌──────────────┬──────────────┐
+            │ Raum (0, -1) │ Raum (1, -1) │
+  y = 0     ├──────  ──────┼──────────────┘
+            │ Raum (0, 0)  │
+            │   (Start)    │
+  y = 176   └──────────────┘
+```
+
+Jetzt zahlt sich aus, dass dein erster Raum genau bei (0, 0) anfängt. In welchem Raum ein Punkt liegt, ist eine einzige Rechnung:
+
+```gdscript
+Vector2i((punkt / Vector2(256, 176)).floor())
+```
+
+Ein Punkt bei (300, 50) liegt in Raum (1, 0), einer bei (100, −20) in Raum (0, −1). `floor()` rundet immer **nach unten**, auch bei negativen Zahlen: −0,1 wird zu −1, nicht zu 0. Deshalb funktionieren auch Räume oberhalb und links vom Start.
+
+`Vector2i` ist ein Vektor aus ganzen Zahlen. Räume haben keine halben Nummern.
+
+### 5.2 Neue Räume malen
+
+1. Zuerst ein Name, der passt: Im FileSystem `raum.tscn` → Rechtsklick → **Rename** → `dungeon.tscn`. Den Root-Node `Raum` umbenennen in `Dungeon`. Godot passt alle Verweise selbst an, auch die Hauptszene.
+2. **Räume kopieren:** Wie beim Umziehen in Kapitel 1: Auf `Waende` mit dem Auswahl-Werkzeug den ganzen Raum markieren, **Strg+C**, **Strg+V** und an der neuen Stelle absetzen. Danach dasselbe auf `Boden`. Am leichtesten triffst du die richtige Stelle mit eingeschaltetem Raster (oben in der Werkzeugleiste des TileMap-Tabs).
+   - Der Raum rechts vom Start beginnt bei Kachel (16, 0).
+   - Der Raum über dem Start beginnt bei Kachel (0, −11).
+3. Mal mindestens **drei Räume**, gern in L-Form wie in der Skizze. Gestalte sie unterschiedlich: mal mehr Säulen, mal einen Gang in der Mitte, mal einfach einen leeren Raum mit vielen Glibbern.
+4. **Türen:** Zwei Räume nebeneinander haben jeweils ihre eigene Wand, die Wand dazwischen ist also zwei Kacheln dick. Damit man durchkommt, brauchen **beide** Wände eine Lücke an derselben Stelle. Das gibt einen kurzen Gang, wie im Original.
+5. Türen, die ins Nichts führen (zum Beispiel aus Übung 2 von Kapitel 1), wieder zumauern.
+6. Verteil Töpfe, Glibber und die Fledermaus auf die Räume.
+
+### 5.3 Die Kamera schiebt
+
+Die Kamera hängt schon als `Camera2D` in der Szene, auf `0, -48`. Sie bekommt jetzt ein Skript:
+
+```gdscript
+extends Camera2D
+
+const RAUM_GROESSE = Vector2(256, 176)   # 16 × 11 Kacheln
+const ANZEIGE_HOEHE = 48                 # Platz für die Anzeige oben
+const SCHIEBE_ZEIT = 0.6                 # so lange dauert ein Raumwechsel
+
+var raum := Vector2i.ZERO   # welchen Raum die Kamera gerade zeigt
+
+@onready var held: Node2D = get_tree().get_first_node_in_group("held")
+
+
+func _ready() -> void:
+	# Beim Start ohne Schieben gleich zum Raum des Helden
+	raum = raum_von(held.global_position)
+	position = kamera_position(raum)
+
+
+func _process(_delta: float) -> void:
+	var neu := raum_von(held.global_position)
+	if neu != raum:
+		schieben(neu)
+
+
+# In welchem Raum liegt dieser Punkt?
+func raum_von(punkt: Vector2) -> Vector2i:
+	return Vector2i((punkt / RAUM_GROESSE).floor())
+
+
+# Wo muss die Kamera stehen, damit sie diesen Raum zeigt?
+func kamera_position(r: Vector2i) -> Vector2:
+	return Vector2(r) * RAUM_GROESSE - Vector2(0, ANZEIGE_HOEHE)
+
+
+# Zum neuen Raum schieben. Solange steht das ganze Spiel still.
+func schieben(neu: Vector2i) -> void:
+	raum = neu
+	get_tree().paused = true
+	var tween := create_tween()
+	tween.tween_property(self, "position", kamera_position(neu), SCHIEBE_ZEIT)
+	await tween.finished
+	get_tree().paused = false
+```
+
+**Wichtig:** Bei der `Camera2D` im Inspector **Process → Mode** auf `Always` stellen. `get_tree().paused = true` hält alles an, was auf `Inherit` oder `Pausable` steht, also auch die Kamera selbst und ihren Tween. Dann würde sie nie ankommen, und das Spiel bliebe für immer stehen. Process Mode kennst du aus Flatterfisch.
+
+Warum das Spiel beim Schieben anhalten? Erstens macht es das Original so. Zweitens wäre es unfair: Während das Bild noch schiebt, sieht der Spieler den neuen Raum nicht richtig, und ein Glibber könnte schon zuschlagen.
+
+### 5.4 Oben schwarz
+
+Die Kamera steht 48 Pixel über dem Raum. Liegt darüber ein anderer Raum, sieht man oben dessen untere Wand. Dort kommt in Kapitel 6 die Anzeige hin. Für jetzt reicht ein schwarzer Balken:
+
+1. Kind von `Dungeon`: **CanvasLayer** → umbenennen in `Anzeige`.
+2. Darin ein **ColorRect**: Farbe Schwarz, Position `0, 0`, Size `256, 48`.
+
+Eine CanvasLayer bewegt sich nicht mit der Kamera, das kennst du vom HUD in Hüpfheld.
+
+### 5.5 Monster bleiben im Raum
+
+Jetzt kommt die Sperre, nach der du gefragt hast. *Project Settings → Layer Names → 2D Physics*:
+
+| Ebene | Name |
+|---|---|
+| 5 | `Gegnersperre` |
+
+Neue Szene `sperre.tscn`:
+
+1. Root: **StaticBody2D** → `Sperre`. **Layer** nur `5`, **Mask** leer.
+2. Kind: `CollisionShape2D` → **New RectangleShape2D**, Size `32, 32`.
+
+Die Sperre ist unsichtbar. Sie bekommt kein Bild, nur die Form.
+
+In `dungeon.tscn` kommt in **jeden Gang** zwischen zwei Räumen eine Sperre. Ihre Mitte liegt genau auf der Grenze zwischen den Räumen, also mitten im zwei Kacheln dicken Gang. Mit **Debug → Visible Collision Shapes** im Menü siehst du sie beim Testen.
+
+Dann die Masks anpassen:
+
+| Wer | Mask |
+|---|---|
+| Held | `1` (Welt), wie bisher. Die Sperre ist für ihn Luft. |
+| Glibber, Fledermaus | `1` (Welt), `3` (Gegner) und neu `5` (Gegnersperre) |
+
+Dasselbe Prinzip wie bei Hitbox und Hurtbox: Eine Fläche ist nur für die eine Wand, deren Mask sie sieht.
+
+### 5.6 Monster in anderen Räumen schlafen
+
+Die Glibber in den anderen Räumen laufen die ganze Zeit herum, obwohl man sie nicht sieht. Das kostet Rechenzeit, und ein Glibber, der hinter der Wand jagt, steht beim Betreten des Raums plötzlich an der Tür.
+
+Die Lösung kennst du fast aus Hüpfheld: Dort hat ein `VisibleOnScreenNotifier2D` die Gegner geweckt. Hier nehmen wir seinen Bruder **`VisibleOnScreenEnabler2D`**. Er schaltet seinen Eltern-Node automatisch ab, solange er nicht im Bild ist, und wieder an, sobald er sichtbar wird. Ganz ohne Code.
+
+In `glibber.tscn` und `fledermaus.tscn`: Kind hinzufügen → `VisibleOnScreenEnabler2D`. Fertig.
+
+### 5.7 Ausprobieren
+
+- Lauf durch eine Tür: Sobald die Mitte des Helden die Raumgrenze überschreitet, schiebt sich das Bild weiter. Alles steht still, dann geht es weiter.
+- Kehr im Gang um: Das Bild schiebt zurück.
+- Oben ist ein schwarzer Balken, egal welcher Raum darüber liegt.
+- Lock einen Glibber zur Tür: Er stößt an die unsichtbare Sperre, du läufst durch.
+- Die Fledermaus prallt an der Sperre ab wie an einer Wand.
+- Geh in einen anderen Raum und zurück: Die Glibber stehen ungefähr da, wo du sie verlassen hast.
+
+### 5.8 Noch drei Dinge aus Kapitel 4
+
+Sie wirken sich auf das Verhalten aus, deshalb gehören sie hierher:
+
+1. **Die Fledermaus braucht Motion Mode `Floating`.** Bei ihr steht noch `Grounded`. Dann zählen die obere und untere Wand als „Decke“ und „Boden“, und `is_on_wall()` meldet nur die linke und rechte Wand. An der oberen und unteren Wand schrammt sie entlang, statt abzuprallen.
+2. **Der RayCast des Glibbers rechnet ein Bild zu spät.** Ein `RayCast2D` aktualisiert sein Ergebnis nur einmal pro Physik-Bild. Setzt du `target_position` neu und fragst gleich danach `is_colliding()`, bekommst du die Antwort für das **alte** Ziel. In RUHE und GETROFFEN ist das alte Ziel vielleicht Sekunden alt. Abhilfe: direkt nach dem Setzen `$RayCast2D.force_raycast_update()` aufrufen. Dann rechnet er sofort neu.
+3. **Die Zustandsanzeige sitzt schief.** Beim Label `Anzeige` ist **Offset Left** `-24`, aber **Offset Right** `44`. Die Mitte liegt so bei 10 statt bei 0, und der Text steht rechts neben dem Glibber. Mach `-34` und `34` daraus.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 5
+
+1. **Hereinspazieren (mittel):** Im Original läuft Link nach dem Schieben von selbst ein Stück in den neuen Raum. Bei uns steht der Held danach mitten im Gang. Gib der Kamera ein Signal `raum_gewechselt(richtung: Vector2)`, das sie nach dem Schieben aussendet. Der Held hört darauf und läuft mit einem Tween 16 Pixel weiter in diese Richtung. Woher kennt die Kamera die Richtung? (Tipp: `neu - raum`, bevor `raum` überschrieben wird.)
+2. **Ruckelfrei (leicht):** Schau beim Schieben genau hin: Die Kacheln zittern ein wenig, weil die Kamera auch auf halben Pixeln steht. Probier *Project Settings → Rendering → 2D → **Snap 2D Transforms to Pixel*** (Advanced Settings). Was ändert sich? Gibt es Nachteile, zum Beispiel beim Watscheln?
+3. **Der Geist (mittel):** Jetzt kannst du den Geist bauen, von dem du gesprochen hast (Frame `121`). Er schwebt langsam und stetig auf den Helden zu, durch Wände und Säulen hindurch, aber nicht aus dem Raum hinaus. Welche Mask braucht er? Mach ihn halb durchsichtig (Modulate) und lass ihn sanft auf und ab schweben. Bonus: Kann man ihn mit dem Schwert treffen, oder geht die Klinge durch ihn hindurch?
+4. **Wiedersehen (Nachdenken):** Triff einen Glibber einmal, verlass den Raum und komm zurück. Er hat immer noch nur 1 Leben. Im Original sind beim Wiederkommen alle Gegner wieder da und frisch. Was gefällt dir besser? Was davon wäre schwerer zu bauen? Darum geht es in Kapitel 9.
+5. **Die Karte (knifflig):** Oben in der schwarzen Anzeige soll eine kleine Karte entstehen: Für jeden besuchten Raum ein graues Kästchen (6 × 4 Pixel), für den aktuellen ein helles. Merk dir die besuchten Räume in der Kamera, zum Beispiel in einem `Dictionary` mit dem Raum als Schlüssel: `besucht[neu] = true`. Ein Node in der Anzeige malt die Kästchen mit `_draw()`, wie der weiße Punkt in Kapitel 2. Wie erfährt er, dass er neu malen soll?

@@ -72,6 +72,7 @@ angriff={
 2d_physics/layer_2="Held"
 2d_physics/layer_3="Gegner"
 2d_physics/layer_4="Schwert"
+2d_physics/layer_5="Gegnersperre"
 
 [physics]
 

@@ -36,7 +36,7 @@ func wechseln(neu: Zustand) -> void:
 	zustand = neu
 	match neu:
 		Zustand.FLATTERN:
-			# Stehen bleiben gehört auch zum Herumlaufen
+			# Neue zufällige Richtung, auch schräg
 			richtung = Vector2(randf() - 0.5, randf() - 0.5).normalized()
 			zustand_zeit = randf_range(0.5, 1.5)
 			$AnimationPlayer.play("flattern")
