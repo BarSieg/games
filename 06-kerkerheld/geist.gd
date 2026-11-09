@@ -11,6 +11,8 @@ var zustand_zeit := 0.0         # wie lange der aktuelle Zustand noch dauert
 var richtung := Vector2.ZERO
 var alpha_ziel := 0.25
 
+@export var schaden := 2   # in halben Herzen
+
 @onready var held: Node2D = get_tree().get_first_node_in_group("held")
 
 

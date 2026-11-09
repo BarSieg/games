@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-enum Zustand { LAUFEN, ANGRIFF }
+enum Zustand { LAUFEN, ANGRIFF, GETROFFEN }
 
 const SPEED = 80.0
 const BESCHLEUNIGUNG = 1200.0   # Pixel pro Sekunde², volle Geschwindigkeit nach 1/15 Sekunde
@@ -9,13 +9,17 @@ const ECKEN_TEMPO = 60.0      # so schnell rutscht er dabei zur Seite
 const UNGEDULDIG_MIN = 10     # so viele Sekunden wartet der Held mindestens ruhig
 const UNGEDULDIG_MAX = 30     # spätestens nach so vielen Sekunden wird der Held unruhig
 const ANGRIFF_BUFFER = 0.1    # so lange wird ein zu früher Angriff gemerkt
+const RUECKSTOSS = 160.0          # so schnell fliegt der Held nach einem Treffer zurück
+const RUECKSTOSS_ZEIT = 0.2       # so lange fliegt er
+const SCHONZEIT = 1.0             # so lange kann ihm danach nichts passieren
 
 var blick := Vector2.DOWN   # wohin der Held schaut, nur vier Richtungen
 var steh_zeit := 0.0
 var geduld_zeit := 0.0
 var zustand := Zustand.LAUFEN
 var angriff_buffer_timer := 0.0
-
+var unverwundbar := 0.0
+var rueckstoss_zeit := 0.0
 
 # Stößt der Held gerade gegen eine Kante, und daneben ist frei: zur Seite rutschen
 func ecke_umrunden(richtung: Vector2, delta: float) -> void:
@@ -56,7 +60,50 @@ func _physics_process(delta: float) -> void:
 			# Beim Zustechen abbremsen, nicht weiterlaufen
 			velocity = velocity.move_toward(Vector2.ZERO, BESCHLEUNIGUNG * delta)
 			move_and_slide()
+		Zustand.GETROFFEN:
+			velocity = velocity.move_toward(Vector2.ZERO, BESCHLEUNIGUNG * delta)
+			move_and_slide()
+			rueckstoss_zeit -= delta
+			if rueckstoss_zeit <= 0:
+				zustand = Zustand.LAUFEN
 	angriff_buffer_timer -= delta
+	treffer_pruefen(delta)
+
+
+# Jedes Bild: Berührt der Held gerade ein Monster?
+func treffer_pruefen(delta: float) -> void:
+	if unverwundbar > 0:
+		unverwundbar -= delta
+		$Bild.visible = fmod(unverwundbar, 0.1) < 0.05   # blinken, zehnmal pro Sekunde
+		return
+	$Bild.visible = true
+	for monster in $Hurtbox.get_overlapping_bodies():
+		getroffen(monster)
+		return   # ein Treffer pro Bild reicht
+
+
+func getroffen(monster: Node2D) -> void:
+	Spielstand.leben -= monster.schaden
+	$Autsch.play()
+	if Spielstand.leben <= 0:
+		sterben()
+		return
+	unverwundbar = SCHONZEIT
+	zustand = Zustand.GETROFFEN
+	rueckstoss_zeit = RUECKSTOSS_ZEIT
+	velocity = monster.global_position.direction_to(global_position) * RUECKSTOSS   # weg vom Monster
+
+
+# Ein letztes Mal drehen, dann alles von vorn
+func sterben() -> void:
+	set_physics_process(false)
+	$Bild.visible = true
+	var tween := create_tween()
+	tween.tween_property($Bild, "rotation", TAU * 3, 1.0)
+	tween.tween_property($Bild, "modulate:a", 0.0, 0.3)
+	await tween.finished
+	Spielstand.neues_spiel()
+	get_tree().reload_current_scene()
 
 
 # Zustechen in Blickrichtung, danach wieder laufen
@@ -65,7 +112,8 @@ func angreifen() -> void:
 	$Schwert.rotation = blick.angle() + PI / 2
 	$AnimationPlayer.play("angriff")
 	await $AnimationPlayer.animation_finished
-	zustand = Zustand.LAUFEN
+	if zustand == Zustand.ANGRIFF:   # nur, wenn nicht inzwischen etwas anderes passiert ist
+		zustand = Zustand.LAUFEN
 
 
 func laufen(delta: float) -> void:

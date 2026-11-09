@@ -47,7 +47,7 @@ _data = {
 &"schweben": SubResource("Animation_t5vos")
 }
 
-[node name="Geist" type="CharacterBody2D" unique_id=1844878404]
+[node name="Geist" type="CharacterBody2D" unique_id=1844878404 groups=["monster"]]
 modulate = Color(1, 1, 1, 0.2509804)
 collision_layer = 4
 collision_mask = 16

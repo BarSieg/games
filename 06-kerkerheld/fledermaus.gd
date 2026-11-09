@@ -8,6 +8,7 @@ var zustand := Zustand.FLATTERN
 var zustand_zeit := 0.0         # wie lange der aktuelle Zustand noch dauert
 var richtung := Vector2.ZERO
 
+@export var schaden := 1   # in halben Herzen
 
 func _ready() -> void:
 	wechseln(Zustand.FLATTERN)

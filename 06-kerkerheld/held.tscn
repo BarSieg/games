@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://di6u0fvdww6pp" path="res://schatten.png" id="3_xw2dj"]
 [ext_resource type="AudioStream" uid="uid://bymnt18bblrjb" path="res://schwung.wav" id="4_kdfus"]
 [ext_resource type="AudioStream" uid="uid://b3j5sj16rxvbq" path="res://schritt.wav" id="4_q6bl5"]
+[ext_resource type="AudioStream" uid="uid://bu0k5mhgj0g16" path="res://hit.wav" id="6_33x0v"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_0orc7"]
 size = Vector2(4, 12)
@@ -244,6 +245,30 @@ tracks/3/keys = {
 "update": 0,
 "values": [Vector2(1, 1)]
 }
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Schwert/Klinge:visible")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Schwert/Klinge/Hitbox/CollisionShape2D:disabled")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
 
 [sub_resource type="Animation" id="Animation_q6bl5"]
 resource_name = "stehen"
@@ -283,6 +308,30 @@ tracks/2/keys = {
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 1,
 "values": [Vector2(1, 1), Vector2(1, 1.07), Vector2(1, 1)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Schwert/Klinge:visible")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Schwert/Klinge/Hitbox/CollisionShape2D:disabled")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
 }
 
 [sub_resource type="Animation" id="Animation_kdfus"]
@@ -325,6 +374,30 @@ tracks/2/keys = {
 "update": 0,
 "values": [Vector2(0, 8)]
 }
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Schwert/Klinge:visible")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Schwert/Klinge/Hitbox/CollisionShape2D:disabled")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_kdfus"]
 _data = {
@@ -334,6 +407,9 @@ _data = {
 &"stehen": SubResource("Animation_q6bl5"),
 &"ungeduldig": SubResource("Animation_kdfus")
 }
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_uaosu"]
+size = Vector2(10, 12)
 
 [node name="Held" type="CharacterBody2D" unique_id=1612745786 groups=["held"]]
 collision_layer = 2
@@ -387,4 +463,15 @@ volume_db = -15.0
 
 [node name="Schwung" type="AudioStreamPlayer" parent="." unique_id=1635468426]
 stream = ExtResource("4_kdfus")
+volume_db = -5.0
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=1836627387]
+collision_layer = 0
+collision_mask = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=248415894]
+shape = SubResource("RectangleShape2D_uaosu")
+
+[node name="Autsch" type="AudioStreamPlayer" parent="." unique_id=2101787417]
+stream = ExtResource("6_33x0v")
 volume_db = -5.0

@@ -10,9 +10,13 @@
 [ext_resource type="PackedScene" uid="uid://dcynd8rmy15w3" path="res://glibber.tscn" id="6_uag5o"]
 [ext_resource type="PackedScene" uid="uid://coqci6i822p7d" path="res://fledermaus.tscn" id="7_jqckn"]
 [ext_resource type="PackedScene" uid="uid://c0cjo311w8hx6" path="res://raumgrenze.tscn" id="8_q5kms"]
+[ext_resource type="Script" uid="uid://86ftw4cx7ai" path="res://herzen.gd" id="8_uag5o"]
 [ext_resource type="PackedScene" uid="uid://bbj60k8w7w8yd" path="res://geist.tscn" id="9_tgur7"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_s017u"]
+font = ExtResource("6_kun6q")
+
+[sub_resource type="LabelSettings" id="LabelSettings_0orc7"]
 font = ExtResource("6_kun6q")
 
 [node name="Dungeon" type="Node2D" unique_id=964547647]
@@ -79,40 +83,57 @@ script = ExtResource("6_7wc3a")
 [node name="KarteLabel" type="Label" parent="Anzeige/Karte" unique_id=1897763868]
 offset_right = 60.0
 offset_bottom = 16.0
-text = "Map"
+text = "KARTE"
 label_settings = SubResource("LabelSettings_s017u")
 horizontal_alignment = 1
 
-[node name="Glibber" parent="." unique_id=1953441129 groups=["monster"] instance=ExtResource("6_uag5o")]
+[node name="Herzen" type="Node2D" parent="Anzeige" unique_id=1985010950]
+position = Vector2(176, 0)
+script = ExtResource("8_uag5o")
+
+[node name="HerzenLabel" type="Label" parent="Anzeige/Herzen" unique_id=1640171997]
+offset_right = 80.0
+offset_bottom = 16.0
+text = "LEBEN"
+label_settings = SubResource("LabelSettings_0orc7")
+horizontal_alignment = 1
+
+[node name="Glibber" parent="." unique_id=1953441129 instance=ExtResource("6_uag5o")]
 position = Vector2(216, 104)
 
-[node name="Glibber2" parent="." unique_id=99499550 groups=["monster"] instance=ExtResource("6_uag5o")]
+[node name="Glibber2" parent="." unique_id=99499550 instance=ExtResource("6_uag5o")]
 position = Vector2(56, 24)
 zeige_zustand = true
 
-[node name="Glibber3" parent="." unique_id=662516697 groups=["monster"] instance=ExtResource("6_uag5o")]
+[node name="Glibber3" parent="." unique_id=662516697 instance=ExtResource("6_uag5o")]
 position = Vector2(24, -152)
 
-[node name="Glibber4" parent="." unique_id=465631883 groups=["monster"] instance=ExtResource("6_uag5o")]
+[node name="Glibber4" parent="." unique_id=465631883 instance=ExtResource("6_uag5o")]
 position = Vector2(23, -120)
 
-[node name="Glibber5" parent="." unique_id=506214603 groups=["monster"] instance=ExtResource("6_uag5o")]
+[node name="Glibber5" parent="." unique_id=506214603 instance=ExtResource("6_uag5o")]
 position = Vector2(24, -136)
 
-[node name="Glibber6" parent="." unique_id=1645725538 groups=["monster"] instance=ExtResource("6_uag5o")]
+[node name="Glibber6" parent="." unique_id=1645725538 instance=ExtResource("6_uag5o")]
 position = Vector2(42, -152)
 
-[node name="Glibber7" parent="." unique_id=1604369057 groups=["monster"] instance=ExtResource("6_uag5o")]
+[node name="Glibber7" parent="." unique_id=1604369057 instance=ExtResource("6_uag5o")]
 position = Vector2(42, -136)
 
-[node name="Glibber8" parent="." unique_id=1739467260 groups=["monster"] instance=ExtResource("6_uag5o")]
+[node name="Glibber8" parent="." unique_id=1739467260 instance=ExtResource("6_uag5o")]
 position = Vector2(60, -152)
 
-[node name="Fledermaus" parent="." unique_id=1844878404 groups=["monster"] instance=ExtResource("7_jqckn")]
+[node name="Fledermaus" parent="." unique_id=1844878404 instance=ExtResource("7_jqckn")]
 position = Vector2(216, 40)
 
-[node name="Geist" parent="." unique_id=284020838 groups=["monster"] instance=ExtResource("9_tgur7")]
+[node name="Fledermaus2" parent="." unique_id=80364028 instance=ExtResource("7_jqckn")]
+position = Vector2(466, -98)
+
+[node name="Geist" parent="." unique_id=284020838 instance=ExtResource("9_tgur7")]
 position = Vector2(184, -40)
+
+[node name="Geist2" parent="." unique_id=872639842 instance=ExtResource("9_tgur7")]
+position = Vector2(472, -38)
 
 [node name="Raumgrenze" parent="." unique_id=968378715 instance=ExtResource("8_q5kms")]
 

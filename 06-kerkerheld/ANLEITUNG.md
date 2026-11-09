@@ -9,9 +9,9 @@ Vieles kennst du schon: TileMapLayer, Kollisionsebenen, Tweens, Autoload, HUD, S
 2. Laufen in vier Richtungen, mit Animation ✔
 3. Das Schwert: Angriff, Hitbox und Hurtbox ✔
 4. Gegner mit State Machine: umherlaufen, verfolgen, angreifen ✔
-5. Mehrere Räume: Die Kamera schaltet um wie im Original, Monster bleiben in ihrem Raum ← *du bist hier*
-6. Herzen, Schaden und die Anzeige oben
-7. Schlüssel, Truhen und verschlossene Türen (Inventar)
+5. Mehrere Räume: Die Kamera schaltet um wie im Original, Monster bleiben in ihrem Raum ✔
+6. Herzen, Schaden und die Anzeige oben ← *du bist hier*
+7. Schlüssel, Truhen und verschlossene Türen (Inventar), dazu Karte und Kompass: Türen und Bossraum auf der Karte
 8. Dialoge: Schilder und ein alter Mann
 9. Die Welt merkt sich alles: Speichern und Laden
 10. Boss, Titelbild mit Optionen (z. B. schräg laufen ja/nein), Musik und Web-Export
@@ -960,4 +960,223 @@ Fertig? Committen und Bescheid geben.
 ### Antworten zu Kapitel 5
 
 4. Die Monster sollen alle Leben zurückbekommen, aber nicht wiedererweckt werden.
-5. Die Karte wird 60 Pixel breit, Platz für 7x5 Räume (wobei die Karte nichts davon weiß, muss also beim platzieren der Räume berücksichtigt werden). 
+5. Die Karte wird 60 Pixel breit, Platz für 7x5 Räume (wobei die Karte nichts davon weiß, das muss also beim Platzieren der Räume berücksichtigt werden).
+
+---
+
+## Kapitel 6: Herzen, Schaden und die Anzeige
+
+Bisher sind die Monster harmlos, man läuft einfach durch sie hindurch. Jetzt bekommt der Held **Herzen**, wie im Original. Wer ein Monster berührt, verliert ein halbes Herz, wird zurückgestoßen und blinkt eine Sekunde lang. In der Zeit kann ihm nichts passieren. Sind alle Herzen weg, dreht er sich ein letztes Mal, und alles beginnt von vorn.
+
+Neu sind vor allem ein **Setter** (eine Variable, die meldet, wenn sie sich ändert) und **Pixel-Art aus Text**: Die Herzen zeichnen wir nicht in Pixelorama, sondern schreiben sie als Daten ins Skript.
+
+### 6.1 Der Spielstand
+
+Die Herzen gehören nicht dem Helden allein. Die Anzeige muss sie kennen, und in Kapitel 9 sollen sie gespeichert werden. Also kommen sie in einen **Autoload**, wie bei Hüpfheld.
+
+Neues Skript `spielstand.gd`, dann *Project Settings → Globals → Autoload* → `spielstand.gd` mit dem Namen `Spielstand` hinzufügen:
+
+```gdscript
+extends Node
+
+signal leben_geaendert
+
+const START_LEBEN = 6   # in halben Herzen: 6 sind drei ganze Herzen
+
+var max_leben := START_LEBEN
+var leben := START_LEBEN:
+	set(wert):
+		leben = clampi(wert, 0, max_leben)
+		leben_geaendert.emit()
+
+
+# Alles auf Anfang, für ein neues Spiel
+func neues_spiel() -> void:
+	max_leben = START_LEBEN
+	leben = max_leben
+```
+
+**Neu ist der Setter** (`set(wert):`). Er wird jedes Mal ausgeführt, wenn jemand `leben` einen neuen Wert gibt, egal wo im Spiel. Hier macht er zwei Dinge:
+
+- **`clampi(wert, 0, max_leben)`**: Die Leben bleiben immer zwischen 0 und dem Maximum. Ein Herz aufsammeln bei vollen Herzen? Kein Problem, es wird einfach abgeschnitten.
+- **`leben_geaendert.emit()`**: Bei jeder Änderung geht ein Signal raus. Wer die Herzen anzeigen will, muss nicht jedes Bild nachfragen, sondern wird benachrichtigt.
+
+Innerhalb des Setters schreibt `leben = ...` direkt in die Variable, ohne den Setter noch einmal aufzurufen. Sonst würde er sich endlos selbst aufrufen.
+
+Warum halbe Herzen als ganze Zahl? Weil es keine Viertel gibt. Mit 6 statt 3,0 kann nie ein krummer Wert wie 2,4999 entstehen.
+
+### 6.2 Herzen aus Text
+
+Auf dem Kachelblatt gibt es keine Herzen. Wir malen sie mit `_draw()`, Pixel für Pixel, aus einem kleinen Bild aus Text:
+
+```
+.##.##.
+#######
+#######
+.#####.
+..###..
+...#...
+```
+
+Jedes `#` ist ein Pixel. Erinnerst du dich an die Level in Ziegelbrecher? Dort war es dasselbe: Ein Bild als Daten im Code.
+
+In der CanvasLayer `Anzeige` ein neuer **Node2D** namens `Herzen`, Position etwa `176, 20` (rechts neben der Karte). Skript `herzen.gd`:
+
+```gdscript
+extends Node2D
+
+const HERZ = [
+	".##.##.",
+	"#######",
+	"#######",
+	".#####.",
+	"..###..",
+	"...#...",
+]
+const ABSTAND = 8                        # 7 Pixel Herz, 1 Pixel Luft
+const VOLL = Color(0.85, 0.1, 0.15)
+const LEER = Color(0.3, 0.3, 0.3)
+
+
+func _ready() -> void:
+	Spielstand.leben_geaendert.connect(queue_redraw)
+
+
+func _draw() -> void:
+	for herz in range(int(Spielstand.max_leben / 2.0)):
+		# Wie viele Hälften dieses Herzens sind noch voll: 2, 1 oder 0 (oder weniger)?
+		var haelften := Spielstand.leben - herz * 2
+		for y in HERZ.size():
+			for x in HERZ[y].length():
+				if HERZ[y][x] == "#":
+					# Ein halbes Herz: nur die linke Hälfte (Spalten 0 bis 3) ist rot
+					var voll: bool = haelften >= 2 or (haelften == 1 and x <= 3)
+					draw_rect(Rect2(herz * ABSTAND + x, y, 1, 1), VOLL if voll else LEER)
+```
+
+- **`connect(queue_redraw)`**: Jedes Mal, wenn der Spielstand meldet „Leben geändert“, malt sich die Anzeige neu. Das ist die Verbindung aus 6.1.
+- **`HERZ[y][x]`**: `HERZ[y]` ist eine Zeile (ein Text), `[x]` holt daraus ein einzelnes Zeichen.
+- **`int(Spielstand.max_leben / 2.0)`**: 6 halbe Herzen sind 3 Herzen. Mit `/ 2` würde Godot warnen, dass bei einer Division ganzer Zahlen der Rest verloren geht. Mit `2.0` rechnet es mit Kommazahlen, und `int()` sagt: Ich will bewusst eine ganze Zahl.
+
+Bonus für die Optik: ein Label `-LEBEN-` in Kenney Pixel darüber, rot, wie im Original.
+
+### 6.3 Die Hurtbox des Helden
+
+Der Held bekommt, was der Topf schon hat: eine Hurtbox.
+
+1. In `held.tscn`: Kind von `Held` → **Area2D** → `Hurtbox`. **Layer** leer, **Mask** nur `3` (Gegner).
+2. Darin eine `CollisionShape2D`, **RectangleShape2D** `10, 12`, Position `0, 0`. Sie deckt fast den ganzen Helden ab.
+3. Ein `AudioStreamPlayer` namens `Autsch` mit einem kurzen Treffer-Ton aus 🆓 jsfxr (dort heißt das „Hit/Hurt“).
+
+Diesmal **ohne** Signal, sondern mit Nachfragen in jedem Bild, wie beim Gegner in Hüpfheld. Der Grund ist derselbe wie damals: Steht der Held nach seiner Schonzeit immer noch im Glibber, kommt kein neues `body_entered`. Er soll aber wieder Schaden nehmen.
+
+Jedes Monster sagt selbst, wie viel Schaden es macht. In `glibber.gd`, `fledermaus.gd` und `geist.gd` oben:
+
+```gdscript
+@export var schaden := 1   # in halben Herzen
+```
+
+### 6.4 Getroffen werden
+
+Der Held bekommt einen dritten Zustand und ein paar neue Konstanten und Variablen:
+
+```gdscript
+enum Zustand { LAUFEN, ANGRIFF, GETROFFEN }
+
+const RUECKSTOSS = 160.0          # so schnell fliegt der Held nach einem Treffer zurück
+const RUECKSTOSS_ZEIT = 0.2       # so lange fliegt er
+const SCHONZEIT = 1.0             # so lange kann ihm danach nichts passieren
+
+var unverwundbar := 0.0
+var rueckstoss_zeit := 0.0
+```
+
+In `_physics_process` kommt ein neuer Zweig ins `match`, und **nach** dem `match` wird jedes Bild auf Treffer geprüft:
+
+```gdscript
+		Zustand.GETROFFEN:
+			velocity = velocity.move_toward(Vector2.ZERO, BESCHLEUNIGUNG * delta)
+			move_and_slide()
+			rueckstoss_zeit -= delta
+			if rueckstoss_zeit <= 0:
+				zustand = Zustand.LAUFEN
+	treffer_pruefen(delta)
+```
+
+Und drei neue Funktionen:
+
+```gdscript
+# Jedes Bild: Berührt der Held gerade ein Monster?
+func treffer_pruefen(delta: float) -> void:
+	if unverwundbar > 0:
+		unverwundbar -= delta
+		$Bild.visible = fmod(unverwundbar, 0.1) < 0.05   # blinken, zehnmal pro Sekunde
+		return
+	$Bild.visible = true
+	for monster in $Hurtbox.get_overlapping_bodies():
+		getroffen(monster)
+		return   # ein Treffer pro Bild reicht
+
+
+func getroffen(monster: Node2D) -> void:
+	Spielstand.leben -= monster.schaden
+	$Autsch.play()
+	if Spielstand.leben <= 0:
+		sterben()
+		return
+	unverwundbar = SCHONZEIT
+	zustand = Zustand.GETROFFEN
+	rueckstoss_zeit = RUECKSTOSS_ZEIT
+	velocity = monster.global_position.direction_to(global_position) * RUECKSTOSS   # weg vom Monster
+
+
+# Ein letztes Mal drehen, dann alles von vorn
+func sterben() -> void:
+	set_physics_process(false)
+	$Bild.visible = true
+	var tween := create_tween()
+	tween.tween_property($Bild, "rotation", TAU * 3, 1.0)
+	tween.tween_property($Bild, "modulate:a", 0.0, 0.3)
+	await tween.finished
+	Spielstand.neues_spiel()
+	get_tree().reload_current_scene()
+```
+
+**Eine Falle beim Angriff:** Wird der Held mitten im Zustechen getroffen, ist er im Zustand GETROFFEN. Aber `angreifen()` wartet noch auf das Ende der Animation und setzt danach stur `zustand = Zustand.LAUFEN`. Dann wäre der Rückstoß plötzlich vorbei. Deshalb in `angreifen()` die letzte Zeile ändern:
+
+```gdscript
+	await $AnimationPlayer.animation_finished
+	if zustand == Zustand.ANGRIFF:   # nur, wenn nicht inzwischen etwas anderes passiert ist
+		zustand = Zustand.LAUFEN
+```
+
+Das ist eine Regel, die du bei jedem `await` im Hinterkopf haben solltest: **Während man wartet, kann sich die Welt verändern.** Nach dem Warten erst prüfen, ob das, was man vorhatte, noch stimmt.
+
+### 6.5 Lies das Skript
+
+- **`fmod(unverwundbar, 0.1) < 0.05`**: `fmod` ist der Rest einer Division für Kommazahlen. Die Schonzeit läuft von 1,0 rückwärts, der Rest durch 0,1 läuft dabei immer wieder von 0,1 bis 0. Die halbe Zeit ist er kleiner als 0,05, dann ist der Held sichtbar, die andere Hälfte nicht. So blinkt er, ohne dass man sich merken muss, ob er gerade an oder aus ist.
+- **`monster.schaden`**: Der Held weiß nicht, ob er einen Glibber, eine Fledermaus oder einen Geist berührt. Er fragt einfach jedes Monster nach seinem Schaden. Neue Monster brauchen nur ein `schaden`, und der Held muss nicht geändert werden.
+- **`TAU`**: eine volle Umdrehung im Bogenmaß, also 2π. `TAU * 3` sind drei Umdrehungen.
+- **`reload_current_scene()`**: Die Szene wird komplett neu geladen, alle Monster und Töpfe sind wieder da. Nur der Autoload `Spielstand` überlebt. Deshalb muss er vorher mit `neues_spiel()` wieder auf volle Herzen gestellt werden.
+
+### 6.6 Ausprobieren
+
+- Lauf in einen Glibber: Ein halbes Herz wird grau, der Held fliegt zurück und blinkt.
+- Bleib im Glibber stehen: Nach der Schonzeit kommt der nächste Treffer.
+- Lass dich beim Zustechen treffen: Der Rückstoß wird nicht abgebrochen.
+- Verlier alle Herzen: Der Held dreht sich, wird durchsichtig, und alles beginnt mit drei vollen Herzen von vorn.
+- Durch eine Tür geflüchtet? Die Herzen bleiben, wie sie sind.
+
+### 6.7 Noch eine Sache aus Kapitel 5
+
+Die Gruppe `monster` hast du in `dungeon.tscn` bei jedem einzelnen Monster eingetragen, nicht in den Szenen `glibber.tscn`, `fledermaus.tscn` und `geist.tscn`. Das funktioniert, aber ein neu hineingezogener Glibber ist dann **nicht** in der Gruppe und schläft nie ein. Trag die Gruppe besser in den drei Szenen beim Root-Node ein. Dann hat jedes neue Monster sie automatisch, und in `dungeon.tscn` kannst du sie wieder entfernen.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 6
+
+1. **Herzen zum Aufsammeln (mittel):** Im Original lassen besiegte Monster manchmal ein Herz fallen. Bau eine Szene `herz.tscn`: eine `Area2D` mit **Mask** `2` (Held), die ein Herz malt (Tipp: dasselbe `HERZ`-Bild wie in der Anzeige, ganz rot). Berührt der Held es, gibt es ein ganzes Herz zurück (`Spielstand.leben += 2`). Beim Sterben lässt ein Glibber mit 30 % Wahrscheinlichkeit eins fallen. Wie erzeugst du eine Szene im Code? Das kennst du von den Münzen aus den Blöcken in Hüpfheld.
+2. **Es rumst (leicht):** Bei einem Treffer soll das Bild kurz wackeln: **Screen Shake**. Die Kamera hat dafür die Eigenschaft `offset`: Sie verschiebt das Bild, ohne dass sich `position` ändert. Stell sie für 0,2 Sekunden jedes Bild auf einen zufälligen Wert zwischen −2 und 2 Pixeln, danach wieder auf `Vector2.ZERO`. Warum `offset` und nicht `position`? (Tipp: Was passiert, wenn gerade ein Raumwechsel läuft?)
+3. **Letztes Herz (leicht):** Im Original piept es nervig, wenn nur noch ein Herz übrig ist. Mach mit jsfxr einen kurzen Piepton, häng ihn als `AudioStreamPlayer` in die Anzeige und lass ihn alle 0,5 Sekunden spielen, solange `Spielstand.leben <= 2` ist. Wo passt das am besten hin? (Tipp: Das Signal `leben_geaendert` gibt es schon.)
+4. **Der Glibber gönnt sich eine Pause (mittel):** Hat ein Glibber den Helden erwischt, soll er kurz in die RUHE wechseln, statt sofort nachzusetzen. Wie erfährt der Glibber davon, dass er getroffen hat? Tipp: Der Held könnte nach dem Treffer `if monster.has_method("hat_getroffen"): monster.hat_getroffen()` aufrufen. Was macht `has_method`, und warum braucht man es hier?
+5. **Herzcontainer (knifflig):** In jedem Dungeon gibt es einen Herzcontainer: Er erhöht `max_leben` um 2 und füllt alle Herzen auf. Bau ihn (am besten wieder mit dem `HERZ`-Bild, aber doppelt so groß, also jedes Pixel als 2 × 2-Quadrat). Was passiert in der Anzeige, wenn es mehr als 8 Herzen werden? Wie würdest du eine zweite Reihe anfangen, wie im Original?

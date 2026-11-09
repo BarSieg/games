@@ -12,6 +12,7 @@ const VERGESSWEITE = 96.0     # so weit weg muss der Held sein, damit er ihn wie
 const SPRUNGWEITE = 28.0      # aus dieser Nähe springt er an
 
 @export var leben := 2
+@export var schaden := 1   # in halben Herzen
 @export var zeige_zustand := false
 
 var zustand := Zustand.WANDERN
