@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://c0cjo311w8hx6"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(256, 8)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mjhhi"]
+size = Vector2(8, 176)
+
+[node name="Raumgrenze" type="StaticBody2D" unique_id=968378715]
+collision_layer = 16
+collision_mask = 0
+
+[node name="Oben" type="CollisionShape2D" parent="." unique_id=1790603709]
+position = Vector2(128, 0)
+shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Unten" type="CollisionShape2D" parent="." unique_id=2007137550]
+position = Vector2(128, 176)
+shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Links" type="CollisionShape2D" parent="." unique_id=661967519]
+position = Vector2(0, 88)
+shape = SubResource("RectangleShape2D_mjhhi")
+
+[node name="Rechts" type="CollisionShape2D" parent="." unique_id=773073587]
+position = Vector2(256, 88)
+shape = SubResource("RectangleShape2D_mjhhi")

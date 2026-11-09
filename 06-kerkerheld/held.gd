@@ -91,3 +91,9 @@ func laufen(delta: float) -> void:
 	# Nach links und rechts schauen
 	if richtung.x != 0:
 		$Bild.flip_h = richtung.x < 0
+
+
+func _on_camera_2d_raumwechsel(wechselrichtung: Variant) -> void:
+	var tween := create_tween()
+	tween.tween_property(self, "position", position + Vector2(18 * wechselrichtung.x, 18 * wechselrichtung.y), 0.2)
+	await tween.finished

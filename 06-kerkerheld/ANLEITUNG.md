@@ -876,20 +876,31 @@ Jetzt kommt die Sperre, nach der du gefragt hast. *Project Settings → Layer Na
 |---|---|
 | 5 | `Gegnersperre` |
 
-Neue Szene `sperre.tscn`:
+Die Sperre läuft **rundherum an der Raumgrenze entlang**, nicht nur in den Türen. So kommt auch ein Geist, der durch Wände schwebt, nicht in den Nachbarraum. Und ein Monster kann bis zur Mitte des Gangs folgen. Der Held kann sich also nicht im Türgang verstecken.
 
-1. Root: **StaticBody2D** → `Sperre`. **Layer** nur `5`, **Mask** leer.
-2. Kind: `CollisionShape2D` → **New RectangleShape2D**, Size `32, 32`.
+Neue Szene `raumgrenze.tscn`:
 
-Die Sperre ist unsichtbar. Sie bekommt kein Bild, nur die Form.
+1. Root: **StaticBody2D** → `Raumgrenze`. **Layer** nur `5`, **Mask** leer.
+2. Vier Kinder `CollisionShape2D`, jedes mit **New RectangleShape2D**. Sie bilden einen Rahmen um einen 256 × 176 großen Raum, der bei (0, 0) beginnt:
 
-In `dungeon.tscn` kommt in **jeden Gang** zwischen zwei Räumen eine Sperre. Ihre Mitte liegt genau auf der Grenze zwischen den Räumen, also mitten im zwei Kacheln dicken Gang. Mit **Debug → Visible Collision Shapes** im Menü siehst du sie beim Testen.
+   | Name | Size | Position |
+   |---|---|---|
+   | `Oben` | `256, 8` | `128, 0` |
+   | `Unten` | `256, 8` | `128, 176` |
+   | `Links` | `8, 176` | `0, 88` |
+   | `Rechts` | `8, 176` | `256, 88` |
+
+3. In `dungeon.tscn` bekommt **jeder Raum** eine Raumgrenze, und zwar genau an seiner linken oberen Ecke: `0, 0` für den Startraum, `256, 0` für den Raum rechts daneben, `0, -176` für den Raum darüber. Die Ränder zweier Nachbarräume liegen dann genau übereinander, das macht nichts.
+
+Die Raumgrenze ist unsichtbar. Mit **Debug → Visible Collision Shapes** im Menü siehst du sie beim Testen.
+
+Warum 8 Pixel dick? Ein springender Glibber legt pro Bild fast 3 Pixel zurück. Bei einer hauchdünnen Wand könnte er im ungünstigen Fall durchrutschen.
 
 Dann die Masks anpassen:
 
 | Wer | Mask |
 |---|---|
-| Held | `1` (Welt), wie bisher. Die Sperre ist für ihn Luft. |
+| Held | `1` (Welt), wie bisher. Die Grenze ist für ihn Luft. |
 | Glibber, Fledermaus | `1` (Welt), `3` (Gegner) und neu `5` (Gegnersperre) |
 
 Dasselbe Prinzip wie bei Hitbox und Hurtbox: Eine Fläche ist nur für die eine Wand, deren Mask sie sieht.
@@ -898,18 +909,35 @@ Dasselbe Prinzip wie bei Hitbox und Hurtbox: Eine Fläche ist nur für die eine 
 
 Die Glibber in den anderen Räumen laufen die ganze Zeit herum, obwohl man sie nicht sieht. Das kostet Rechenzeit, und ein Glibber, der hinter der Wand jagt, steht beim Betreten des Raums plötzlich an der Tür.
 
-Die Lösung kennst du fast aus Hüpfheld: Dort hat ein `VisibleOnScreenNotifier2D` die Gegner geweckt. Hier nehmen wir seinen Bruder **`VisibleOnScreenEnabler2D`**. Er schaltet seinen Eltern-Node automatisch ab, solange er nicht im Bild ist, und wieder an, sobald er sichtbar wird. Ganz ohne Code.
+Die Kamera weiß, welcher Raum gerade dran ist. Also weckt sie die Monster dieses Raums und schickt alle anderen schlafen:
 
-In `glibber.tscn` und `fledermaus.tscn`: Kind hinzufügen → `VisibleOnScreenEnabler2D`. Fertig.
+1. Jedes Monster kommt in eine Gruppe `monster`: in `glibber.tscn` und `fledermaus.tscn` beim Root-Node **Node → Groups** → `monster`.
+2. Neue Funktion in der Kamera:
+
+```gdscript
+# Nur die Monster im aktuellen Raum sind wach, alle anderen schlafen
+func monster_wecken() -> void:
+	for monster in get_tree().get_nodes_in_group("monster"):
+		if raum_von(monster.global_position) == raum:
+			monster.process_mode = Node.PROCESS_MODE_INHERIT
+		else:
+			monster.process_mode = Node.PROCESS_MODE_DISABLED
+```
+
+3. Aufrufen an zwei Stellen: am Ende von `_ready()` und in `schieben()` direkt nach `await tween.finished`, also bevor die Pause endet.
+
+`PROCESS_MODE_DISABLED` schaltet einen Node komplett ab: kein `_physics_process`, keine Animation, und er nimmt nicht mehr an der Physik teil. `PROCESS_MODE_INHERIT` heißt: Mach, was dein Eltern-Node macht, also ganz normal mit.
+
+Warum nicht `VisibleOnScreenEnabler2D`, den Bruder des Notifiers aus Hüpfheld? Der schaltet seinen Node ab, solange er nicht im Bild ist. Bei uns gehören aber die 48 Pixel unter dem schwarzen Balken auch „zum Bild“, und dort liegt der untere Rand des Raums darüber. Ein Monster dort wäre wach, obwohl man es nicht sieht. Die Kamera dagegen fragt nicht „Was sehe ich?“, sondern „Welcher Raum ist dran?“. Das ist genau die richtige Frage.
 
 ### 5.7 Ausprobieren
 
 - Lauf durch eine Tür: Sobald die Mitte des Helden die Raumgrenze überschreitet, schiebt sich das Bild weiter. Alles steht still, dann geht es weiter.
 - Kehr im Gang um: Das Bild schiebt zurück.
 - Oben ist ein schwarzer Balken, egal welcher Raum darüber liegt.
-- Lock einen Glibber zur Tür: Er stößt an die unsichtbare Sperre, du läufst durch.
-- Die Fledermaus prallt an der Sperre ab wie an einer Wand.
-- Geh in einen anderen Raum und zurück: Die Glibber stehen ungefähr da, wo du sie verlassen hast.
+- Lock einen Glibber in den Gang: Er folgt dir bis zur Mitte, dann stößt er an die unsichtbare Grenze.
+- Die Fledermaus prallt an der Grenze ab wie an einer Wand.
+- Geh in einen anderen Raum und zurück: Die Glibber stehen genau da, wo du sie verlassen hast, denn sie haben geschlafen.
 
 ### 5.8 Noch drei Dinge aus Kapitel 4
 
@@ -928,3 +956,8 @@ Fertig? Committen und Bescheid geben.
 3. **Der Geist (mittel):** Jetzt kannst du den Geist bauen, von dem du gesprochen hast (Frame `121`). Er schwebt langsam und stetig auf den Helden zu, durch Wände und Säulen hindurch, aber nicht aus dem Raum hinaus. Welche Mask braucht er? Mach ihn halb durchsichtig (Modulate) und lass ihn sanft auf und ab schweben. Bonus: Kann man ihn mit dem Schwert treffen, oder geht die Klinge durch ihn hindurch?
 4. **Wiedersehen (Nachdenken):** Triff einen Glibber einmal, verlass den Raum und komm zurück. Er hat immer noch nur 1 Leben. Im Original sind beim Wiederkommen alle Gegner wieder da und frisch. Was gefällt dir besser? Was davon wäre schwerer zu bauen? Darum geht es in Kapitel 9.
 5. **Die Karte (knifflig):** Oben in der schwarzen Anzeige soll eine kleine Karte entstehen: Für jeden besuchten Raum ein graues Kästchen (6 × 4 Pixel), für den aktuellen ein helles. Merk dir die besuchten Räume in der Kamera, zum Beispiel in einem `Dictionary` mit dem Raum als Schlüssel: `besucht[neu] = true`. Ein Node in der Anzeige malt die Kästchen mit `_draw()`, wie der weiße Punkt in Kapitel 2. Wie erfährt er, dass er neu malen soll?
+
+### Antworten zu Kapitel 5
+
+4. Die Monster sollen alle Leben zurückbekommen, aber nicht wiedererweckt werden.
+5. Die Karte wird 60 Pixel breit, Platz für 7x5 Räume (wobei die Karte nichts davon weiß, muss also beim platzieren der Räume berücksichtigt werden). 

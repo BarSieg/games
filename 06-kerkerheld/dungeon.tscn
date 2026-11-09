@@ -5,9 +5,15 @@
 [ext_resource type="PackedScene" uid="uid://cey7qqoxo4xqn" path="res://held.tscn" id="3_tgur7"]
 [ext_resource type="PackedScene" uid="uid://rfqtsgcksg4l" path="res://saeule.tscn" id="4_kun6q"]
 [ext_resource type="PackedScene" uid="uid://b7lsyt27fn45e" path="res://topf.tscn" id="5_7wc3a"]
+[ext_resource type="Script" uid="uid://c74l2pe7eldnb" path="res://karte.gd" id="6_7wc3a"]
+[ext_resource type="FontFile" uid="uid://dlkjlgec87e21" path="res://Kenney/Kenney Pixel.ttf" id="6_kun6q"]
 [ext_resource type="PackedScene" uid="uid://dcynd8rmy15w3" path="res://glibber.tscn" id="6_uag5o"]
 [ext_resource type="PackedScene" uid="uid://coqci6i822p7d" path="res://fledermaus.tscn" id="7_jqckn"]
-[ext_resource type="PackedScene" uid="uid://c0cjo311w8hx6" path="res://sperre.tscn" id="8_q5kms"]
+[ext_resource type="PackedScene" uid="uid://c0cjo311w8hx6" path="res://raumgrenze.tscn" id="8_q5kms"]
+[ext_resource type="PackedScene" uid="uid://bbj60k8w7w8yd" path="res://geist.tscn" id="9_tgur7"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_s017u"]
+font = ExtResource("6_kun6q")
 
 [node name="Dungeon" type="Node2D" unique_id=964547647]
 y_sort_enabled = true
@@ -37,6 +43,9 @@ position = Vector2(40, 40)
 [node name="Saeule2" parent="." unique_id=343907575 instance=ExtResource("4_kun6q")]
 position = Vector2(72, 40)
 
+[node name="Saeule3" parent="." unique_id=383392320 instance=ExtResource("4_kun6q")]
+position = Vector2(216, -136)
+
 [node name="Topf" parent="." unique_id=404548848 instance=ExtResource("5_7wc3a")]
 position = Vector2(200, 136)
 
@@ -47,24 +56,11 @@ bewohnt = true
 [node name="Topf3" parent="." unique_id=1486422539 instance=ExtResource("5_7wc3a")]
 position = Vector2(232, 136)
 
-[node name="Glibber" parent="." unique_id=1953441129 instance=ExtResource("6_uag5o")]
-position = Vector2(216, 104)
+[node name="Topf4" parent="." unique_id=1294544046 instance=ExtResource("5_7wc3a")]
+position = Vector2(42, -120)
 
-[node name="Glibber2" parent="." unique_id=99499550 instance=ExtResource("6_uag5o")]
-position = Vector2(56, 24)
-zeige_zustand = true
-
-[node name="Fledermaus" parent="." unique_id=1844878404 instance=ExtResource("7_jqckn")]
-position = Vector2(216, 40)
-
-[node name="Saeule3" parent="." unique_id=383392320 instance=ExtResource("4_kun6q")]
-position = Vector2(216, -136)
-
-[node name="Glibber3" parent="." unique_id=662516697 instance=ExtResource("6_uag5o")]
-position = Vector2(24, -152)
-
-[node name="Glibber4" parent="." unique_id=465631883 instance=ExtResource("6_uag5o")]
-position = Vector2(23, -120)
+[node name="Topf5" parent="." unique_id=1119588556 instance=ExtResource("5_7wc3a")]
+position = Vector2(60, -135)
 
 [node name="Anzeige" type="CanvasLayer" parent="." unique_id=541112382]
 
@@ -76,50 +72,54 @@ offset_bottom = 48.0
 grow_horizontal = 2
 color = Color(0, 0, 0, 1)
 
-[node name="Glibber5" parent="." unique_id=506214603 instance=ExtResource("6_uag5o")]
+[node name="Karte" type="Node2D" parent="Anzeige" unique_id=1160950448]
+unique_name_in_owner = true
+script = ExtResource("6_7wc3a")
+
+[node name="KarteLabel" type="Label" parent="Anzeige/Karte" unique_id=1897763868]
+offset_right = 60.0
+offset_bottom = 16.0
+text = "Map"
+label_settings = SubResource("LabelSettings_s017u")
+horizontal_alignment = 1
+
+[node name="Glibber" parent="." unique_id=1953441129 groups=["monster"] instance=ExtResource("6_uag5o")]
+position = Vector2(216, 104)
+
+[node name="Glibber2" parent="." unique_id=99499550 groups=["monster"] instance=ExtResource("6_uag5o")]
+position = Vector2(56, 24)
+zeige_zustand = true
+
+[node name="Glibber3" parent="." unique_id=662516697 groups=["monster"] instance=ExtResource("6_uag5o")]
+position = Vector2(24, -152)
+
+[node name="Glibber4" parent="." unique_id=465631883 groups=["monster"] instance=ExtResource("6_uag5o")]
+position = Vector2(23, -120)
+
+[node name="Glibber5" parent="." unique_id=506214603 groups=["monster"] instance=ExtResource("6_uag5o")]
 position = Vector2(24, -136)
 
-[node name="Glibber6" parent="." unique_id=1645725538 instance=ExtResource("6_uag5o")]
+[node name="Glibber6" parent="." unique_id=1645725538 groups=["monster"] instance=ExtResource("6_uag5o")]
 position = Vector2(42, -152)
 
-[node name="Glibber7" parent="." unique_id=1604369057 instance=ExtResource("6_uag5o")]
+[node name="Glibber7" parent="." unique_id=1604369057 groups=["monster"] instance=ExtResource("6_uag5o")]
 position = Vector2(42, -136)
 
-[node name="Glibber8" parent="." unique_id=1739467260 instance=ExtResource("6_uag5o")]
+[node name="Glibber8" parent="." unique_id=1739467260 groups=["monster"] instance=ExtResource("6_uag5o")]
 position = Vector2(60, -152)
 
-[node name="Topf4" parent="." unique_id=1294544046 instance=ExtResource("5_7wc3a")]
-position = Vector2(42, -120)
+[node name="Fledermaus" parent="." unique_id=1844878404 groups=["monster"] instance=ExtResource("7_jqckn")]
+position = Vector2(216, 40)
 
-[node name="Topf5" parent="." unique_id=1119588556 instance=ExtResource("5_7wc3a")]
-position = Vector2(60, -135)
+[node name="Geist" parent="." unique_id=284020838 groups=["monster"] instance=ExtResource("9_tgur7")]
+position = Vector2(184, -40)
 
-[node name="Sperre" parent="." unique_id=968378715 instance=ExtResource("8_q5kms")]
-position = Vector2(0, -96)
+[node name="Raumgrenze" parent="." unique_id=968378715 instance=ExtResource("8_q5kms")]
 
-[node name="Sperre2" parent="." unique_id=887006646 instance=ExtResource("8_q5kms")]
-position = Vector2(128, -176)
+[node name="Raumgrenze2" parent="." unique_id=1796605700 instance=ExtResource("8_q5kms")]
+position = Vector2(0, -176)
 
-[node name="Sperre3" parent="." unique_id=1153244050 instance=ExtResource("8_q5kms")]
-position = Vector2(256, -96)
+[node name="Raumgrenze3" parent="." unique_id=370693176 instance=ExtResource("8_q5kms")]
+position = Vector2(256, -176)
 
-[node name="Sperre4" parent="." unique_id=1830613663 instance=ExtResource("8_q5kms")]
-position = Vector2(384, -176)
-
-[node name="Sperre5" parent="." unique_id=757105180 instance=ExtResource("8_q5kms")]
-position = Vector2(384, 0)
-
-[node name="Sperre6" parent="." unique_id=1983905194 instance=ExtResource("8_q5kms")]
-position = Vector2(512, -96)
-
-[node name="Sperre7" parent="." unique_id=2077399610 instance=ExtResource("8_q5kms")]
-position = Vector2(128, 0)
-
-[node name="Sperre8" parent="." unique_id=1668216657 instance=ExtResource("8_q5kms")]
-position = Vector2(256, 80)
-
-[node name="Sperre9" parent="." unique_id=674626703 instance=ExtResource("8_q5kms")]
-position = Vector2(128, 176)
-
-[node name="Sperre10" parent="." unique_id=1509807377 instance=ExtResource("8_q5kms")]
-position = Vector2(0, 80)
+[connection signal="raumwechsel" from="Camera2D" to="Held" method="_on_camera_2d_raumwechsel"]
