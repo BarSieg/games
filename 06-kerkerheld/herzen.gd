@@ -1,7 +1,5 @@
 extends Node2D
 
-# o = Rand, # = Füllung, + = Glanz, . = durchsichtig
-
 const ABSTAND = 16                       # 14 Pixel Herz, 2 Pixel Luft
 const PRO_REIHE = 5
 const HERZEN_SPACE_Y = 16
@@ -38,7 +36,7 @@ func _draw() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if Spielstand.leben <= 2:
+	if Spielstand.leben <= 2 and Spielstand.leben > 0:
 		warnung -= delta
 		if warnung < 0:
 			warnung = WARNUNG_FREQUENZ

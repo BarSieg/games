@@ -18,24 +18,24 @@ const HERZCONTAINER = [
 	".......oo.......",
 ]
 
-# Called when the node enters the scene tree for the first time.
+
 func _ready() -> void:
 	queue_redraw()
 
 
-func _physics_process(delta: float) -> void:
-	pass # evtl. Animation
+func _physics_process(_delta: float) -> void:
+	pass   # evtl. Animation
 
 
 func _on_bild_body_entered(_body: Node2D) -> void:
-		Spielstand.max_leben += 2
-		Spielstand.leben += 20
-		queue_free()
+	Spielstand.max_leben += 2
+	Spielstand.leben += 20   # alle Herzen auffüllen, der Setter schneidet ab
+	queue_free()
 
 
 func _draw() -> void:
-	# Ein voles Herz
-	var ecke =  $Bild.position
+	# Ein goldgerahmtes Herz
+	var ecke = $Bild.position
 	for y in HERZCONTAINER.size():
 		for x in HERZCONTAINER[y].length():
 			var farbe: Color

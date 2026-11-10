@@ -20,12 +20,13 @@ const HERZ_DROPRATE = 0.3
 var zustand := Zustand.WANDERN
 var zustand_zeit := 0.0       # wie lange der aktuelle Zustand noch dauert
 var richtung := Vector2.ZERO
-var start_leben := leben
+var start_leben := 0          # wird in _ready() gesetzt
 
 @onready var held: Node2D = get_tree().get_first_node_in_group("held")
 
 
 func _ready() -> void:
+	start_leben = leben
 	wechseln(Zustand.WANDERN)
 	$Anzeige.visible = zeige_zustand
 
@@ -140,4 +141,3 @@ func sterben() -> void:
 		herzchen.drop = true
 		herzchen.position = position
 		get_parent().add_child.call_deferred(herzchen)
-		

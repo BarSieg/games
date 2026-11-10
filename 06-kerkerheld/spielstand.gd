@@ -12,6 +12,7 @@ const GOLD = Color(1, 0.8, 0.3)
 const LEER = Color(0.3, 0.3, 0.3)
 const LEER_GLANZ = Color(0.47, 0.47, 0.47)
 
+# o = Rand, # = Füllung, + = Glanz, . = durchsichtig
 const HERZ = [
 	"..ooo....ooo..",
 	".o###o..o###o.",
@@ -32,6 +33,7 @@ const HERZ = [
 var max_leben := START_LEBEN
 var leben := START_LEBEN:
 	set(wert):
+		max_leben = min(max_leben, MAX_HERZEN * 2)
 		leben = clampi(wert, 0, min(max_leben, MAX_HERZEN * 2))
 		leben_geaendert.emit()
 

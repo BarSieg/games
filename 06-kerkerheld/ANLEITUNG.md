@@ -10,8 +10,8 @@ Vieles kennst du schon: TileMapLayer, Kollisionsebenen, Tweens, Autoload, HUD, S
 3. Das Schwert: Angriff, Hitbox und Hurtbox ✔
 4. Gegner mit State Machine: umherlaufen, verfolgen, angreifen ✔
 5. Mehrere Räume: Die Kamera schaltet um wie im Original, Monster bleiben in ihrem Raum ✔
-6. Herzen, Schaden und die Anzeige oben ← *du bist hier*
-7. Schlüssel, Truhen und verschlossene Türen (Inventar), dazu Karte und Kompass: Türen und Bossraum auf der Karte
+6. Herzen, Schaden und die Anzeige oben ✔
+7. Schlüssel, Truhen und verschlossene Türen (Inventar), Masterschlüssel für den Bossraum, dazu Karte und Kompass ← *du bist hier*
 8. Dialoge: Schilder und ein alter Mann
 9. Die Welt merkt sich alles: Speichern und Laden
 10. Boss, Titelbild mit Optionen (z. B. schräg laufen ja/nein), Musik und Web-Export
@@ -1180,3 +1180,430 @@ Fertig? Committen und Bescheid geben.
 3. **Letztes Herz (leicht):** Im Original piept es nervig, wenn nur noch ein Herz übrig ist. Mach mit jsfxr einen kurzen Piepton, häng ihn als `AudioStreamPlayer` in die Anzeige und lass ihn alle 0,5 Sekunden spielen, solange `Spielstand.leben <= 2` ist. Wo passt das am besten hin? (Tipp: Das Signal `leben_geaendert` gibt es schon.)
 4. **Der Glibber gönnt sich eine Pause (mittel):** Hat ein Glibber den Helden erwischt, soll er kurz in die RUHE wechseln, statt sofort nachzusetzen. Wie erfährt der Glibber davon, dass er getroffen hat? Tipp: Der Held könnte nach dem Treffer `if monster.has_method("hat_getroffen"): monster.hat_getroffen()` aufrufen. Was macht `has_method`, und warum braucht man es hier?
 5. **Herzcontainer (knifflig):** In jedem Dungeon gibt es einen Herzcontainer: Er erhöht `max_leben` um 2 und füllt alle Herzen auf. Bau ihn (am besten wieder mit dem `HERZ`-Bild, aber doppelt so groß, also jedes Pixel als 2 × 2-Quadrat). Was passiert in der Anzeige, wenn es mehr als 8 Herzen werden? Wie würdest du eine zweite Reihe anfangen, wie im Original?
+
+---
+
+## Kapitel 7: Schlüssel, Truhen und verschlossene Türen
+
+Ein Dungeon ohne verschlossene Türen ist nur ein Keller. In diesem Kapitel bekommt der Held ein **Inventar**. In Truhen liegen Schlüssel, und jeder Schlüssel öffnet genau eine Tür. Hinter einer goldenen Tür wartet der Bossraum, und die öffnet nur der **Masterschlüssel**. Dazu kommen die beiden Schätze aus dem Original: Die **Karte** zeigt alle Räume, der **Kompass** den Bossraum.
+
+Neu sind ein Inventar als **Dictionary**, eine Klasse mit **`class_name`** und **`static func`**, und ein `@export` mit Auswahlmenü für einen `enum` aus einer anderen Datei.
+
+### 7.1 Was es alles gibt: die Klasse `Gegenstand`
+
+Schlüssel, Masterschlüssel, Karte und Kompass tauchen an vielen Stellen auf: in der Truhe, im Inventar, in der Anzeige, an der Tür. Damit sie überall gleich heißen und gleich aussehen, bekommen sie eine eigene Datei. Sie ist kein Node, sondern nur eine Sammlung von Namen, Bildern und einer Malfunktion.
+
+Neues Skript `gegenstand.gd` (*FileSystem → Rechtsklick → New → Script*, **Inherits** egal, der Inhalt wird ersetzt):
+
+```gdscript
+class_name Gegenstand
+
+# Alles, was in einer Truhe liegen und ins Inventar wandern kann
+enum Art { SCHLUESSEL, MASTERSCHLUESSEL, KARTE, KOMPASS }
+
+# Zu jeder Art ein Bild aus Text und welche Farbe welches Zeichen hat. Andere Zeichen bleiben durchsichtig.
+const BILDER = {
+	Art.SCHLUESSEL: [
+		[
+			"..ooo..",
+			".o###o.",
+			"o##o##o",
+			"o##o##o",
+			".o###o.",
+			"..o#o..",
+			"..o#oo.",
+			"..o##o.",
+			"..o#oo.",
+			"..o##o.",
+			"..o#o..",
+			"...o...",
+		],
+		{"o": Color(0.16, 0.12, 0.08), "#": Color(0.78, 0.78, 0.84)},
+	],
+	Art.MASTERSCHLUESSEL: [
+		[
+			"...ooo...",
+			"..o###o..",
+			".o##+##o.",
+			"o##+++##o",
+			".o##+##o.",
+			"..o###o..",
+			"...o#o...",
+			"...o#oo..",
+			"...o###o.",
+			"...o#oo..",
+			"...o##o..",
+			"...o#oo..",
+			"...o#o...",
+			"....o....",
+		],
+		{"o": Color(0.24, 0.14, 0.04), "#": Color(1.0, 0.8, 0.3), "+": Color(0.86, 0.12, 0.16)},
+	],
+	Art.KARTE: [
+		[
+			"oooooooooo",
+			"o##-##-##o",
+			"o##-##-##o",
+			"o--------o",
+			"o##-##-##o",
+			"o##-##-xxo",
+			"o--------o",
+			"o##-##-##o",
+			"oooooooooo",
+		],
+		{"o": Color(0.31, 0.2, 0.1), "#": Color(0.92, 0.84, 0.63), "-": Color(0.63, 0.43, 0.24), "x": Color(0.82, 0.12, 0.12)},
+	],
+	Art.KOMPASS: [
+		[
+			"..ooooo..",
+			".o#####o.",
+			"o###r###o",
+			"o##rrr##o",
+			"o###o###o",
+			"o##sss##o",
+			"o###s###o",
+			".o#####o.",
+			"..ooooo..",
+		],
+		{"o": Color(0.24, 0.14, 0.04), "#": Color(0.94, 0.94, 0.9), "r": Color(0.82, 0.12, 0.12), "s": Color(0.47, 0.47, 0.55)},
+	],
+}
+
+
+# Einen Gegenstand malen. Die Stelle ist die Mitte seiner Unterkante, also da, wo er "steht".
+static func malen(leinwand: CanvasItem, art: Art, mitte_unten: Vector2) -> void:
+	var bild: Array = BILDER[art][0]
+	var ecke := mitte_unten - Vector2(bild[0].length() / 2.0, bild.size()).floor()
+	bild_malen(leinwand, bild, ecke, BILDER[art][1])
+
+
+# Ein Bild aus Text malen, Pixel für Pixel. Geht nur aus dem _draw() der Leinwand heraus.
+static func bild_malen(leinwand: CanvasItem, bild: Array, ecke: Vector2, farben: Dictionary) -> void:
+	for y in bild.size():
+		for x in bild[y].length():
+			var zeichen: String = bild[y][x]
+			if zeichen in farben:
+				leinwand.draw_rect(Rect2(ecke + Vector2(x, y), Vector2.ONE), farben[zeichen])
+```
+
+So sehen die vier aus: ein silberner Schlüssel, ein goldener Masterschlüssel mit rotem Stein, eine Karte auf Pergament mit einem roten Kreuz und ein Kompass mit roter Nadel.
+
+Drei neue Dinge stecken darin:
+
+- **`class_name Gegenstand`** gibt der Datei einen Namen, den das ganze Projekt kennt. Überall kannst du jetzt `Gegenstand.Art.SCHLUESSEL` oder `Gegenstand.malen(...)` schreiben, ohne die Datei zu laden. Wie bei einem Autoload, nur ohne Node, der im Spiel herumhängt.
+- **`static func`** ist eine Funktion, die zur Klasse gehört und nicht zu einem einzelnen Ding. Man braucht kein `Gegenstand.new()`, um sie aufzurufen. Dafür kennt sie kein `self` und keine Variablen, sondern nur, was man ihr übergibt. Deshalb bekommt sie die **Leinwand** mit: den Node, in dessen `_draw()` gerade gemalt wird. Gemalt wird mit `leinwand.draw_rect(...)`, genau wie in deinen Herzen.
+- **`const BILDER = { Art.SCHLUESSEL: [bild, farben], ... }`**: ein Dictionary, das zu jeder Art eine kleine Liste mit zwei Einträgen speichert: `[0]` ist das Bild, `[1]` die Farben. Die Farben sind selbst ein Dictionary: Zeichen → Farbe. Jedes Zeichen, das darin nicht vorkommt, bleibt durchsichtig. So braucht `bild_malen` kein `match` mehr, und jedes Bild darf seine eigenen Zeichen haben.
+
+Die Herzen hast du in den Übungen schon ganz ähnlich gelöst. In Übung 5 kannst du sie hierher umziehen lassen.
+
+### 7.2 Das Inventar im Spielstand
+
+Was der Held besitzt, gehört in den Spielstand. Unten an `spielstand.gd` anhängen, und in `neues_spiel()` das Inventar leeren:
+
+```gdscript
+signal inventar_geaendert
+
+var inventar := {}   # Gegenstand.Art -> Anzahl
+
+
+# Wie viele davon hat der Held?
+func anzahl(art: Gegenstand.Art) -> int:
+	return inventar.get(art, 0)
+
+
+func hinzufuegen(art: Gegenstand.Art) -> void:
+	inventar[art] = anzahl(art) + 1
+	inventar_geaendert.emit()
+
+
+# Einen verbrauchen, falls der Held einen hat. Die Antwort sagt, ob es geklappt hat.
+func verbrauchen(art: Gegenstand.Art) -> bool:
+	if anzahl(art) == 0:
+		return false
+	inventar[art] -= 1
+	inventar_geaendert.emit()
+	return true
+```
+
+In `neues_spiel()` dazu:
+
+```gdscript
+	inventar.clear()
+	inventar_geaendert.emit()
+```
+
+- **Ein Dictionary als Inventar:** Der Schlüssel ist die Art des Gegenstands, der Wert, wie viele der Held davon hat. Bei Karte und Kompass ist das nur 0 oder 1, bei normalen Schlüsseln auch mal 3. Ein neuer Gegenstand in Kapitel 10? Ein neuer Eintrag im `enum`, fertig, der Spielstand muss nicht geändert werden.
+- **`inventar.get(art, 0)`**: Holt den Wert zum Schlüssel. Steht der Schlüssel noch gar nicht im Dictionary, kommt die `0` zurück statt eines Fehlers.
+- **`verbrauchen` antwortet mit `bool`**: Wer eine Tür aufschließen will, fragt nicht erst „Hast du einen?“ und nimmt dann einen weg. Er sagt nur „Nimm einen“ und erfährt dabei, ob es geklappt hat. So kann man nie vergessen, einen Schlüssel abzuziehen.
+- **Warum leeren beim Tod?** `reload_current_scene()` stellt alle Truhen wieder zu. Würde das Inventar überleben, könnte man sterben, die Truhe noch einmal öffnen und Schlüssel sammeln. Also beginnt nach dem Tod alles von vorn. Wie man Fortschritt richtig behält, kommt in Kapitel 9.
+
+### 7.3 Die Hand des Helden
+
+Truhen und Türen öffnet man mit der **Angriffstaste**: Steht etwas Benutzbares direkt vor dem Helden, wird es benutzt, sonst wird zugestochen. Woher weiß der Held, was vor ihm steht? Mit einer kleinen Fläche in Blickrichtung, der **Hand**.
+
+Der Node `Schwert` dreht sich ja schon in die Blickrichtung. Die Hand hängt sich einfach dazu:
+
+1. In `held.tscn`: Kind von `Schwert` → **Area2D** → `Hand`. **Layer** leer, **Mask** nur `1` (Welt). **Monitorable** aus.
+2. Darin eine `CollisionShape2D`, **RectangleShape2D** `8, 8`, Position `0, -12`: ein Stückchen vor dem Helden.
+3. Damit die Hand immer dahin zeigt, wohin der Held schaut, und nicht nur beim Zustechen, wandert die Zeile `$Schwert.rotation = blick.angle() + PI / 2` aus `angreifen()` nach `laufen()`, direkt unter `blick = vier_richtungen(richtung)`.
+
+Neue Funktion im Helden:
+
+```gdscript
+# Steht vor dem Helden etwas, das man benutzen kann? Dann benutzen statt zustechen.
+func benutzen() -> bool:
+	for ding in $Schwert/Hand.get_overlapping_bodies():
+		if ding.has_method("benutzen"):
+			ding.benutzen()
+			return true
+	return false
+```
+
+Und in `_physics_process` im Zweig LAUFEN:
+
+```gdscript
+			if Input.is_action_just_pressed("angriff") or angriff_buffer_timer > 0:
+				angriff_buffer_timer = 0.0
+				if not benutzen():
+					angreifen()
+```
+
+- **`has_method("benutzen")`** kennst du aus Übung 4 von Kapitel 6. Die Hand berührt auch Wände und Säulen, die liegen ja auch auf Ebene 1. Die haben aber kein `benutzen()` und werden übersprungen. Jedes Ding, das man benutzen kann, sagt das einfach, indem es diese Funktion hat. Der Held muss keine Truhen und keine Türen kennen.
+- **`angriff_buffer_timer = 0.0`**: Dein vorgemerkter Angriff aus Kapitel 3 hat den Timer bisher nicht zurückgesetzt, er lief einfach ab. Das ging gut, solange danach immer ein Angriff von 0,25 Sekunden kam. Jetzt kann das Benutzen sofort fertig sein. Ohne das Zurücksetzen würde im nächsten Bild der Timer noch laufen, und der Held würde zusätzlich zustechen.
+
+### 7.4 Die Truhe
+
+Zuerst eine kleine Szene für den **Schatz**, der beim Öffnen aus der Truhe aufsteigt. Neues Skript `schatz.gd`:
+
+```gdscript
+class_name Schatz
+extends Node2D
+
+var art := Gegenstand.Art.SCHLUESSEL
+
+
+func _draw() -> void:
+	Gegenstand.malen(self, art, Vector2.ZERO)
+```
+
+Neue Szene: Root **Node2D** → `Schatz`, Skript `schatz.gd` anhängen, speichern als `schatz.tscn`. Mehr braucht er nicht.
+
+Dann die Truhe:
+
+```
+Truhe (StaticBody2D)
+├── Bild (Sprite2D)
+├── CollisionShape2D
+└── Fanfare (AudioStreamPlayer)
+```
+
+1. `Truhe`: **StaticBody2D**, Layer `1` (Welt), Mask leer.
+2. `Bild`: Kachelblatt, Frame `90` (geschlossen). Frame `91` ist die offene Truhe.
+3. `CollisionShape2D`: `14, 10` auf `0, 3`. Etwas größer als bei Säule und Topf, damit die Hand sie gut erwischt.
+4. `Fanfare`: ein kurzer, fröhlicher Ton. Aus 🆓 jsfxr (**Powerup**) oder ein kurzes Stück aus den Kenney-Jingles von Hüpfheld.
+5. Skript:
+
+```gdscript
+extends StaticBody2D
+
+const SCHATZ = preload("res://schatz.tscn")
+const BILD_OFFEN = 91
+
+@export var inhalt: Gegenstand.Art = Gegenstand.Art.SCHLUESSEL
+
+var offen := false
+
+
+# Der Held steht davor und drückt den Knopf
+func benutzen() -> void:
+	if offen:
+		return
+	offen = true
+	$Bild.frame = BILD_OFFEN
+	$Fanfare.play()
+	Spielstand.hinzufuegen(inhalt)
+	zeigen()
+
+
+# Der Schatz steigt aus der Truhe auf, bleibt kurz stehen und verblasst
+func zeigen() -> void:
+	var schatz: Schatz = SCHATZ.instantiate()
+	schatz.art = inhalt
+	schatz.position = Vector2(0, -4)
+	add_child(schatz)
+	var tween := schatz.create_tween()
+	tween.tween_property(schatz, "position:y", -18.0, 0.5)
+	tween.tween_interval(0.6)
+	tween.tween_property(schatz, "modulate:a", 0.0, 0.3)
+	tween.tween_callback(schatz.queue_free)
+```
+
+6. Speichern als `truhe.tscn`.
+
+**`@export var inhalt: Gegenstand.Art`**: Weil `Gegenstand` einen `class_name` hat, kennt der Inspector seinen `enum`. Wähl eine Truhe im Dungeon aus: Bei **Inhalt** gibt es ein Auswahlmenü mit allen vier Arten, wie bei deinen Blöcken in Hüpfheld.
+
+**`var schatz: Schatz`**: Auch die Schatz-Szene hat einen `class_name`. Dadurch weiß Godot, dass das Ergebnis von `instantiate()` ein `Schatz` mit einer Variablen `art` ist, und kann `schatz.art = inhalt` prüfen. Bei deinem `herzchen` in Kapitel 6 stand nur `var herzchen = ...` ohne Typ. Das funktioniert auch, aber ein Tippfehler wie `herzchen.dorp` fällt erst beim Spielen auf.
+
+### 7.5 Verschlossene Türen
+
+```
+Tuer (StaticBody2D)
+├── Bilder (Node2D)
+│   ├── Links (Sprite2D)
+│   └── Rechts (Sprite2D)
+└── CollisionShape2D
+```
+
+1. `Tuer`: **StaticBody2D**, Layer `1`, Mask leer.
+2. `Bilder`: ein **Node2D**, nur damit beide Hälften zusammen wackeln können.
+3. `Links`: Kachelblatt, Frame `46`, Position `-8, 0`. `Rechts`: Frame `47`, Position `8, 0`. Zusammen ergeben sie eine Doppeltür, genau so breit wie deine Tür-Lücken oben und unten.
+4. `CollisionShape2D`: `32, 16`.
+5. Skript:
+
+```gdscript
+extends StaticBody2D
+
+@export var master := false   # braucht den Masterschlüssel statt eines normalen
+
+
+func _ready() -> void:
+	if master:
+		$Bilder.modulate = Color(1.0, 0.85, 0.4)   # golden: Hier geht es zum Boss
+
+
+# Der Held steht davor und drückt den Knopf
+func benutzen() -> void:
+	var schluessel := Gegenstand.Art.MASTERSCHLUESSEL if master else Gegenstand.Art.SCHLUESSEL
+	if not Spielstand.verbrauchen(schluessel):
+		wackeln()
+		return
+	$CollisionShape2D.set_deferred("disabled", true)
+	var tween := create_tween()
+	tween.tween_property(self, "modulate:a", 0.0, 0.3)
+	tween.tween_callback(queue_free)
+
+
+# Kein Schlüssel: Die Tür rüttelt nur
+func wackeln() -> void:
+	var tween := create_tween()
+	for i in 3:
+		tween.tween_property($Bilder, "position:x", 1.0, 0.04)
+		tween.tween_property($Bilder, "position:x", -1.0, 0.04)
+	tween.tween_property($Bilder, "position:x", 0.0, 0.04)
+```
+
+6. Speichern als `tuer.tscn`.
+
+**Einsetzen:** Eine Tür kommt in die Wand-Lücke **des Raums, aus dem man kommt**, also in einen der beiden Teile des Gangs. Für Türen in der linken oder rechten Wand: **Rotation** `90`. Bei 90° bleiben Pixel scharf.
+
+Der **Masterschlüssel** ist einfach eine Tür mit angehaktem **Master** im Inspector. Sie wird golden und will einen Masterschlüssel statt eines normalen. Sonst ist alles gleich. Ein einziges Häkchen statt einer zweiten Szene.
+
+Eine Kleinigkeit zu **`wackeln()`**: Die Tween-Schleife hängt sechs Schritte hintereinander, die dann nacheinander ablaufen. Das `for` läuft also sofort durch, gewackelt wird erst danach.
+
+### 7.6 Der Bossraum
+
+Für den Masterschlüssel brauchen wir einen Bossraum. Den Boss selbst gibt es erst in Kapitel 10, aber den Raum kannst du schon bauen:
+
+1. Mal einen Raum, der nur durch eine einzige Tür erreichbar ist, und setz dort eine Tür mit **Master** an.
+2. Stell in den Raum einen **Marker2D** namens `Bossraum` und steck ihn in die Gruppe `boss`. In Kapitel 10 übernimmt der Boss selbst diese Gruppe, bis dahin hält der Marker den Platz frei.
+3. Versteck den Masterschlüssel in einer Truhe, möglichst weit weg und hinter einer normalen verschlossenen Tür. Im Original liegt er meistens tief im Dungeon, kurz bevor man den Boss erreicht.
+4. Verteil Karte, Kompass und ein paar Schlüssel auf andere Truhen. Achte darauf, dass man nie hängenbleibt: Bevor eine Tür kommt, muss der Schlüssel dafür erreichbar sein.
+
+### 7.7 Das Inventar in der Anzeige
+
+In der CanvasLayer `Anzeige` ein **Node2D** namens `Inventar`, Position etwa `96, 0`, also zwischen Karte und Herzen. Darin ein **Label** namens `Anzahl` in Kenney Pixel, Position `9, 18`. Skript an `Inventar`:
+
+```gdscript
+extends Node2D
+
+
+func _ready() -> void:
+	Spielstand.inventar_geaendert.connect(aktualisieren)
+	aktualisieren()
+
+
+func aktualisieren() -> void:
+	$Anzahl.text = "x%d" % Spielstand.anzahl(Gegenstand.Art.SCHLUESSEL)
+	queue_redraw()
+
+
+func _draw() -> void:
+	Gegenstand.malen(self, Gegenstand.Art.SCHLUESSEL, Vector2(4, 30))
+	if Spielstand.anzahl(Gegenstand.Art.MASTERSCHLUESSEL) > 0:
+		Gegenstand.malen(self, Gegenstand.Art.MASTERSCHLUESSEL, Vector2(28, 30))
+	if Spielstand.anzahl(Gegenstand.Art.KARTE) > 0:
+		Gegenstand.malen(self, Gegenstand.Art.KARTE, Vector2(46, 21))
+	if Spielstand.anzahl(Gegenstand.Art.KOMPASS) > 0:
+		Gegenstand.malen(self, Gegenstand.Art.KOMPASS, Vector2(46, 34))
+```
+
+Die Positionen sind ein Vorschlag. Schieb sie hin, bis es dir gefällt.
+
+### 7.8 Karte und Kompass auf der Karte
+
+Jetzt kommt, was du dir für die Karte gewünscht hast.
+
+1. Den TileMapLayer `Waende` mit Rechtsklick → **Access as Unique Name** für die Karte erreichbar machen.
+2. In `karte.gd` eine neue Variable und ein `_ready()`:
+
+```gdscript
+var alle_raeume := {}         # jeder Raum, in dem eine Wandkachel liegt
+
+
+func _ready() -> void:
+	# Welche Räume gibt es? Jede Wandkachel verrät ihren Raum.
+	for zelle in %Waende.get_used_cells():
+		alle_raeume[Vector2i((Vector2(zelle) / Vector2(16, 11)).floor())] = true
+	Spielstand.inventar_geaendert.connect(queue_redraw)
+```
+
+3. Und ein neues `_draw()`:
+
+```gdscript
+func _draw() -> void:
+	# Mit der Karte: alle Räume, auch die unbesuchten, ganz dunkel
+	if Spielstand.anzahl(Gegenstand.Art.KARTE) > 0:
+		for raum in alle_raeume:
+			draw_rect(kasten(raum), Color(0.25, 0.25, 0.25))
+	for raum in besucht:
+		draw_rect(kasten(raum), Color.DARK_GRAY)
+	# Mit dem Kompass: der Bossraum in Rot
+	var boss: Node2D = get_tree().get_first_node_in_group("boss")
+	if boss and Spielstand.anzahl(Gegenstand.Art.KOMPASS) > 0:
+		draw_rect(kasten(%Camera2D.raum_von(boss.global_position)), Color.RED)
+	draw_rect(kasten(aktuell), Color.WHITE)
+```
+
+- **`get_used_cells()`** liefert die Koordinaten aller Zellen, in denen eine Kachel liegt. Jede Wandkachel wird zum Raum umgerechnet, und ein Dictionary merkt sich jeden Raum nur einmal. So weiß die Karte, welche Räume es gibt, ohne dass du sie irgendwo aufzählen musst. Malst du einen neuen Raum, ist er von selbst auf der Karte.
+- **Warum `Vector2(zelle) / Vector2(16, 11)` und nicht gleich mit ganzen Zahlen?** Eine Division ganzer Zahlen rundet in Richtung null: −1 ÷ 16 ergibt 0 statt −1. Die Zelle (−1, 0) würde so in Raum (0, 0) landen statt in Raum (−1, 0). Mit Kommazahlen und `floor()` stimmt es auch links und oberhalb vom Start.
+- **`%Camera2D.raum_von(...)`**: Die Karte rechnet den Raum des Bosses nicht selbst aus, sondern fragt die Kamera. Die Formel steht so nur an einer Stelle.
+- **Reihenfolge beim Malen:** Erst alle Räume dunkel, darüber die besuchten heller, darüber der Bossraum rot, ganz oben der aktuelle Raum weiß. Was später gemalt wird, liegt oben.
+
+### 7.9 Ausprobieren
+
+- Stell dich vor eine Truhe und drück die Angriffstaste: Sie geht auf, die Fanfare spielt, der Schatz steigt auf, und in der Anzeige steht `x1`.
+- Noch einmal drücken: nichts, die Truhe ist leer. Steht der Held daneben und schaut weg, sticht er zu.
+- Geh an eine verschlossene Tür: Mit Schlüssel verschwindet sie, und die Anzeige zählt herunter. Ohne Schlüssel rüttelt sie nur.
+- Die goldene Tür rüttelt, auch wenn du normale Schlüssel hast.
+- Öffne die Truhe mit der Karte: Auf der Karte erscheinen alle Räume. Mit dem Kompass leuchtet der Bossraum rot.
+- Stirb mit Schlüsseln in der Tasche: Alles ist weg, alle Truhen sind wieder zu.
+
+### 7.10 Noch drei Dinge aus Kapitel 6
+
+Sie wirken sich auf das Verhalten aus:
+
+1. **`max_leben` hat keine Grenze.** In `spielstand.gd` begrenzt der Setter nur `leben` auf höchstens 20. `max_leben` selbst kann aber beliebig wachsen. Nach dem elften Herzcontainer malt die Anzeige 11 Herzen in drei Reihen, obwohl nur 10 gefüllt werden können. Abhilfe: ein Setter auch für `max_leben`, wie ich ihn bei der Herzanzahl vorgeschlagen habe: `max_leben = clampi(wert, START_LEBEN, MAX_HERZEN * 2)`. Dann kann der Setter von `leben` wieder einfach `clampi(wert, 0, max_leben)` sein.
+2. **`start_leben` im Glibber merkt sich den falschen Wert.** `var start_leben := leben` steht oben bei den Variablen. Diese Zeile läuft, **bevor** Godot die Werte aus dem Inspector einträgt. Gibst du einem Glibber im Inspector `leben = 3`, merkt sich `start_leben` trotzdem die 2 aus dem Skript, und `heilen()` macht aus ihm einen Glibber mit 2 Leben. Abhilfe: `var start_leben := 0` oben und `start_leben = leben` in `_ready()`. Dann sind die Inspector-Werte schon eingetragen.
+3. **Der Warnton piept auch beim Sterben.** `Spielstand.leben <= 2` ist auch bei 0 wahr, also piept es während der letzten Drehung. Mit `0 < Spielstand.leben and Spielstand.leben <= 2` ist Ruhe.
+
+Und ein Hinweis ohne Fehler: Dein Screen Shake setzt den Offset nur einmal beim Treffer und erst nach dem Rückstoß wieder auf null. Das ist ein einzelner Ruck, kein Wackeln. Wenn es dir so gefällt, lass es. Sonst stell `offset` während GETROFFEN in jedem Bild neu ein.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 7
+
+1. **Die Mimik (mittel):** Frame `92` ist eine Truhe mit Zähnen und Zunge. Gib der Truhe `@export var mimik := false` und `@export var schaden := 2`. Eine Mimik zeigt beim Öffnen Frame `92` und beißt zu: Der Held verliert ein Herz und fliegt zurück. Tipp: Der Held hat schon eine Funktion, die genau das macht, wenn man ihr ein Ding mit `schaden` gibt. Wie kommt die Truhe an den Helden? (Tipp: Gruppe `held`.) 😬
+2. **Türen auf der Karte (mittel):** Wie besprochen: Für jeden Raum, den die Karte zeigt, nachsehen, ob in der Mitte einer Wand eine Wandkachel fehlt. Die Mitte der oberen Wand ist die Zelle `Vector2i(raum.x * 16 + 7, raum.y * 11)`. `%Waende.get_cell_source_id(zelle)` liefert `-1`, wenn dort keine Kachel liegt. Dann einen kleinen Strich vom Kästchen zum Nachbarn malen. Wo liegen die Mitten der anderen drei Wände?
+3. **Belohnung für einen leeren Raum (mittel):** Im Original erscheint oft ein Schlüssel, wenn alle Monster eines Raums besiegt sind. Bau eine Szene `belohnung.tscn` (eine Truhe, die erst unsichtbar ist und keine Kollision hat). Sie prüft in jedem Bild: Gibt es in meinem Raum noch ein Monster aus der Gruppe `monster`? Wenn nicht, taucht sie mit einem Geräusch auf. Tipp: `get_tree().get_nodes_in_group("monster")` und `%Camera2D.raum_von()`. Achtung: Was passiert mit Monstern, die gerade schrumpfen und gleich weg sind?
+4. **Klick und Klack (leicht):** Ein Geräusch für die verschlossene Tür beim Rütteln und eins beim Aufschließen. Das Aufschließen ist knifflig: Die Tür löscht sich mit `queue_free()`, und der Ton wäre sofort mit weg. Wo kann der Ton stattdessen hängen? Das kennst du von den Münzen in Hüpfheld.
+5. **Aufräumen (leicht):** Du hast jetzt zwei Malfunktionen für Bilder aus Text: deine eigene in den Herzen und `Gegenstand.bild_malen()`. Zieh `HERZ` und deinen `HERZCONTAINER` aus dem Spielstand nach `Gegenstand` um und lass `herz.gd` und `herzcontainer.gd` mit `Gegenstand.bild_malen()` malen. Die Herzanzeige mit ihren halben Herzen darf ihre eigene Schleife behalten. Warum?
