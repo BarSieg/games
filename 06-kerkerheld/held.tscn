@@ -10,6 +10,9 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_0orc7"]
 size = Vector2(4, 12)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ky4lx"]
+size = Vector2(8, 8)
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
 size = Vector2(10, 6)
 
@@ -449,6 +452,13 @@ monitoring = false
 position = Vector2(0, -9)
 shape = SubResource("RectangleShape2D_0orc7")
 disabled = true
+
+[node name="Hand" type="Area2D" parent="Schwert" unique_id=1639398668]
+collision_layer = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Schwert/Hand" unique_id=338456864]
+position = Vector2(0, -8)
+shape = SubResource("RectangleShape2D_ky4lx")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=400025648]
 position = Vector2(0, 5)

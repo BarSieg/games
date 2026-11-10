@@ -54,7 +54,9 @@ func _physics_process(delta: float) -> void:
 			laufen(delta)
 			%Camera2D.offset = Vector2i.ZERO
 			if Input.is_action_just_pressed("angriff") or angriff_buffer_timer > 0:
-				angreifen()
+				angriff_buffer_timer = 0.0
+				if not benutzen():
+					angreifen()
 		Zustand.ANGRIFF:
 			if Input.is_action_just_pressed("angriff"):
 				angriff_buffer_timer = ANGRIFF_BUFFER
@@ -63,6 +65,7 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 		Zustand.GETROFFEN:
 			velocity = velocity.move_toward(Vector2.ZERO, BESCHLEUNIGUNG * delta)
+			%Camera2D.offset = Vector2i(randi_range(-2, 2), randi_range(-2, 2))
 			move_and_slide()
 			rueckstoss_zeit -= delta
 			if rueckstoss_zeit <= 0:
@@ -85,7 +88,6 @@ func treffer_pruefen(delta: float) -> void:
 
 func getroffen(monster: Node2D) -> void:
 	Spielstand.leben -= monster.schaden
-	%Camera2D.offset = Vector2i(randi_range(-2, 2), randi_range(-2, 2))
 	$Autsch.play()
 	if monster.has_method("hat_getroffen"):
 		monster.hat_getroffen()
@@ -113,7 +115,6 @@ func sterben() -> void:
 # Zustechen in Blickrichtung, danach wieder laufen
 func angreifen() -> void:
 	zustand = Zustand.ANGRIFF
-	$Schwert.rotation = blick.angle() + PI / 2
 	$AnimationPlayer.play("angriff")
 	await $AnimationPlayer.animation_finished
 	if zustand == Zustand.ANGRIFF:   # nur, wenn nicht inzwischen etwas anderes passiert ist
@@ -130,6 +131,7 @@ func laufen(delta: float) -> void:
 		steh_zeit = 0.0
 		geduld_zeit = 0.0
 		blick = vier_richtungen(richtung)
+		$Schwert.rotation = blick.angle() + PI / 2
 		$AnimationPlayer.play("laufen")
 	else:
 		steh_zeit += delta
@@ -143,6 +145,15 @@ func laufen(delta: float) -> void:
 	# Nach links und rechts schauen
 	if richtung.x != 0:
 		$Bild.flip_h = richtung.x < 0
+
+
+# Steht vor dem Helden etwas, das man benutzen kann? Dann benutzen statt zustechen.
+func benutzen() -> bool:
+	for ding in $Schwert/Hand.get_overlapping_bodies():
+		if ding.has_method("benutzen"):
+			ding.benutzen()
+			return true
+	return false
 
 
 func _on_camera_2d_raumwechsel(wechselrichtung: Variant) -> void:

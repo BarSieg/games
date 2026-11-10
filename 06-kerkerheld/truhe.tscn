@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://btkdn1hnhc7um"]
+
+[ext_resource type="Script" uid="uid://devj3etpl28w3" path="res://truhe.gd" id="1_qebd8"]
+[ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="2_bcgh3"]
+[ext_resource type="AudioStream" uid="uid://c8h38npe4kogh" path="res://fanfare.wav" id="3_5l6a1"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(14, 10)
+
+[node name="Truhe" type="StaticBody2D" unique_id=583123573]
+collision_mask = 0
+script = ExtResource("1_qebd8")
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=165027267]
+texture = ExtResource("2_bcgh3")
+hframes = 12
+vframes = 11
+frame = 89
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2086778084]
+position = Vector2(0, 3)
+shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Fanfare" type="AudioStreamPlayer" parent="." unique_id=819055992]
+stream = ExtResource("3_5l6a1")

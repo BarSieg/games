@@ -15,7 +15,7 @@ func _ready() -> void:
 	# Beim Start ohne Schieben gleich zum Raum des Helden
 	raum = raum_von(held.global_position)
 	position = kamera_position(raum)
-	monster_wecken()
+	monster_wecken.call_deferred()
 	%Karte.zeigen(raum)
 
 

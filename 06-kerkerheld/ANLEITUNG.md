@@ -1343,8 +1343,8 @@ Truhen und Türen öffnet man mit der **Angriffstaste**: Steht etwas Benutzbares
 
 Der Node `Schwert` dreht sich ja schon in die Blickrichtung. Die Hand hängt sich einfach dazu:
 
-1. In `held.tscn`: Kind von `Schwert` → **Area2D** → `Hand`. **Layer** leer, **Mask** nur `1` (Welt). **Monitorable** aus.
-2. Darin eine `CollisionShape2D`, **RectangleShape2D** `8, 8`, Position `0, -12`: ein Stückchen vor dem Helden.
+1. In `held.tscn`: Kind von `Schwert` → **Area2D** → `Hand`. **Layer** leer, **Mask** nur `1` (Welt). **Monitoring** und **Monitorable** bleiben an. (Ohne Monitorable bemerkt die Hand in Godot 4.7 keine StaticBody2D, obwohl sie selbst nur sucht.)
+2. Darin eine `CollisionShape2D`, **RectangleShape2D** `8, 8`, Position `0, -8`: ein Stückchen vor dem Helden. Weiter weg darf sie nicht: Steht der Held unter einer Truhe, würde die Hand sonst knapp darüber in der Luft greifen.
 3. Damit die Hand immer dahin zeigt, wohin der Held schaut, und nicht nur beim Zustechen, wandert die Zeile `$Schwert.rotation = blick.angle() + PI / 2` aus `angreifen()` nach `laufen()`, direkt unter `blick = vier_richtungen(richtung)`.
 
 Neue Funktion im Helden:
@@ -1593,7 +1593,7 @@ func _draw() -> void:
 Sie wirken sich auf das Verhalten aus:
 
 1. **`max_leben` hat keine Grenze.** In `spielstand.gd` begrenzt der Setter nur `leben` auf höchstens 20. `max_leben` selbst kann aber beliebig wachsen. Nach dem elften Herzcontainer malt die Anzeige 11 Herzen in drei Reihen, obwohl nur 10 gefüllt werden können. Abhilfe: ein Setter auch für `max_leben`, wie ich ihn bei der Herzanzahl vorgeschlagen habe: `max_leben = clampi(wert, START_LEBEN, MAX_HERZEN * 2)`. Dann kann der Setter von `leben` wieder einfach `clampi(wert, 0, max_leben)` sein.
-2. **`start_leben` im Glibber merkt sich den falschen Wert.** `var start_leben := leben` steht oben bei den Variablen. Diese Zeile läuft, **bevor** Godot die Werte aus dem Inspector einträgt. Gibst du einem Glibber im Inspector `leben = 3`, merkt sich `start_leben` trotzdem die 2 aus dem Skript, und `heilen()` macht aus ihm einen Glibber mit 2 Leben. Abhilfe: `var start_leben := 0` oben und `start_leben = leben` in `_ready()`. Dann sind die Inspector-Werte schon eingetragen.
+2. **`start_leben` im Glibber merkt sich den falschen Wert.** `var start_leben := leben` steht oben bei den Variablen. Diese Zeile läuft, **bevor** Godot die Werte aus dem Inspector einträgt. Gibst du einem Glibber im Inspector `leben = 3`, merkt sich `start_leben` trotzdem die 2 aus dem Skript, und `heilen()` macht aus ihm einen Glibber mit 2 Leben. Abhilfe: `var start_leben := 0` oben und `start_leben = leben` in `_ready()`. Dann sind die Inspector-Werte schon eingetragen. **Aber Achtung:** Die Kamera steht im Szenenbaum über den Monstern, ihr `_ready()` läuft also zuerst und ruft `monster_wecken()` → `heilen()` auf, bevor die Glibber im Startraum ihr `start_leben` kennen. Die hätten dann 0 Leben. Darum wartet die Kamera in ihrem `_ready()` mit `monster_wecken.call_deferred()`: „Mach das, wenn alle anderen fertig sind.“
 3. **Der Warnton piept auch beim Sterben.** `Spielstand.leben <= 2` ist auch bei 0 wahr, also piept es während der letzten Drehung. Mit `0 < Spielstand.leben and Spielstand.leben <= 2` ist Ruhe.
 
 Und ein Hinweis ohne Fehler: Dein Screen Shake setzt den Offset nur einmal beim Treffer und erst nach dem Rückstoß wieder auf null. Das ist ein einzelner Ruck, kein Wackeln. Wenn es dir so gefällt, lass es. Sonst stell `offset` während GETROFFEN in jedem Bild neu ein.
