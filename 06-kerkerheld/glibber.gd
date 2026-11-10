@@ -2,6 +2,7 @@ extends CharacterBody2D
 
 enum Zustand { WANDERN, JAGEN, ANLAUF, SPRUNG, RUHE, GETROFFEN }
 
+const HERZCHEN = preload("res://herz.tscn")
 const WANDER_TEMPO = 25.0
 const JAGD_TEMPO = 40.0
 const SPRUNG_TEMPO = 160.0
@@ -10,6 +11,7 @@ const BREMSE = 600.0          # so schnell kommt er danach zum Stehen
 const SEHWEITE = 64.0         # so nah muss der Held kommen, damit der Glibber ihn bemerkt
 const VERGESSWEITE = 96.0     # so weit weg muss der Held sein, damit er ihn wieder vergisst
 const SPRUNGWEITE = 28.0      # aus dieser Nähe springt er an
+const HERZ_DROPRATE = 0.3
 
 @export var leben := 2
 @export var schaden := 1   # in halben Herzen
@@ -18,6 +20,7 @@ const SPRUNGWEITE = 28.0      # aus dieser Nähe springt er an
 var zustand := Zustand.WANDERN
 var zustand_zeit := 0.0       # wie lange der aktuelle Zustand noch dauert
 var richtung := Vector2.ZERO
+var start_leben := leben
 
 @onready var held: Node2D = get_tree().get_first_node_in_group("held")
 
@@ -115,6 +118,14 @@ func _on_hurtbox_area_entered(_area: Area2D) -> void:
 		sterben()
 
 
+func hat_getroffen() -> void:
+	wechseln(Zustand.RUHE)
+
+
+func heilen() -> void:
+	leben = start_leben
+
+
 # Zusammenschrumpfen und weg
 func sterben() -> void:
 	set_physics_process(false)
@@ -124,3 +135,9 @@ func sterben() -> void:
 	var tween := create_tween()
 	tween.tween_property($Bild, "scale", Vector2.ZERO, 0.3)
 	tween.tween_callback(queue_free)
+	if randf() < HERZ_DROPRATE:
+		var herzchen = HERZCHEN.instantiate()
+		herzchen.drop = true
+		herzchen.position = position
+		get_parent().add_child.call_deferred(herzchen)
+		

@@ -11,7 +11,10 @@
 [ext_resource type="PackedScene" uid="uid://coqci6i822p7d" path="res://fledermaus.tscn" id="7_jqckn"]
 [ext_resource type="PackedScene" uid="uid://c0cjo311w8hx6" path="res://raumgrenze.tscn" id="8_q5kms"]
 [ext_resource type="Script" uid="uid://86ftw4cx7ai" path="res://herzen.gd" id="8_uag5o"]
+[ext_resource type="AudioStream" uid="uid://bfnys1j8stsxh" path="res://lowLife.wav" id="9_o2cd7"]
 [ext_resource type="PackedScene" uid="uid://bbj60k8w7w8yd" path="res://geist.tscn" id="9_tgur7"]
+[ext_resource type="PackedScene" uid="uid://bcip2v3h2bkye" path="res://herzcontainer.tscn" id="10_av2vf"]
+[ext_resource type="PackedScene" uid="uid://1smdykr0ea7a" path="res://herz.tscn" id="13_jqckn"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_s017u"]
 font = ExtResource("6_kun6q")
@@ -33,6 +36,7 @@ tile_map_data = PackedByteArray("AAAAAAAAAAAEAAMAAAAAAAEAAAAFAAIAAAAAAAIAAAAEAAM
 tile_set = ExtResource("1_4f3i4")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=842274103]
+unique_name_in_owner = true
 process_mode = 3
 position = Vector2(0, -48)
 anchor_mode = 0
@@ -98,6 +102,10 @@ text = "LEBEN"
 label_settings = SubResource("LabelSettings_0orc7")
 horizontal_alignment = 1
 
+[node name="Warnton" type="AudioStreamPlayer" parent="Anzeige/Herzen" unique_id=181786044]
+stream = ExtResource("9_o2cd7")
+volume_db = -5.0
+
 [node name="Glibber" parent="." unique_id=1953441129 instance=ExtResource("6_uag5o")]
 position = Vector2(216, 104)
 
@@ -127,13 +135,13 @@ position = Vector2(60, -152)
 position = Vector2(216, 40)
 
 [node name="Fledermaus2" parent="." unique_id=80364028 instance=ExtResource("7_jqckn")]
-position = Vector2(466, -98)
+position = Vector2(472, -104)
 
 [node name="Geist" parent="." unique_id=284020838 instance=ExtResource("9_tgur7")]
 position = Vector2(184, -40)
 
 [node name="Geist2" parent="." unique_id=872639842 instance=ExtResource("9_tgur7")]
-position = Vector2(472, -38)
+position = Vector2(472, -40)
 
 [node name="Raumgrenze" parent="." unique_id=968378715 instance=ExtResource("8_q5kms")]
 
@@ -142,5 +150,17 @@ position = Vector2(0, -176)
 
 [node name="Raumgrenze3" parent="." unique_id=370693176 instance=ExtResource("8_q5kms")]
 position = Vector2(256, -176)
+
+[node name="Herz" parent="." unique_id=191322224 instance=ExtResource("13_jqckn")]
+position = Vector2(25, 57)
+
+[node name="Herzcontainer" parent="." unique_id=1340754339 instance=ExtResource("10_av2vf")]
+position = Vector2(488, -152)
+
+[node name="Geist3" parent="." unique_id=1095179263 instance=ExtResource("9_tgur7")]
+position = Vector2(472, -152)
+
+[node name="Fledermaus3" parent="." unique_id=1206372936 instance=ExtResource("7_jqckn")]
+position = Vector2(472, -88)
 
 [connection signal="raumwechsel" from="Camera2D" to="Held" method="_on_camera_2d_raumwechsel"]

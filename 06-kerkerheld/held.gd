@@ -52,6 +52,7 @@ func _physics_process(delta: float) -> void:
 	match zustand:
 		Zustand.LAUFEN:
 			laufen(delta)
+			%Camera2D.offset = Vector2i.ZERO
 			if Input.is_action_just_pressed("angriff") or angriff_buffer_timer > 0:
 				angreifen()
 		Zustand.ANGRIFF:
@@ -84,7 +85,10 @@ func treffer_pruefen(delta: float) -> void:
 
 func getroffen(monster: Node2D) -> void:
 	Spielstand.leben -= monster.schaden
+	%Camera2D.offset = Vector2i(randi_range(-2, 2), randi_range(-2, 2))
 	$Autsch.play()
+	if monster.has_method("hat_getroffen"):
+		monster.hat_getroffen()
 	if Spielstand.leben <= 0:
 		sterben()
 		return

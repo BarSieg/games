@@ -54,5 +54,7 @@ func monster_wecken() -> void:
 	for monster in get_tree().get_nodes_in_group("monster"):
 		if raum_von(monster.global_position) == raum:
 			monster.process_mode = Node.PROCESS_MODE_INHERIT
+			if monster.has_method("heilen"):
+				monster.heilen()
 		else:
 			monster.process_mode = Node.PROCESS_MODE_DISABLED

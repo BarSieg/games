@@ -3,11 +3,36 @@ extends Node
 signal leben_geaendert
 
 const START_LEBEN = 6   # in halben Herzen: 6 sind drei ganze Herzen
+const MAX_HERZEN = 10
+
+const RAND = Color(0.16, 0.04, 0.06)
+const VOLL = Color(0.85, 0.1, 0.15)
+const GLANZ = Color(1.0, 0.67, 0.67)
+const GOLD = Color(1, 0.8, 0.3)
+const LEER = Color(0.3, 0.3, 0.3)
+const LEER_GLANZ = Color(0.47, 0.47, 0.47)
+
+const HERZ = [
+	"..ooo....ooo..",
+	".o###o..o###o.",
+	"o#++##oo#####o",
+	"o#+##########o",
+	"o############o",
+	"o############o",
+	"o############o",
+	".o##########o.",
+	"..o########o..",
+	"...o######o...",
+	"....o####o....",
+	".....o##o.....",
+	"......oo......",
+	"..............",
+]
 
 var max_leben := START_LEBEN
 var leben := START_LEBEN:
 	set(wert):
-		leben = clampi(wert, 0, max_leben)
+		leben = clampi(wert, 0, min(max_leben, MAX_HERZEN * 2))
 		leben_geaendert.emit()
 
 

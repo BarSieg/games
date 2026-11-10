@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://bcip2v3h2bkye"]
+
+[ext_resource type="Script" uid="uid://b0nfw5hhfjupl" path="res://herzcontainer.gd" id="1_4tfrh"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(14, 14)
+
+[node name="Herzcontainer" type="Node2D" unique_id=1340754339]
+script = ExtResource("1_4tfrh")
+
+[node name="Bild" type="Area2D" parent="." unique_id=1198964340]
+position = Vector2(-7, -7)
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Bild" unique_id=544484140]
+position = Vector2(7, 7)
+shape = SubResource("RectangleShape2D_s017u")
+
+[connection signal="body_entered" from="Bild" to="." method="_on_bild_body_entered"]
