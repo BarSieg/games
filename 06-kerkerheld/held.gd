@@ -86,6 +86,10 @@ func treffer_pruefen(delta: float) -> void:
 		return   # ein Treffer pro Bild reicht
 
 
+func tuer_offen() -> void:
+	$Tuer.play()
+
+
 func getroffen(monster: Node2D) -> void:
 	Spielstand.leben -= monster.schaden
 	$Autsch.play()

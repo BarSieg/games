@@ -5,13 +5,26 @@ const BILD_OEFFNEN = 90
 const BILD_OFFEN = 91
 
 @export var inhalt: Gegenstand.Art = Gegenstand.Art.SCHLUESSEL
+@export var belohnung:= false # erscheint wenn alle monster im raum besiegt sind
 
 var offen := false
+var monster_im_raum := []
+var versteckt := false
+
+func _ready() -> void:
+	if belohnung:
+		var alle_monster := get_tree().get_nodes_in_group("monster")
+		for monster in alle_monster:
+			if %Camera2D.raum_von(monster.position) == %Camera2D.raum_von(self.position):
+				monster_im_raum.append(monster)
+		versteckt = true
+		$Bild.visibility_layer = false
+		$CollisionShape2D.disabled = true
 
 
 # Der Held steht davor und drückt den Knopf
 func benutzen() -> void:
-	if offen:
+	if offen or versteckt:
 		return
 	offen = true
 	$Bild.frame = BILD_OEFFNEN
@@ -32,3 +45,19 @@ func zeigen() -> void:
 	tween.tween_property(schatz, "modulate:a", 0.0, 0.3)
 	tween.tween_callback(schatz.queue_free)
 	tween.tween_property($Bild, "frame", BILD_OFFEN, 0.0)
+
+
+func erscheinen() -> void:
+	versteckt = false
+	$Bild.visibility_layer = true
+	$CollisionShape2D.disabled = false
+	$Erscheinen.play()
+
+func _physics_process(_delta: float) -> void:
+	if versteckt:
+		for monster in monster_im_raum:
+			if not is_instance_valid(monster):
+				monster_im_raum.erase(monster)
+		if monster_im_raum.size() == 0:
+			erscheinen()
+	

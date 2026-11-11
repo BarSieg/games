@@ -23,24 +23,10 @@ func _physics_process(delta: float) -> void:
 
 
 func _on_bild_body_entered(_body: Node2D) -> void:
-	Spielstand.leben += 2
+	Spielstand.hinzufuegen(Gegenstand.Art.HERZ)
 	queue_free()
 
 
 func _draw() -> void:
-	# Ein volles Herz, beim Verschwinden immer durchsichtiger
-	var ecke = $Bild.position
 	var alpha := 1.0 if (zeit > ZEIT_VERSCHWINDEN or not drop) else zeit / ZEIT_VERSCHWINDEN
-	for y in Spielstand.HERZ.size():
-		for x in Spielstand.HERZ[y].length():
-			var farbe: Color
-			match Spielstand.HERZ[y][x]:
-				"o":
-					farbe = Color(Spielstand.RAND, alpha)
-				"#":
-					farbe = Color(Spielstand.VOLL, alpha)
-				"+":
-					farbe = Color(Spielstand.GLANZ, alpha)
-				_:
-					continue   # durchsichtig: nichts malen
-			draw_rect(Rect2(ecke + Vector2(x, y), Vector2(1, 1)), farbe)
+	Gegenstand.malen(self, Gegenstand.Art.HERZ, $Bild.position, alpha)

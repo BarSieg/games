@@ -1,0 +1,54 @@
+[gd_scene format=3 uid="uid://st347s8ik3ip"]
+
+[ext_resource type="Script" uid="uid://k1x4i4ikp1r2" path="res://mimic.gd" id="1_njw1c"]
+[ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="2_4t4u1"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cf3la"]
+atlas = ExtResource("2_4t4u1")
+region = Rect2(128, 112, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4t4u1"]
+atlas = ExtResource("2_4t4u1")
+region = Rect2(80, 112, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mskle"]
+atlas = ExtResource("2_4t4u1")
+region = Rect2(96, 112, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_s017u"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_cf3la")
+}],
+"loop": 1,
+"name": &"angriff",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 74.0,
+"texture": SubResource("AtlasTexture_4t4u1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mskle")
+}],
+"loop": 1,
+"name": &"warten",
+"speed": 10.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(14, 10)
+
+[node name="Mimic" type="StaticBody2D" unique_id=583123573]
+collision_mask = 0
+script = ExtResource("1_njw1c")
+
+[node name="Bild" type="AnimatedSprite2D" parent="." unique_id=92484403]
+sprite_frames = SubResource("SpriteFrames_s017u")
+animation = &"warten"
+autoplay = "warten"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2086778084]
+position = Vector2(0, 3)
+shape = SubResource("RectangleShape2D_s017u")

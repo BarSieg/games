@@ -6,6 +6,7 @@
 [ext_resource type="AudioStream" uid="uid://bymnt18bblrjb" path="res://schwung.wav" id="4_kdfus"]
 [ext_resource type="AudioStream" uid="uid://b3j5sj16rxvbq" path="res://schritt.wav" id="4_q6bl5"]
 [ext_resource type="AudioStream" uid="uid://bu0k5mhgj0g16" path="res://hit.wav" id="6_33x0v"]
+[ext_resource type="AudioStream" uid="uid://degp48c7d6oet" path="res://tuer_offen.wav" id="7_g67po"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_0orc7"]
 size = Vector2(4, 12)
@@ -485,3 +486,6 @@ shape = SubResource("RectangleShape2D_uaosu")
 [node name="Autsch" type="AudioStreamPlayer" parent="." unique_id=2101787417]
 stream = ExtResource("6_33x0v")
 volume_db = -5.0
+
+[node name="Tuer" type="AudioStreamPlayer" parent="." unique_id=746616337]
+stream = ExtResource("7_g67po")

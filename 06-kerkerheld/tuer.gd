@@ -19,13 +19,16 @@ func benutzen() -> void:
 	$CollisionShape2D.set_deferred("disabled", true)
 	$Bilder/Links.frame = OFFEN_LINKS
 	$Bilder/Rechts.frame = OFFEN_RECHTS
+	get_tree().get_first_node_in_group("held").tuer_offen()
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(queue_free)
+	
 
 
 # Kein Schlüssel: Die Tür rüttelt nur
 func wackeln() -> void:
+	$Ruetteln.play()
 	var tween := create_tween()
 	for i in 3:
 		tween.tween_property($Bilder, "position:x", 1.0, 0.04)

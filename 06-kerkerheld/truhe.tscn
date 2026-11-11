@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://devj3etpl28w3" path="res://truhe.gd" id="1_qebd8"]
 [ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="2_bcgh3"]
 [ext_resource type="AudioStream" uid="uid://c8h38npe4kogh" path="res://fanfare.wav" id="3_5l6a1"]
+[ext_resource type="AudioStream" uid="uid://de60w22y032bq" path="res://belohnung.wav" id="4_bcgh3"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
 size = Vector2(14, 10)
@@ -23,3 +24,7 @@ shape = SubResource("RectangleShape2D_s017u")
 
 [node name="Fanfare" type="AudioStreamPlayer" parent="." unique_id=819055992]
 stream = ExtResource("3_5l6a1")
+
+[node name="Erscheinen" type="AudioStreamPlayer" parent="." unique_id=1904524005]
+stream = ExtResource("4_bcgh3")
+volume_db = -5.0

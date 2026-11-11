@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cpso7ddynr7sk" path="res://tuer.gd" id="1_ov5m0"]
 [ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="2_olbrd"]
+[ext_resource type="AudioStream" uid="uid://kb54tnu5qxm1" path="res://ruetteln.wav" id="3_olbrd"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
 size = Vector2(32, 16)
@@ -28,3 +29,7 @@ frame = 47
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=517234927]
 shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Ruetteln" type="AudioStreamPlayer" parent="." unique_id=1956465132]
+stream = ExtResource("3_olbrd")
+volume_db = -5.0

@@ -15,23 +15,7 @@ const LEER_GLANZ = Color(0.47, 0.47, 0.47)
 
 var inventar := {}   # Gegenstand.Art -> Anzahl
 
-# o = Rand, # = Füllung, + = Glanz, . = durchsichtig
-const HERZ = [
-	"..ooo....ooo..",
-	".o###o..o###o.",
-	"o#++##oo#####o",
-	"o#+##########o",
-	"o############o",
-	"o############o",
-	"o############o",
-	".o##########o.",
-	"..o########o..",
-	"...o######o...",
-	"....o####o....",
-	".....o##o.....",
-	"......oo......",
-	"..............",
-]
+
 
 var max_leben := START_LEBEN
 var leben := START_LEBEN:
@@ -55,8 +39,14 @@ func anzahl(art: Gegenstand.Art) -> int:
 
 
 func hinzufuegen(art: Gegenstand.Art) -> void:
-	inventar[art] = anzahl(art) + 1
-	inventar_geaendert.emit()
+	if art == Gegenstand.Art.HERZCONTAINER:
+		Spielstand.max_leben += 2
+		Spielstand.leben += 20   # alle Herzen auffüllen, der Setter schneidet ab
+	elif art == Gegenstand.Art.HERZ:
+		Spielstand.leben += 2
+	else:
+		inventar[art] = anzahl(art) + 1
+		inventar_geaendert.emit()
 
 
 # Einen verbrauchen, falls der Held einen hat. Die Antwort sagt, ob es geklappt hat.

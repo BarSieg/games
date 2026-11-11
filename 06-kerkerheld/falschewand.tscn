@@ -1,0 +1,47 @@
+[gd_scene format=3 uid="uid://b12djcyq54hu"]
+
+[ext_resource type="Script" uid="uid://bayphx86jkopt" path="res://falschewand.gd" id="1_070g4"]
+[ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="2_78b3x"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0orc7"]
+size = Vector2(14, 14)
+
+[node name="FalscheWand" type="StaticBody2D" unique_id=404548848]
+collision_mask = 0
+script = ExtResource("1_070g4")
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=759331986]
+texture = ExtResource("2_78b3x")
+hframes = 12
+vframes = 11
+frame = 40
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1479509388]
+shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=1638475673]
+collision_layer = 0
+collision_mask = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=1874428611]
+shape = SubResource("RectangleShape2D_0orc7")
+
+[node name="Scherben" type="CPUParticles2D" parent="." unique_id=1342168350]
+position = Vector2(0, 4)
+emitting = false
+amount = 12
+one_shot = true
+explosiveness = 0.24
+emission_shape = 2
+emission_sphere_radius = 3.0
+direction = Vector2(0, -1)
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 5.0
+initial_velocity_max = 5.0
+color = Color(0.7411765, 0.42352942, 0.2901961, 1)
+
+[connection signal="area_entered" from="Hurtbox" to="." method="_on_hurtbox_area_entered"]
