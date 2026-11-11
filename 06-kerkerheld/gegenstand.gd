@@ -1,7 +1,18 @@
 class_name Gegenstand
 
 # Alles, was in einer Truhe liegen und ins Inventar wandern kann
-enum Art { SCHLUESSEL, MASTERSCHLUESSEL, KARTE, KOMPASS, HERZ, HERZCONTAINER }
+enum Art { SCHLUESSEL, MASTERSCHLUESSEL, KARTE, KOMPASS, HERZ, HERZCONTAINER, MUENZE }
+
+# So heißen sie, wenn jemand über sie redet
+const NAMEN = {
+	Art.SCHLUESSEL: "Ein Schlüssel",
+	Art.MASTERSCHLUESSEL: "Der Masterschlüssel",
+	Art.KARTE: "Die Karte",
+	Art.KOMPASS: "Der Kompass",
+	Art.HERZ: "Ein Herz",
+	Art.HERZCONTAINER: "Ein Herzcontainer",
+	Art.MUENZE: "Eine Münze",
+}
 
 const RAND = Color(0.16, 0.04, 0.06)
 const VOLL = Color(0.85, 0.1, 0.15)
@@ -10,6 +21,8 @@ const GLANZ = Color(1.0, 0.67, 0.67)
 const GOLD = Color(1, 0.8, 0.3)
 const GREY = Color(0.78, 0.78, 0.84)
 const BRAUN = Color(0.24, 0.14, 0.04)
+const BEIGE = Color(1.0, 0.95, 0.7)
+const SMARAGD = Color(00, 0.95, 0.3)
 const LEER = Color(0.3, 0.3, 0.3)
 const LEER_GLANZ = Color(0.47, 0.47, 0.47)
 
@@ -117,6 +130,26 @@ const BILDER = {
 			".......oo.......",
 		],
 		{"o": RAND, "#": VOLL, "+": GLANZ, "$": GOLD},
+	],
+	Art.MUENZE: [
+		[
+			"....oo....",
+			"...o+#o...",
+			"..o++##o..",
+			".o+++###o.",
+			"o+#+#o#o#o",
+			"o++###o##o",
+			"o++###o##o",
+			"o++###o##o",
+			"o++###o##o",
+			"o+#+##o##o",
+			"o###+o+o#o",
+			".o######o.",
+			"..o####o..",
+			"...o##o...",
+			"....oo....",
+		],
+		{"o": RAND, "#": SMARAGD, "+": BEIGE},
 	],
 }
 

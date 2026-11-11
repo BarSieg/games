@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://oej7fknsu0jr"]
+
+[ext_resource type="Script" uid="uid://sfapowfl62iq" path="res://fundstueck.gd" id="1_p1ji4"]
+[ext_resource type="AudioStream" uid="uid://c1dxaswm427p7" path="res://klimper.wav" id="2_gbpmr"]
+[ext_resource type="AudioStream" uid="uid://dnoml5r80jra5" path="res://item.wav" id="3_gbpmr"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(12, 12)
+
+[node name="Fundstueck" type="Area2D" unique_id=1125213161]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_p1ji4")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=544484140]
+shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Klimper" type="AudioStreamPlayer" parent="." unique_id=376152689]
+stream = ExtResource("2_gbpmr")
+volume_db = -5.0
+
+[node name="Sammeln" type="AudioStreamPlayer" parent="." unique_id=1685491891]
+stream = ExtResource("3_gbpmr")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

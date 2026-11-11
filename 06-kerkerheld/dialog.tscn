@@ -1,0 +1,47 @@
+[gd_scene format=3 uid="uid://brf82eyod5ei5"]
+
+[ext_resource type="Script" uid="uid://bhyugg51mqpub" path="res://dialog.gd" id="1_5wlj5"]
+[ext_resource type="LabelSettings" uid="uid://cggyy4uae7ijw" path="res://schrift_settings.tres" id="1_7voku"]
+
+[node name="Dialog" type="CanvasLayer" unique_id=1576873844]
+process_mode = 3
+layer = 10
+script = ExtResource("1_5wlj5")
+
+[node name="Rahmen" type="ColorRect" parent="." unique_id=1999831460]
+offset_left = 8.0
+offset_top = 164.0
+offset_right = 248.0
+offset_bottom = 220.0
+color = Color(0.63375676, 0.6337568, 0.63375676, 1)
+
+[node name="Innen" type="ColorRect" parent="Rahmen" unique_id=1952855550]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 1.0
+offset_right = 239.0
+offset_bottom = 55.0
+color = Color(0, 0, 0, 1)
+
+[node name="Text" type="Label" parent="Rahmen" unique_id=1309675935]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 3.0
+offset_right = 234.0
+offset_bottom = 53.0
+text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. Ut enim ad minim veniam."
+label_settings = ExtResource("1_7voku")
+autowrap_mode = 3
+
+[node name="Auswahl" type="Label" parent="Rahmen" unique_id=1781434928]
+layout_mode = 0
+offset_left = 120.0
+offset_top = 40.0
+offset_right = 234.0
+offset_bottom = 63.0
+text = "> Ja     Nein"
+label_settings = ExtResource("1_7voku")
+
+[node name="Weiter" type="Polygon2D" parent="Rahmen" unique_id=1126443195]
+position = Vector2(229, 49)
+polygon = PackedVector2Array(0, 0, 6, 0, 3, 3)

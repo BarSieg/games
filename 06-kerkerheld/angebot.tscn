@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://b6g4l58wwnuem"]
+
+[ext_resource type="Script" uid="uid://bt2nxj2rf0ytl" path="res://angebot.gd" id="1_7v1te"]
+[ext_resource type="LabelSettings" uid="uid://cggyy4uae7ijw" path="res://schrift_settings.tres" id="1_vsq14"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(14, 14)
+
+[node name="Angebot" type="StaticBody2D" unique_id=1433362626]
+collision_mask = 0
+script = ExtResource("1_7v1te")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=318418173]
+shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Preis" type="Label" parent="." unique_id=536718656]
+offset_left = -12.0
+offset_top = 8.0
+offset_right = 12.0
+offset_bottom = 31.0
+label_settings = ExtResource("1_vsq14")
+horizontal_alignment = 1

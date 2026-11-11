@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://q76y73eiaw56"]
+
+[ext_resource type="PackedScene" uid="uid://b746f4bguw80a" path="res://figur.tscn" id="1_p730v"]
+
+[node name="Haendler" unique_id=1900369273 instance=ExtResource("1_p730v")]
+seiten = Array[String](["Willkommen! Alles muss raus!", "Wirklich alles. Ich zieh um. Der Vermieter ist ein Drache."])
+
+[node name="Bild" parent="." index="0" unique_id=1358289850]
+frame = 112

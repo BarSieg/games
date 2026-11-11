@@ -1,0 +1,7 @@
+[gd_resource type="LabelSettings" format=3 uid="uid://cggyy4uae7ijw"]
+
+[ext_resource type="FontFile" uid="uid://dlkjlgec87e21" path="res://Kenney/Kenney Pixel.ttf" id="1_cslue"]
+
+[resource]
+line_spacing = 1.0
+font = ExtResource("1_cslue")

@@ -17,12 +17,18 @@
 [ext_resource type="PackedScene" uid="uid://bcip2v3h2bkye" path="res://herzcontainer.tscn" id="10_av2vf"]
 [ext_resource type="Script" uid="uid://bco8pbrojgkdj" path="res://inventar.gd" id="10_v3ata"]
 [ext_resource type="PackedScene" uid="uid://st347s8ik3ip" path="res://mimic.tscn" id="11_uj8uw"]
+[ext_resource type="LabelSettings" uid="uid://cggyy4uae7ijw" path="res://schrift_settings.tres" id="12_0luh7"]
 [ext_resource type="PackedScene" uid="uid://1smdykr0ea7a" path="res://herz.tscn" id="13_jqckn"]
 [ext_resource type="PackedScene" uid="uid://btkdn1hnhc7um" path="res://truhe.tscn" id="16_6gydx"]
 [ext_resource type="PackedScene" uid="uid://cpnmptro18510" path="res://tuer.tscn" id="17_85cul"]
 [ext_resource type="PackedScene" uid="uid://cbt3ce0njqhqx" path="res://bossraum.tscn" id="19_uj8uw"]
 [ext_resource type="PackedScene" uid="uid://c1rspe1xhl0a3" path="res://geheimnis.tscn" id="21_k21r5"]
 [ext_resource type="PackedScene" uid="uid://b12djcyq54hu" path="res://falschewand.tscn" id="23_ou4rh"]
+[ext_resource type="PackedScene" uid="uid://cx1whi8u2838i" path="res://schild.tscn" id="24_tkvb4"]
+[ext_resource type="PackedScene" uid="uid://oej7fknsu0jr" path="res://fundstueck.tscn" id="25_ojnyd"]
+[ext_resource type="PackedScene" uid="uid://b746f4bguw80a" path="res://figur.tscn" id="27_k67ek"]
+[ext_resource type="PackedScene" uid="uid://q76y73eiaw56" path="res://haendler.tscn" id="28_ynsks"]
+[ext_resource type="PackedScene" uid="uid://b6g4l58wwnuem" path="res://angebot.tscn" id="29_pedrn"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ou4rh"]
 texture = ExtResource("1_5grt3")
@@ -195,7 +201,7 @@ anchor_mode = 0
 script = ExtResource("2_q5kms")
 
 [node name="Held" parent="." unique_id=1612745786 instance=ExtResource("3_tgur7")]
-position = Vector2(130, 143)
+position = Vector2(-142, 126)
 
 [node name="Saeule" parent="." unique_id=1017626744 instance=ExtResource("4_kun6q")]
 position = Vector2(40, 40)
@@ -263,10 +269,19 @@ position = Vector2(96, 0)
 script = ExtResource("10_v3ata")
 
 [node name="Anzahl" type="Label" parent="Anzeige/Inventar" unique_id=810662117]
-offset_right = 40.0
-offset_bottom = 23.0
+offset_left = 9.0
+offset_top = 18.0
+offset_right = 49.0
+offset_bottom = 41.0
 text = "Anzahl"
 label_settings = SubResource("LabelSettings_uaosu")
+
+[node name="Muenzen" type="Label" parent="Anzeige/Inventar" unique_id=193562977]
+offset_left = 9.0
+offset_top = 33.0
+offset_right = 49.0
+offset_bottom = 56.0
+label_settings = ExtResource("12_0luh7")
 
 [node name="Glibber" parent="." unique_id=1953441129 instance=ExtResource("6_uag5o")]
 position = Vector2(216, 104)
@@ -514,5 +529,43 @@ position = Vector2(139, -252)
 
 [node name="Fledermaus5" parent="." unique_id=1614070860 instance=ExtResource("7_jqckn")]
 position = Vector2(187, -272)
+
+[node name="Schild" parent="." unique_id=1900369273 instance=ExtResource("24_tkvb4")]
+position = Vector2(1240, 40)
+
+[node name="Schild2" parent="." unique_id=678842862 instance=ExtResource("24_tkvb4")]
+position = Vector2(24, -56)
+seiten = Array[String](["Achtung, Glibber! Bitte nicht füttern."])
+
+[node name="Schild3" parent="." unique_id=1923102186 instance=ExtResource("24_tkvb4")]
+position = Vector2(120, -264)
+seiten = Array[String](["Links: Ausgang. Rechts: auch Ausgang. Oben: ebenfalls Ausgang."])
+
+[node name="Schild4" parent="." unique_id=1186791480 instance=ExtResource("24_tkvb4")]
+position = Vector2(216, -760)
+seiten = Array[String](["Schilder dürfen hier lügen."])
+
+[node name="Schild5" parent="." unique_id=2073156093 instance=ExtResource("24_tkvb4")]
+position = Vector2(1112, -649)
+seiten = Array[String](["Dieses Schild wurde von einem Monster aufgestellt. Gehen Sie weiter. Hier gibt es nichts zu sehen."])
+
+[node name="Fundstueck" parent="." unique_id=1125213161 instance=ExtResource("25_ojnyd")]
+position = Vector2(89, 108)
+
+[node name="Figur" parent="." unique_id=494412720 instance=ExtResource("27_k67ek")]
+position = Vector2(-187, 74)
+geschenk_anzahl = 50
+
+[node name="Haendler" parent="." unique_id=1504936069 instance=ExtResource("28_ynsks")]
+position = Vector2(-313, 40)
+
+[node name="Angebot" parent="." unique_id=1433362626 instance=ExtResource("29_pedrn")]
+position = Vector2(-335, 61)
+
+[node name="Angebot2" parent="." unique_id=1813623416 instance=ExtResource("29_pedrn")]
+position = Vector2(-309, 62)
+ware = 5
+preis = 50
+einmalig = true
 
 [connection signal="raumwechsel" from="Camera2D" to="Held" method="_on_camera_2d_raumwechsel"]

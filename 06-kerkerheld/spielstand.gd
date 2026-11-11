@@ -39,10 +39,10 @@ func hinzufuegen(art: Gegenstand.Art) -> void:
 		inventar_geaendert.emit()
 
 
-# Einen verbrauchen, falls der Held einen hat. Die Antwort sagt, ob es geklappt hat.
-func verbrauchen(art: Gegenstand.Art) -> bool:
-	if anzahl(art) == 0:
+# Einen oder mehrere verbrauchen, falls der Held genug hat. Die Antwort sagt, ob es geklappt hat.
+func verbrauchen(art: Gegenstand.Art, menge := 1) -> bool:
+	if anzahl(art) < menge:
 		return false
-	inventar[art] -= 1
+	inventar[art] -= menge
 	inventar_geaendert.emit()
 	return true
