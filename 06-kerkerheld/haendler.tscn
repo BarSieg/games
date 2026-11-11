@@ -4,6 +4,7 @@
 
 [node name="Haendler" unique_id=1900369273 instance=ExtResource("1_p730v")]
 seiten = Array[String](["Willkommen! Alles muss raus!", "Wirklich alles. Ich zieh um. Der Vermieter ist ein Drache."])
+danach = Array[String](["Willkommen! Alles muss raus!"])
 
 [node name="Bild" parent="." index="0" unique_id=1358289850]
 frame = 112

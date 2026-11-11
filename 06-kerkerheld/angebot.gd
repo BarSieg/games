@@ -15,14 +15,17 @@ func _draw() -> void:
 
 # Fragen, bezahlen, einpacken
 func benutzen() -> void:
-	var ja: bool = await Dialog.frage("%s für %d Münzen?" % [Gegenstand.NAMEN[ware], preis])
-	if not ja:
-		Dialog.zeigen(["Gucken kostet nichts. Noch nicht."])
-	elif not Spielstand.verbrauchen(Gegenstand.Art.MUENZE, preis):
-		Dialog.zeigen(["Das reicht nicht. Komm wieder, wenn du flüssig bist."])
+	if ware == Gegenstand.Art.HERZ and Spielstand.leben == Spielstand.max_leben:
+		Dialog.zeigen(["Du bist kerngesund. Komm wieder, wenn dich was gebissen hat."])
 	else:
-		Spielstand.hinzufuegen(ware)
-		Schatz.zeigen(get_tree().get_first_node_in_group("held"), ware)
-		if einmalig:
-			queue_free()
-		Dialog.zeigen(["Gute Wahl! Umtausch ausgeschlossen."])
+		var ja: bool = await Dialog.frage("%s für %d Münzen?" % [Gegenstand.NAMEN[ware], preis])
+		if not ja:
+			Dialog.zeigen(["Gucken kostet nichts. Noch nicht."])
+		elif not Spielstand.verbrauchen(Gegenstand.Art.MUENZE, preis):
+			Dialog.zeigen(["Das reicht nicht. Komm wieder, wenn du flüssig bist."])
+		else:
+			Spielstand.hinzufuegen(ware)
+			Schatz.zeigen(get_tree().get_first_node_in_group("held"), ware)
+			if einmalig:
+				queue_free()
+			Dialog.zeigen(["Gute Wahl! Umtausch ausgeschlossen."])
