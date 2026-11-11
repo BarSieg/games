@@ -568,4 +568,10 @@ ware = 5
 preis = 50
 einmalig = true
 
+[node name="Angebot3" parent="." unique_id=2087546620 instance=ExtResource("29_pedrn")]
+position = Vector2(-376, 65)
+ware = 0
+preis = 25
+einmalig = true
+
 [connection signal="raumwechsel" from="Camera2D" to="Held" method="_on_camera_2d_raumwechsel"]

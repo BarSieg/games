@@ -2,12 +2,13 @@ extends CanvasLayer
 
 signal fertig
 
-const TEMPO = 40.0   # Buchstaben pro Sekunde
+const TEMPO = 30.0   # Buchstaben pro Sekunde
 
 var seiten: Array[String] = []   # was noch kommt
 var buchstaben := 0.0            # wie viele Buchstaben schon zu sehen sind, mit Komma
 var fragend := false             # wartet die letzte Seite auf Ja oder Nein?
 var antwort := true
+var buchstaben_anzeige := 0.0
 
 @onready var text: Label = $Rahmen/Text
 
@@ -38,18 +39,27 @@ func umblaettern() -> void:
 	text.text = seiten.pop_front()
 	text.visible_characters = 0
 	buchstaben = 0.0
+	buchstaben_anzeige = 0.0
 
 
 func _process(delta: float) -> void:
+	var chat_teil := ""
 	if not visible:
 		return
-	buchstaben += TEMPO * delta
+	if not alles_da():
+		buchstaben += TEMPO * delta
+	if buchstaben > buchstaben_anzeige:
+		chat_teil = text.text.substr(int(buchstaben_anzeige), int(buchstaben - buchstaben_anzeige))
+		if chat_teil.replace(" ", "").length() > 1:
+			$Chat.pitch_scale = randf_range(0.8, 1.2)
+			$Chat.play()
+			buchstaben_anzeige = buchstaben
 	text.visible_characters = int(buchstaben)
 	var letzte := seiten.is_empty()
 	# Blinkender Pfeil: Es geht weiter
 	$Rahmen/Weiter.visible = alles_da() and not (letzte and fragend) and Time.get_ticks_msec() % 600 < 300
 	$Rahmen/Auswahl.visible = alles_da() and letzte and fragend
-	$Rahmen/Auswahl.text = "> Ja     Nein" if antwort else "  Ja   > Nein"
+	$Rahmen/Auswahl.text = "> Ja     Nein" if antwort else "   Ja  > Nein"
 
 
 func alles_da() -> bool:
