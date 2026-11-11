@@ -96,7 +96,7 @@ const BILDER = {
 			"......oo......",
 			"..............",
 		],
-		{"o": RAND,	"#": VOLL,	"+": GLANZ }
+		{"o": RAND, "#": VOLL, "+": GLANZ},
 	],
 	Art.HERZCONTAINER: [
 		[
@@ -122,14 +122,14 @@ const BILDER = {
 
 
 # Einen Gegenstand malen. Die Stelle ist die Mitte seiner Unterkante, also da, wo er "steht".
-static func malen(leinwand: CanvasItem, art: Art, mitte_unten: Vector2, alpha : float = 1.0) -> void:
+static func malen(leinwand: CanvasItem, art: Art, mitte_unten: Vector2, alpha: float = 1.0) -> void:
 	var bild: Array = BILDER[art][0]
 	var ecke := mitte_unten - Vector2(bild[0].length() / 2.0, bild.size()).floor()
 	bild_malen(leinwand, bild, ecke, BILDER[art][1], alpha)
 
 
 # Ein Bild aus Text malen, Pixel für Pixel. Geht nur aus dem _draw() der Leinwand heraus.
-static func bild_malen(leinwand: CanvasItem, bild: Array, ecke: Vector2, farben: Dictionary, alpha : float = 1.0) -> void:
+static func bild_malen(leinwand: CanvasItem, bild: Array, ecke: Vector2, farben: Dictionary, alpha: float = 1.0) -> void:
 	for y in bild.size():
 		for x in bild[y].length():
 			var zeichen: String = bild[y][x]

@@ -5,11 +5,12 @@ const BILD_OEFFNEN = 90
 const BILD_OFFEN = 91
 
 @export var inhalt: Gegenstand.Art = Gegenstand.Art.SCHLUESSEL
-@export var belohnung:= false # erscheint wenn alle monster im raum besiegt sind
+@export var belohnung := false   # erscheint wenn alle monster im raum besiegt sind
 
 var offen := false
 var monster_im_raum := []
 var versteckt := false
+
 
 func _ready() -> void:
 	if belohnung:
@@ -18,7 +19,7 @@ func _ready() -> void:
 			if %Camera2D.raum_von(monster.position) == %Camera2D.raum_von(self.position):
 				monster_im_raum.append(monster)
 		versteckt = true
-		$Bild.visibility_layer = false
+		$Bild.visible = false
 		$CollisionShape2D.disabled = true
 
 
@@ -49,15 +50,13 @@ func zeigen() -> void:
 
 func erscheinen() -> void:
 	versteckt = false
-	$Bild.visibility_layer = true
+	$Bild.visible = true
 	$CollisionShape2D.disabled = false
 	$Erscheinen.play()
 
+
 func _physics_process(_delta: float) -> void:
 	if versteckt:
-		for monster in monster_im_raum:
-			if not is_instance_valid(monster):
-				monster_im_raum.erase(monster)
+		monster_im_raum = monster_im_raum.filter(is_instance_valid)
 		if monster_im_raum.size() == 0:
 			erscheinen()
-	

@@ -1,8 +1,9 @@
 extends StaticBody2D
 
+@export var schaden := 2   # in halben Herzen
 
 var offen := false
-@export var schaden := 2
+
 
 # Der Held steht davor und drückt den Knopf
 func benutzen() -> void:

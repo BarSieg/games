@@ -12,7 +12,7 @@ const DOOR_PIXELS = 2
 var besucht := {}             # jeder besuchte Raum ist ein Schlüssel
 var aktuell := Vector2i.ZERO
 var alle_raeume := {}         # jeder Raum, in dem eine Wandkachel liegt
-var geheime_raeme := {}       # diese Räume müssen zuerst betretten werden um auf der Karte gezeichnet zu werden
+var geheime_raeume := {}      # diese Räume erscheinen erst auf der Karte, wenn man sie betreten hat
 
 
 func _ready() -> void:
@@ -20,9 +20,9 @@ func _ready() -> void:
 	for zelle in %Waende.get_used_cells():
 		alle_raeume[Vector2i((Vector2(zelle) / Vector2(16, 11)).floor())] = true
 	Spielstand.inventar_geaendert.connect(queue_redraw)
-	# Entferne geheime Räume
+	# Geheime Räume merken: In jedem liegt ein Marker aus der Gruppe secrets
 	for geheimnis in get_tree().get_nodes_in_group("secrets"):
-		geheime_raeme[%Camera2D.raum_von(geheimnis.global_position)] = true
+		geheime_raeume[%Camera2D.raum_von(geheimnis.global_position)] = true
 
 
 # Die Kamera meldet einen Raum: merken und neu malen lassen
@@ -38,7 +38,7 @@ func _draw() -> void:
 	if Spielstand.anzahl(Gegenstand.Art.KARTE) > 0:
 		for raum in alle_raeume:
 			# aber die geheimen nicht!
-			if not raum in geheime_raeme:
+			if not raum in geheime_raeume:
 				draw_rect(kasten(raum), Color(0.25, 0.25, 0.25))
 				pruefe_tueren(raum)
 	for raum in besucht:
@@ -59,11 +59,11 @@ func kasten(raum: Vector2i) -> Rect2:
 	return Rect2(ecke, Vector2(MAP_RAUM_BREITE, MAP_RAUM_HOEHE))
 
 
-# Für jeden Raum muss nur zwei Richtungen prüfen. S und O
-func pruefe_tueren(raum: Vector2i):
+# Für jeden Raum reicht es, zwei Richtungen zu prüfen: Süden und Osten
+func pruefe_tueren(raum: Vector2i) -> void:
 	var nachbarraum := raum + Vector2i(0, 1)
 	var doorfarbe := Color.DARK_GRAY if nachbarraum in besucht and raum in besucht else Color(0.25, 0.25, 0.25)
-	if (nachbarraum in besucht) or ((Spielstand.anzahl(Gegenstand.Art.KARTE) > 0) and (raum in alle_raeume) and (not raum in geheime_raeme)):
+	if (nachbarraum in besucht) or ((Spielstand.anzahl(Gegenstand.Art.KARTE) > 0) and (raum in alle_raeume) and (not raum in geheime_raeume)):
 		if (
 			(
 			   %Waende.get_cell_source_id(Vector2i(nachbarraum.x * 16 + 7, nachbarraum.y * 11)) == -1
@@ -78,7 +78,7 @@ func pruefe_tueren(raum: Vector2i):
 			draw_rect(tuer_kasten(raum, true), doorfarbe)
 	nachbarraum = raum + Vector2i(1, 0)
 	doorfarbe = Color.DARK_GRAY if nachbarraum in besucht and raum in besucht else Color(0.25, 0.25, 0.25)
-	if (nachbarraum in besucht) or ((Spielstand.anzahl(Gegenstand.Art.KARTE) > 0) and (raum in alle_raeume) and (not raum in geheime_raeme)):
+	if (nachbarraum in besucht) or ((Spielstand.anzahl(Gegenstand.Art.KARTE) > 0) and (raum in alle_raeume) and (not raum in geheime_raeume)):
 		if (
 			(
 			   %Waende.get_cell_source_id(Vector2i(nachbarraum.x * 16, nachbarraum.y * 11 + 4)) == -1
@@ -93,7 +93,7 @@ func pruefe_tueren(raum: Vector2i):
 			draw_rect(tuer_kasten(raum, false), doorfarbe)
 
 
-# Wo auf der Karte liegt das Kästchen für die Türen S und O ?
+# Wo auf der Karte liegt das Kästchen für die Tür nach Süden oder Osten?
 func tuer_kasten(raum: Vector2i, vertical: bool) -> Rect2:
 	var ecke := Vector2.ZERO
 	if vertical:

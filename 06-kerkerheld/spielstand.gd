@@ -6,17 +6,7 @@ signal inventar_geaendert
 const START_LEBEN = 6   # in halben Herzen: 6 sind drei ganze Herzen
 const MAX_HERZEN = 10
 
-const RAND = Color(0.16, 0.04, 0.06)
-const VOLL = Color(0.85, 0.1, 0.15)
-const GLANZ = Color(1.0, 0.67, 0.67)
-const GOLD = Color(1, 0.8, 0.3)
-const LEER = Color(0.3, 0.3, 0.3)
-const LEER_GLANZ = Color(0.47, 0.47, 0.47)
-
 var inventar := {}   # Gegenstand.Art -> Anzahl
-
-
-
 var max_leben := START_LEBEN
 var leben := START_LEBEN:
 	set(wert):
@@ -40,10 +30,10 @@ func anzahl(art: Gegenstand.Art) -> int:
 
 func hinzufuegen(art: Gegenstand.Art) -> void:
 	if art == Gegenstand.Art.HERZCONTAINER:
-		Spielstand.max_leben += 2
-		Spielstand.leben += 20   # alle Herzen auffüllen, der Setter schneidet ab
+		max_leben += 2
+		leben += 20   # alle Herzen auffüllen, der Setter schneidet ab
 	elif art == Gegenstand.Art.HERZ:
-		Spielstand.leben += 2
+		leben += 2
 	else:
 		inventar[art] = anzahl(art) + 1
 		inventar_geaendert.emit()

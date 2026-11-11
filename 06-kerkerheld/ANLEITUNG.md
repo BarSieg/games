@@ -11,8 +11,8 @@ Vieles kennst du schon: TileMapLayer, Kollisionsebenen, Tweens, Autoload, HUD, S
 4. Gegner mit State Machine: umherlaufen, verfolgen, angreifen ✔
 5. Mehrere Räume: Die Kamera schaltet um wie im Original, Monster bleiben in ihrem Raum ✔
 6. Herzen, Schaden und die Anzeige oben ✔
-7. Schlüssel, Truhen und verschlossene Türen (Inventar), Masterschlüssel für den Bossraum, dazu Karte und Kompass ← *du bist hier*
-8. Dialoge: Schilder und ein alter Mann
+7. Schlüssel, Truhen und verschlossene Türen (Inventar), Masterschlüssel für den Bossraum, dazu Karte und Kompass ✔
+8. Dialoge: Schilder, ein alter Mann, Münzen und ein Händler ← *du bist hier*
 9. Die Welt merkt sich alles: Speichern und Laden
 10. Boss, Titelbild mit Optionen (z. B. schräg laufen ja/nein), Musik und Web-Export
 
@@ -1607,3 +1607,495 @@ Fertig? Committen und Bescheid geben.
 3. **Belohnung für einen leeren Raum (mittel):** Im Original erscheint oft ein Schlüssel, wenn alle Monster eines Raums besiegt sind. Bau eine Szene `belohnung.tscn` (eine Truhe, die erst unsichtbar ist und keine Kollision hat). Sie prüft in jedem Bild: Gibt es in meinem Raum noch ein Monster aus der Gruppe `monster`? Wenn nicht, taucht sie mit einem Geräusch auf. Tipp: `get_tree().get_nodes_in_group("monster")` und `%Camera2D.raum_von()`. Achtung: Was passiert mit Monstern, die gerade schrumpfen und gleich weg sind?
 4. **Klick und Klack (leicht):** Ein Geräusch für die verschlossene Tür beim Rütteln und eins beim Aufschließen. Das Aufschließen ist knifflig: Die Tür löscht sich mit `queue_free()`, und der Ton wäre sofort mit weg. Wo kann der Ton stattdessen hängen? Das kennst du von den Münzen in Hüpfheld.
 5. **Aufräumen (leicht):** Du hast jetzt zwei Malfunktionen für Bilder aus Text: deine eigene in den Herzen und `Gegenstand.bild_malen()`. Zieh `HERZ` und deinen `HERZCONTAINER` aus dem Spielstand nach `Gegenstand` um und lass `herz.gd` und `herzcontainer.gd` mit `Gegenstand.bild_malen()` malen. Die Herzanzeige mit ihren halben Herzen darf ihre eigene Schleife behalten. Warum?
+
+---
+
+## Kapitel 8: Dialoge, Münzen und ein Händler
+
+Bisher redet in deinem Dungeon niemand. Das ändert sich jetzt: Schilder geben schlechte Ratschläge, ein alter Mann schenkt dem Helden etwas, und ein Händler will Geld sehen. Dafür braucht der Held **Münzen**, die Monster fallen lassen.
+
+Neu sind eine **Autoload-Szene** (nicht nur ein Skript), **`await` auf eigene Funktionen**, die Schreibmaschinen-Schrift mit **`visible_characters`**, **`_unhandled_input`** statt `Input.is_action_just_pressed`, **`@export_multiline`** für Texte im Inspector, ein Parameter mit **Standardwert** und **geerbte Szenen**.
+
+### 8.1 Die Dialogbox
+
+Die Dialogbox muss von überall erreichbar sein: vom Schild, vom alten Mann, vom Händler. Wie `Spielstand` wird sie ein Autoload, diesmal aber eine ganze **Szene** mit Nodes darin.
+
+Neue Szene:
+
+```
+Dialog (CanvasLayer)
+└── Rahmen (ColorRect)
+    ├── Innen (ColorRect)
+    ├── Text (Label)
+    ├── Auswahl (Label)
+    └── Weiter (Polygon2D)
+```
+
+1. `Dialog`: **CanvasLayer**, **Layer** `10` (über der Anzeige). Unter **Process** → **Mode**: **Always**. Die Box muss weiterlaufen, während das Spiel angehalten ist.
+2. `Rahmen`: **ColorRect**, unter **Layout → Transform**: Position `8, 164`, Size `240, 56`. Farbe hellgrau. Das ist der Rand.
+3. `Innen`: **ColorRect**, Position `1, 1`, Size `238, 54`, schwarz. So bleibt rundherum ein Pixel Rand stehen.
+4. `Text`: **Label**, Position `6, 3`, Size `228, 50`. **Label Settings** mit Kenney Pixel wie in der Anzeige. **Autowrap Mode**: **Word (Smart)**, dann bricht der Text von selbst um. Schreib zum Ausprobieren einen langen Satz hinein: Vier Zeilen passen in die Box.
+5. `Auswahl`: **Label**, Position `120, 40`, Size `114, 13`, gleiche Schrift, **Horizontal Alignment**: **Right**. Text `> Ja     Nein`.
+6. `Weiter`: **Polygon2D**, Position `229, 49`. Unter **Polygon** drei Punkte eintragen: `0, 0`, `6, 0` und `3, 3`. Ein kleines Dreieck, das „Es geht weiter“ sagt.
+7. Speichern als `dialog.tscn`.
+
+Skript an `Dialog`:
+
+```gdscript
+extends CanvasLayer
+
+signal fertig
+
+const TEMPO = 40.0   # Buchstaben pro Sekunde
+
+var seiten: Array[String] = []   # was noch kommt
+var buchstaben := 0.0            # wie viele Buchstaben schon zu sehen sind, mit Komma
+var fragend := false             # wartet die letzte Seite auf Ja oder Nein?
+var antwort := true
+
+@onready var text: Label = $Rahmen/Text
+
+
+func _ready() -> void:
+	hide()
+
+
+# Eine oder mehrere Seiten nacheinander zeigen. Solange steht das Spiel still.
+func zeigen(neue_seiten: Array[String]) -> void:
+	seiten = neue_seiten.duplicate()
+	get_tree().paused = true
+	show()
+	umblaettern()
+	await fertig
+
+
+# Eine Frage stellen. Die Antwort ist true für Ja und false für Nein.
+func frage(seite: String) -> bool:
+	fragend = true
+	antwort = true
+	await zeigen([seite])
+	fragend = false
+	return antwort
+
+
+func umblaettern() -> void:
+	text.text = seiten.pop_front()
+	text.visible_characters = 0
+	buchstaben = 0.0
+
+
+func _process(delta: float) -> void:
+	if not visible:
+		return
+	buchstaben += TEMPO * delta
+	text.visible_characters = int(buchstaben)
+	var letzte := seiten.is_empty()
+	# Blinkender Pfeil: Es geht weiter
+	$Rahmen/Weiter.visible = alles_da() and not (letzte and fragend) and Time.get_ticks_msec() % 600 < 300
+	$Rahmen/Auswahl.visible = alles_da() and letzte and fragend
+	$Rahmen/Auswahl.text = "> Ja     Nein" if antwort else "  Ja   > Nein"
+
+
+func alles_da() -> bool:
+	return buchstaben >= text.get_total_character_count()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not visible:
+		return
+	if $Rahmen/Auswahl.visible and (event.is_action_pressed("links") or event.is_action_pressed("rechts")):
+		antwort = not antwort
+	elif event.is_action_pressed("angriff"):
+		if not alles_da():
+			buchstaben = text.get_total_character_count()   # Ungeduldig? Dann alles auf einmal.
+		elif not seiten.is_empty():
+			umblaettern()
+		else:
+			schliessen()
+
+
+func schliessen() -> void:
+	hide()
+	# Erst weiterspielen, wenn die Taste losgelassen ist. Sonst sticht der Held mit demselben Druck gleich zu.
+	while Input.is_action_pressed("angriff"):
+		await get_tree().process_frame
+	get_tree().paused = false
+	fertig.emit()
+```
+
+Zum Schluss: *Project → Project Settings → Globals → Autoload*, bei **Path** `res://dialog.tscn` wählen, **Node Name** `Dialog`, **Add**. Ab jetzt kann jedes Skript `Dialog.zeigen(["Hallo!"])` schreiben.
+
+### 8.2 Lies das Skript
+
+- **`await fertig`**: `zeigen()` zeigt die erste Seite und wartet dann, bis das Signal `fertig` kommt, also bis die letzte Seite weggedrückt ist. Wer `zeigen()` aufruft, kann selbst entscheiden: Mit `await Dialog.zeigen(...)` wartet er mit, ohne `await` macht er sofort weiter. Beides brauchen wir gleich.
+- **`frage()` gibt eine Antwort zurück**, aber erst später. `var ja: bool = await Dialog.frage("Kaufen?")` wartet, bis der Spieler sich entschieden hat, und hat dann `true` oder `false` in der Hand. Hier muss der Typ dastehen (`: bool`), mit `:=` kann Godot ihn bei `await` nicht erraten.
+- **`visible_characters`**: Ein Label kann nur die ersten paar Buchstaben zeigen. `buchstaben` zählt mit Komma hoch, 40 pro Sekunde, und das Label zeigt davon den ganzen Teil. Das ist die Schreibmaschine.
+- **`seiten.pop_front()`** nimmt die erste Seite aus der Liste und gibt sie zurück. Ist die Liste leer, war das die letzte Seite. Darum am Anfang `duplicate()`: Sonst würde `pop_front()` die Liste des Schilds leer räumen, und beim zweiten Lesen stünde nichts mehr drauf.
+- **`get_tree().paused = true`** kennst du von der Kamera. Monster, Held, Herzanzeige: Alles bleibt stehen. Nur Nodes mit Process Mode **Always** laufen weiter: die Kamera und jetzt die Dialogbox.
+- **`_unhandled_input(event)` statt `Input.is_action_just_pressed()`**: Der Held öffnet die Box in seinem `_physics_process`, weil die Angriffstaste gerade gedrückt wurde. Würde die Box mit `is_action_just_pressed` fragen, wäre derselbe Druck im selben Bild noch „gerade gedrückt“, und die Box würde sofort weiterblättern. `_unhandled_input` bekommt dagegen jeden Tastendruck genau einmal als **Ereignis**, und zwar am Anfang des Bilds, bevor der Held überhaupt dran ist. Der Druck, der die Box geöffnet hat, ist da schon vorbei.
+- **Warten, bis die Taste losgelassen ist**: Beim Schließen gibt es das umgekehrte Problem. Die Box geht zu, das Spiel läuft weiter, und der Held sieht in seinem `_physics_process`: Angriffstaste gerade gedrückt! Er würde gleich wieder zustechen oder das Schild noch einmal lesen. Darum wartet `schliessen()`, bis die Taste oben ist.
+- **`[seite]`** in `frage()` macht aus einem einzelnen Text eine Liste mit einem Eintrag, weil `zeigen()` eine Liste will.
+
+### 8.3 Ein Schild
+
+```
+Schild (StaticBody2D)
+├── Bild (Sprite2D)
+└── CollisionShape2D
+```
+
+1. `Schild`: **StaticBody2D**, Layer `1`, Mask leer. Wie die Truhe, damit die Hand es findet.
+2. `Bild`: Kachelblatt, Frame `65` (eine Steintafel).
+3. `CollisionShape2D`: `14, 10` auf `0, 3`.
+4. Skript:
+
+```gdscript
+extends StaticBody2D
+
+@export_multiline var seiten: Array[String] = ["Hier könnte Ihre Werbung stehen."]
+
+
+# Lesen statt zustechen
+func benutzen() -> void:
+	Dialog.zeigen(seiten)
+```
+
+5. Speichern als `schild.tscn` und ein paar Schilder in den Dungeon stellen.
+
+**`@export_multiline var seiten: Array[String]`**: Im Inspector steht jetzt eine Liste. Mit **Add Element** kommt eine Seite dazu, und jede Seite hat ein großes Textfeld. Jedes Schild bekommt so seinen eigenen Text, ohne neues Skript. Ein paar Ideen:
+
+- „Achtung, Glibber! Bitte nicht füttern.“
+- „Links: Ausgang. Rechts: auch Ausgang. Schilder dürfen hier lügen.“
+- „Dieses Schild wurde von einem Monster aufgestellt. Gehen Sie weiter. Hier gibt es nichts zu sehen.“
+
+Am Schild siehst du, warum die Hand aus Kapitel 7 nur nach `benutzen()` fragt: Der Held muss nichts über Schilder wissen.
+
+### 8.4 Der alte Mann
+
+Eine Figur ist ein Schild, das sich merkt, ob man schon mit ihr geredet hat, und beim ersten Mal etwas schenken kann.
+
+Zuerst eine Kleinigkeit zum Aufräumen. Den aufsteigenden Schatz braucht jetzt nicht nur die Truhe, sondern auch der alte Mann und gleich der Händler. Also wandert er in die Klasse `Schatz`. `schatz.gd` bekommt unten eine `static func`:
+
+```gdscript
+# Über wo einen Schatz aufsteigen lassen, kurz zeigen, verblassen.
+# Der Tween kommt zurück, falls noch jemand etwas anhängen will.
+static func zeigen(wo: Node2D, was: Gegenstand.Art) -> Tween:
+	var schatz: Schatz = load("res://schatz.tscn").instantiate()
+	schatz.art = was
+	schatz.position = Vector2(0, -4)
+	wo.add_child(schatz)
+	var tween := schatz.create_tween()
+	tween.tween_property(schatz, "position:y", -18.0, 0.5)
+	tween.tween_interval(0.6)
+	tween.tween_property(schatz, "modulate:a", 0.0, 0.3)
+	tween.tween_callback(schatz.queue_free)
+	return tween
+```
+
+In `truhe.gd` wird `zeigen()` dadurch ganz kurz. Dein Bildwechsel hängt sich einfach an den zurückgegebenen Tween:
+
+```gdscript
+func zeigen() -> void:
+	var tween := Schatz.zeigen(self, inhalt)
+	tween.tween_property($Bild, "frame", BILD_OFFEN, 0.0)
+```
+
+Die Zeile `const SCHATZ = preload(...)` oben in der Truhe kann weg.
+
+- **Warum `load()` und nicht `preload()`?** `schatz.tscn` enthält `schatz.gd`. Würde `schatz.gd` mit `preload` wiederum `schatz.tscn` laden, bräuchte jede Datei die andere zuerst. `load()` lädt erst, wenn die Funktion wirklich läuft, und dann sind beide längst da.
+- **`wo` und `was`** heißen nicht `art`, weil `Schatz` schon eine Variable `art` hat. Gleiche Namen würden sich verdecken, und Godot würde warnen.
+
+Jetzt die Figur. Gleicher Aufbau wie das Schild (StaticBody2D, Bild, CollisionShape2D), Frame `84` (ein alter Zauberer mit Bart). Skript `figur.gd`:
+
+```gdscript
+extends StaticBody2D
+
+@export_multiline var seiten: Array[String] = ["Es ist gefährlich, allein zu gehen!", "Nimm das hier."]
+@export_multiline var danach: Array[String] = ["Was denn noch? Mehr hab ich nicht."]
+@export var geschenk: Gegenstand.Art = Gegenstand.Art.MUENZE
+@export var geschenk_anzahl := 0   # 0 heißt: kein Geschenk
+
+var schon_geredet := false
+
+
+# Beim ersten Mal reden und vielleicht etwas schenken, danach nur noch reden
+func benutzen() -> void:
+	if schon_geredet:
+		Dialog.zeigen(danach)
+		return
+	schon_geredet = true
+	await Dialog.zeigen(seiten)
+	if geschenk_anzahl > 0:
+		for i in geschenk_anzahl:
+			Spielstand.hinzufuegen(geschenk)
+		Schatz.zeigen(get_tree().get_first_node_in_group("held"), geschenk)
+```
+
+Speichern als `figur.tscn`. `Gegenstand.Art.MUENZE` gibt es noch nicht, Godot meckert. Das kommt im nächsten Abschnitt.
+
+- **`await Dialog.zeigen(seiten)`**: Der alte Mann redet erst zu Ende, dann gibt er das Geschenk her. Ohne `await` käme der Schatz schon während der ersten Seite.
+- **`Schatz.zeigen(held, ...)`**: Der Schatz steigt diesmal über dem **Helden** auf, nicht über der Figur. Als hielte der Held ihn hoch.
+
+Stell den alten Mann in einen eigenen kleinen Raum, am besten gleich neben dem Start. Mit **Geschenk** `MUENZE` und **Geschenk Anzahl** `10` hat der Held gleich Taschengeld für den Händler. Eigene Texte sind ausdrücklich erwünscht. Vorschlag für **Danach**: „Ich hab dir doch schon alles gegeben. Mein ganzes Erspartes. Für so was wie dich.“
+
+### 8.5 Münzen
+
+**`gegenstand.gd`**: Eine neue Art hinten an den `enum`, also `..., HERZCONTAINER, MUENZE }`. **Wichtig: hinten anhängen.** Der Inspector speichert für jede Truhe nur die Nummer ihres Inhalts. Käme `MUENZE` an den Anfang, würde aus jedem Schlüssel in deinen Truhen ein Masterschlüssel.
+
+Dazu ein Bild in `BILDER`:
+
+```gdscript
+	Art.MUENZE: [
+		[
+			"..oooo..",
+			".o####o.",
+			"o##++##o",
+			"o#+####o",
+			"o#+####o",
+			"o######o",
+			".o####o.",
+			"..oooo..",
+		],
+		{"o": BRAUN, "#": GOLD, "+": Color(1.0, 0.95, 0.7)},
+	],
+```
+
+Und für den Händler, der gleich über seine Ware reden will, ein Name zu jeder Art (oben, unter dem `enum`):
+
+```gdscript
+# So heißen sie, wenn jemand über sie redet
+const NAMEN = {
+	Art.SCHLUESSEL: "Ein Schlüssel",
+	Art.MASTERSCHLUESSEL: "Der Masterschlüssel",
+	Art.KARTE: "Die Karte",
+	Art.KOMPASS: "Der Kompass",
+	Art.HERZ: "Ein Herz",
+	Art.HERZCONTAINER: "Ein Herzcontainer",
+	Art.MUENZE: "Eine Münze",
+}
+```
+
+**`spielstand.gd`**: Münzen sind einfach ein Eintrag im Inventar. Das Dictionary aus Kapitel 7 muss dafür nicht geändert werden. Nur `verbrauchen()` muss jetzt mehr als einen auf einmal nehmen können:
+
+```gdscript
+# Einen oder mehrere verbrauchen, falls der Held genug hat. Die Antwort sagt, ob es geklappt hat.
+func verbrauchen(art: Gegenstand.Art, menge := 1) -> bool:
+	if anzahl(art) < menge:
+		return false
+	inventar[art] -= menge
+	inventar_geaendert.emit()
+	return true
+```
+
+**`menge := 1`** ist ein Parameter mit **Standardwert**: Wer ihn weglässt, bekommt 1. Deine Türen rufen weiter `Spielstand.verbrauchen(schluessel)` auf und müssen nicht geändert werden. Der Händler schreibt `verbrauchen(Gegenstand.Art.MUENZE, 25)`.
+
+**Das Fundstück**: Etwas, das auf dem Boden liegt und eingesammelt wird. Dein Herz macht genau das schon, aber nur für Herzen. Das Fundstück kann jede Art sein.
+
+```
+Fundstueck (Area2D)
+├── CollisionShape2D
+└── Klimper (AudioStreamPlayer)
+```
+
+1. `Fundstueck`: **Area2D**, Layer leer, Mask nur `2` (Held).
+2. `CollisionShape2D`: `10, 10`.
+3. `Klimper`: Ein kurzer Münzton, in 🆓 jsfxr ist das **Pickup/Coin**.
+4. Das Signal `body_entered` von `Fundstueck` mit sich selbst verbinden.
+5. Skript `fundstueck.gd`:
+
+```gdscript
+extends Area2D
+
+const ZEIT_ZUM_SAMMELN = 15.0
+const ZEIT_VERSCHWINDEN = 5.0
+
+@export var art: Gegenstand.Art = Gegenstand.Art.MUENZE
+
+var drop := false   # von einem Monster fallen gelassen: verschwindet nach einer Weile
+var zeit := ZEIT_ZUM_SAMMELN
+
+
+func _physics_process(delta: float) -> void:
+	if drop:
+		zeit -= delta
+		queue_redraw()
+		if zeit < 0:
+			queue_free()
+
+
+func _draw() -> void:
+	# In den letzten Sekunden verblassen. Liegt es fest im Level, bleibt zeit immer voll.
+	var alpha := clampf(zeit / ZEIT_VERSCHWINDEN, 0.0, 1.0)
+	var hoehe: float = Gegenstand.BILDER[art][0].size()
+	Gegenstand.malen(self, art, Vector2(0, hoehe / 2), alpha)
+
+
+func _on_body_entered(_body: Node2D) -> void:
+	Spielstand.hinzufuegen(art)
+	# Unsichtbar werden, klimpern, erst danach weg. Sonst wäre der Ton gleich mit weg.
+	set_deferred("monitoring", false)
+	drop = false
+	hide()
+	$Klimper.play()
+	await $Klimper.finished
+	queue_free()
+```
+
+6. Speichern als `fundstueck.tscn`.
+
+- Das `alpha` in `Gegenstand.malen()` ist **deine** Erweiterung aus Kapitel 7. Hier zahlt sie sich aus.
+- **`clampf(zeit / ZEIT_VERSCHWINDEN, 0.0, 1.0)`**: Bei 15 Sekunden kommt 3 heraus, das wird auf 1 gekappt, also voll sichtbar. Erst unter 5 Sekunden wird es durchsichtig. Eine Rechnung statt deines `if` im Herz, und ein Fundstück, das fest im Level liegt, zählt gar nicht erst herunter.
+- **`hoehe / 2`**: `malen()` will die Mitte der Unterkante. Eine halbe Bildhöhe nach unten, dann sitzt das Bild mittig auf der Kollisionsform, egal ob Münze oder Herz.
+- **`await $Klimper.finished`**: Die andere Lösung für das Ton-Problem aus Übung 4 von Kapitel 7. Statt den Ton woanders hinzuhängen, wird das Fundstück erst unsichtbar und taub, wartet den Ton ab und löscht sich dann selbst.
+
+Ein paar Münzen kannst du direkt in den Dungeon legen. Die meisten sollen aber von Monstern kommen. **`glibber.gd`**, oben:
+
+```gdscript
+const MUENZ_DROPRATE = 0.4
+const FUNDSTUECK = preload("res://fundstueck.tscn")
+```
+
+In `sterben()` ersetzt eine Zeile `beute()` den ganzen `if randf() < HERZ_DROPRATE:`-Block. Darunter die neue Funktion:
+
+```gdscript
+# Ein Herz oder eine Münze fallen lassen. Oder nichts.
+func beute() -> void:
+	var los := randf()
+	var ding   # ohne Typ: Herz und Fundstück haben beide ein drop, aber sonst wenig gemeinsam
+	if los < HERZ_DROPRATE:
+		ding = HERZCHEN.instantiate()
+	elif los < HERZ_DROPRATE + MUENZ_DROPRATE:
+		ding = FUNDSTUECK.instantiate()
+	else:
+		return
+	ding.drop = true
+	ding.position = position
+	get_parent().add_child.call_deferred(ding)
+```
+
+**Ein Los, drei Ausgänge**: `randf()` liefert eine Zahl zwischen 0 und 1. Unter 0,3: Herz. Zwischen 0,3 und 0,7: Münze. Darüber: nichts. Würdest du zweimal würfeln, könnte ein Glibber beides fallen lassen, und die Wahrscheinlichkeiten wären schwerer auszurechnen.
+
+**Die Anzeige**: In `Inventar` ein zweites Label `Muenzen`, gleiche Schrift, Position `9, 33`. In `inventar.gd`:
+
+```gdscript
+func aktualisieren() -> void:
+	$Anzahl.text = "x%d" % Spielstand.anzahl(Gegenstand.Art.SCHLUESSEL)
+	$Muenzen.text = "x%d" % Spielstand.anzahl(Gegenstand.Art.MUENZE)
+	queue_redraw()
+```
+
+Und als erste Zeile in `_draw()`:
+
+```gdscript
+	Gegenstand.malen(self, Gegenstand.Art.MUENZE, Vector2(4, 44))
+```
+
+Die Münzen stehen so unter dem Schlüssel. Dein Label `Anzahl` steht bei dir ganz oben links im Inventar. Gedacht war `9, 18`, also rechts neben dem Schlüssel. Sonst stehen beide Zahlen nicht da, wo ihr Bild ist.
+
+### 8.6 Der Händler
+
+Der Händler ist auch eine Figur, nur mit anderem Bild und anderem Text. Statt `figur.tscn` zu kopieren, **erbst** du sie:
+
+1. *Scene → New Inherited Scene* → `figur.tscn` wählen.
+2. Es öffnet sich eine Szene, die genau wie die Figur aussieht. Die Nodes sind gelb: Sie gehören der Eltern-Szene.
+3. `Bild` auswählen, Frame `112` (ein Kerl mit grünem Stirnband). Die Root in `Haendler` umbenennen.
+4. Im Inspector die Texte, zum Beispiel: „Willkommen! Alles muss raus!“, „Wirklich alles. Ich zieh um. Der Vermieter ist ein Drache.“
+5. Speichern als `haendler.tscn`.
+
+**Geerbte Szene**: `haendler.tscn` speichert nur, was **anders** ist als bei der Figur, also Bild und Texte. Änderst du später etwas an `figur.tscn`, etwa die Kollisionsform, bekommt der Händler das von selbst mit. Bei einer Kopie müsstest du jede Änderung zweimal machen.
+
+Jetzt die Ware. Jedes Angebot liegt einzeln auf dem Boden, mit dem Preis darunter, wie im Original.
+
+```
+Angebot (StaticBody2D)
+├── CollisionShape2D
+└── Preis (Label)
+```
+
+1. `Angebot`: **StaticBody2D**, Layer `1`, Mask leer.
+2. `CollisionShape2D`: `14, 14`.
+3. `Preis`: **Label**, Kenney Pixel, Position `-12, 8`, Size `24, 12`, **Horizontal Alignment**: **Center**.
+4. Skript `angebot.gd`:
+
+```gdscript
+extends StaticBody2D
+
+@export var ware: Gegenstand.Art = Gegenstand.Art.HERZ
+@export var preis := 10
+@export var einmalig := false   # nur einmal zu haben, zum Beispiel der Herzcontainer
+
+
+func _ready() -> void:
+	$Preis.text = str(preis)
+
+
+func _draw() -> void:
+	Gegenstand.malen(self, ware, Vector2(0, 7))
+
+
+# Fragen, bezahlen, einpacken
+func benutzen() -> void:
+	var ja: bool = await Dialog.frage("%s für %d Münzen?" % [Gegenstand.NAMEN[ware], preis])
+	if not ja:
+		Dialog.zeigen(["Gucken kostet nichts. Noch nicht."])
+	elif not Spielstand.verbrauchen(Gegenstand.Art.MUENZE, preis):
+		Dialog.zeigen(["Das reicht nicht. Komm wieder, wenn du flüssig bist."])
+	else:
+		Spielstand.hinzufuegen(ware)
+		Schatz.zeigen(get_tree().get_first_node_in_group("held"), ware)
+		if einmalig:
+			queue_free()
+		Dialog.zeigen(["Gute Wahl! Umtausch ausgeschlossen."])
+```
+
+5. Speichern als `angebot.tscn`.
+
+Bau einen Laden: ein Raum mit dem Händler oben in der Mitte und drei Angeboten in einer Reihe davor. Vorschlag:
+
+| Ware | Preis | Einmalig |
+|---|---|---|
+| `HERZ` | 10 | nein |
+| `SCHLUESSEL` | 25 | nein |
+| `HERZCONTAINER` | 50 | ja |
+
+Der Herzcontainer im Laden ist einer von den zehn aus deinem Plan.
+
+- **`"%s für %d Münzen?" % [...]`**: `%s` wird durch einen Text ersetzt, `%d` durch eine ganze Zahl, der Reihe nach. Kennst du von `"x%d"` in der Anzeige, nur mit zwei Lücken.
+- **Erst fragen, dann zahlen**: `verbrauchen()` nimmt nur, wenn genug da ist, und sagt, ob es geklappt hat. Wie bei der Tür. Es kann nie passieren, dass Münzen weg sind und die Ware nicht kommt.
+- **`queue_free()` vor dem letzten Satz**: Das Angebot verschwindet sofort, die Dialogbox ist ein Autoload und redet trotzdem weiter. Gelöscht wird erst am Ende des Bilds, `Dialog.zeigen` läuft also noch.
+
+Ein Ladentisch macht sich gut: Kachel `72` ist ein Tisch, Kachel `73` ein Hocker. Stell sie hinter die Ware oder mal sie auf die Wände-Ebene, wenn sie eine Kollision haben sollen.
+
+### 8.7 Ausprobieren
+
+- Lies ein Schild: Die Box erscheint unten, der Text tippt sich hin, alles andere steht still. Angriffstaste während des Tippens: Der Rest erscheint auf einmal. Noch einmal: Box zu, und der Held sticht **nicht** zu.
+- Rede mit dem alten Mann: zwei Seiten, das Dreieck blinkt zwischen den Seiten. Danach steigen die Münzen über dem Helden auf, und die Anzeige zählt `x10`. Ein zweites Mal reden: Er hat nichts mehr.
+- Erschlag ein paar Glibber: Manchmal bleibt eine Münze liegen. Lass sie liegen: Nach zehn Sekunden fängt sie an zu verblassen, nach fünfzehn ist sie weg.
+- Im Laden: Frage mit `Ja` und `Nein`, links und rechts schalten um. Bei `Nein` passiert nichts. Mit zu wenig Geld schimpft der Händler. Mit genug Geld wandert die Ware zum Helden, und der Herzcontainer ist danach weg.
+
+### 8.8 Noch zwei Dinge aus Kapitel 7
+
+Zuerst das Lob: Deine Tür spielt ihren Ton über den Helden, weil sie sich selbst löscht. Das war genau die Lösung für Übung 4. Und die Belohnungstruhe als Häkchen an der normalen Truhe statt als eigene Szene ist dieselbe Idee wie der Masterschlüssel an der Tür.
+
+Diese zwei wirken sich auf das Verhalten aus:
+
+1. **`visibility_layer` ist nicht `visible`.** In der Belohnungstruhe steht `$Bild.visibility_layer = false`. `visibility_layer` ist eine Bitmaske, ähnlich wie die Kollisionsebenen, und legt fest, in welchen Ansichten etwas zu sehen ist. `false` wird zu 0, also „in keiner“, und `true` zu 1, „in Ansicht 1“. Das ist zufällig die normale. Es klappt also, aber nur aus Glück, und eine Minikarte oder ein zweiter Bildschirm würde es kaputtmachen. Gemeint ist `$Bild.visible = false` und `true`.
+2. **Löschen in der eigenen Schleife.** `for monster in monster_im_raum:` mit `monster_im_raum.erase(monster)` darin: Wird mitten in der Schleife ein Eintrag gelöscht, rücken alle dahinter eins auf, und die Schleife überspringt den nächsten. Bei dir fällt das nicht auf, weil das im nächsten Bild nachgeholt wird. Sauberer ist eine Zeile ohne Schleife:
+
+   ```gdscript
+   monster_im_raum = monster_im_raum.filter(is_instance_valid)
+   ```
+
+   `filter` behält nur, wofür die Funktion `true` sagt. Wichtig ist das `monster_im_raum =` vorne: `filter` ändert die Liste nicht, sondern baut eine **neue** und gibt sie zurück. Ohne Zuweisung wird die neue Liste sofort weggeworfen, die alte bleibt voll, und die Truhe erscheint nie. Das gilt auch für `map`, `duplicate` und `slice`. Nur Befehle wie `append`, `erase` und `sort` ändern die Liste selbst.
+
+Die Formatierung habe ich korrigiert: Tippfehler in `karte.gd` (`geheime_raeme` → `geheime_raeume`), die nicht mehr benutzten Farben in `spielstand.gd` sind raus, und Kleinkram in `truhe.gd`, `tuer.gd`, `mimic.gd`, `herzcontainer.gd` und `gegenstand.gd`.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 8
+
+1. **Plappern (leicht):** Ein leiser, kurzer Ton bei jedem zweiten Buchstaben, mit zufälliger Tonhöhe (`pitch_scale = randf_range(0.9, 1.1)`), wie bei vielen Pixelspielen. Tipp: Merk dir in `_process`, wie viele Buchstaben im letzten Bild zu sehen waren. Wenn es jetzt mehr sind, ist ein neuer dazugekommen. Leerzeichen sollen still sein.
+2. **Kundenservice (leicht):** Bei vollen Herzen ein Herz zu kaufen ist rausgeworfenes Geld. Der Händler soll dann gar nicht erst fragen, sondern sagen: „Du bist kerngesund. Komm wieder, wenn dich was gebissen hat.“ Wo im Skript gehört die Prüfung hin?
+3. **Kleingeld im Topf (leicht):** Gib dem Topf `@export var muenzen := 0`. Beim Zerbrechen fallen so viele Münzen heraus, leicht verstreut. Tipp: Schau dir `beute()` im Glibber an, und für das Verstreuen `Vector2(randf_range(-6, 6), randf_range(-6, 6))`.
+4. **Wer spricht da? (mittel):** Über der Box ein kleines Namensschild, zum Beispiel „Alter Mann“ oder „Händler“. `zeigen()` bekommt dafür einen zweiten Parameter mit Standardwert `""`. Ohne Namen bleibt das Schild weg, dann können die Schilder alles lassen, wie es ist. Und `frage()`? Achtung: Nenn die Variable in der Figur nicht `name`. Warum nicht?
+5. **Türreparatur (mittel):** Im Original sitzt in einem Geheimraum ein Mann, der sagt: „Du hast meine Tür kaputt gemacht! Das macht 20 Münzen.“ Und kassiert, ohne zu fragen. Bau ihn hinter deine falsche Wand. Hat der Held weniger als 20, nimmt er eben alles. Tipp: `verbrauchen()` nimmt nur, wenn genug da ist. Wie viele kann er also höchstens nehmen? `mini()` hilft. 💸

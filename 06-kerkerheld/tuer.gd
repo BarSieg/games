@@ -1,9 +1,10 @@
 extends StaticBody2D
 
-@export var master := false   # braucht den Masterschlüssel statt eines normalen
-
 const OFFEN_LINKS = 22
 const OFFEN_RECHTS = 23
+
+@export var master := false   # braucht den Masterschlüssel statt eines normalen
+
 
 func _ready() -> void:
 	if master:
@@ -23,7 +24,6 @@ func benutzen() -> void:
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(queue_free)
-	
 
 
 # Kein Schlüssel: Die Tür rüttelt nur
