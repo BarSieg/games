@@ -8,7 +8,7 @@ var seiten: Array[String] = []   # was noch kommt
 var buchstaben := 0.0            # wie viele Buchstaben schon zu sehen sind, mit Komma
 var fragend := false             # wartet die letzte Seite auf Ja oder Nein?
 var antwort := true
-var buchstaben_anzeige := 0.0
+var buchstaben_anzeige := 0.0     # bis hierhin wurde schon geplappert
 
 @onready var text: Label = $Rahmen/Text
 

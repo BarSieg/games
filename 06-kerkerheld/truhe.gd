@@ -12,6 +12,10 @@ var versteckt := false
 
 
 func _ready() -> void:
+	if Spielstand.ist_erledigt(self):
+		offen = true
+		$Bild.frame = BILD_OFFEN
+		return
 	if belohnung:
 		var alle_monster := get_tree().get_nodes_in_group("monster")
 		for monster in alle_monster:
@@ -27,6 +31,7 @@ func benutzen() -> void:
 	if offen or versteckt:
 		return
 	offen = true
+	Spielstand.erledigen(self)
 	$Bild.frame = BILD_OEFFNEN
 	$Fanfare.play()
 	Spielstand.hinzufuegen(inhalt)

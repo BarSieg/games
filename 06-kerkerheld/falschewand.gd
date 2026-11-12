@@ -1,5 +1,9 @@
 extends StaticBody2D
 
+func _ready() -> void:
+	if Spielstand.ist_erledigt(self):
+		queue_free()
+
 
 func _on_hurtbox_area_entered(_area: Area2D) -> void:
 	zerbrechen()
@@ -7,6 +11,7 @@ func _on_hurtbox_area_entered(_area: Area2D) -> void:
 
 # Kurz plattdrücken, dann weg
 func zerbrechen() -> void:
+	Spielstand.erledigen(self)
 	Engine.time_scale = 0.0
 	await get_tree().create_timer(0.06, true, false, true).timeout
 	Engine.time_scale = 1.0

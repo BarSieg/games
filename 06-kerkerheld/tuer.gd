@@ -7,6 +7,9 @@ const OFFEN_RECHTS = 23
 
 
 func _ready() -> void:
+	if Spielstand.ist_erledigt(self):
+		queue_free()
+		return
 	if master:
 		$Bilder.modulate = Color(1.0, 0.85, 0.4)   # golden: Hier geht es zum Boss
 
@@ -17,6 +20,7 @@ func benutzen() -> void:
 	if not Spielstand.verbrauchen(schluessel):
 		wackeln()
 		return
+	Spielstand.erledigen(self)
 	$CollisionShape2D.set_deferred("disabled", true)
 	$Bilder/Links.frame = OFFEN_LINKS
 	$Bilder/Rechts.frame = OFFEN_RECHTS

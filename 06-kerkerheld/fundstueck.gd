@@ -9,6 +9,12 @@ var drop := false   # von einem Monster fallen gelassen: verschwindet nach einer
 var zeit := ZEIT_ZUM_SAMMELN
 
 
+func _ready() -> void:
+	# Fallen gelassene Dinge sind jedes Mal neu, nur die fest im Level liegenden merken wir uns
+	if not drop and Spielstand.ist_erledigt(self):
+		queue_free()
+
+
 func _physics_process(delta: float) -> void:
 	if drop:
 		zeit -= delta
@@ -26,6 +32,8 @@ func _draw() -> void:
 
 func _on_body_entered(_body: Node2D) -> void:
 	Spielstand.hinzufuegen(art)
+	if not drop:
+		Spielstand.erledigen(self)
 	# Unsichtbar werden, klimpern, erst danach weg. Sonst wäre der Ton gleich mit weg.
 	set_deferred("monitoring", false)
 	drop = false

@@ -12,8 +12,8 @@ Vieles kennst du schon: TileMapLayer, Kollisionsebenen, Tweens, Autoload, HUD, S
 5. Mehrere Räume: Die Kamera schaltet um wie im Original, Monster bleiben in ihrem Raum ✔
 6. Herzen, Schaden und die Anzeige oben ✔
 7. Schlüssel, Truhen und verschlossene Türen (Inventar), Masterschlüssel für den Bossraum, dazu Karte und Kompass ✔
-8. Dialoge: Schilder, ein alter Mann, Münzen und ein Händler ← *du bist hier*
-9. Die Welt merkt sich alles: Speichern und Laden
+8. Dialoge: Schilder, ein alter Mann, Münzen und ein Händler ✔
+9. Die Welt merkt sich alles: Speichern und Laden ← *du bist hier*
 10. Boss, Titelbild mit Optionen (z. B. schräg laufen ja/nein), Musik und Web-Export
 
 ---
@@ -2099,3 +2099,355 @@ Fertig? Committen und Bescheid geben.
 3. **Kleingeld im Topf (leicht):** Gib dem Topf `@export var muenzen := 0`. Beim Zerbrechen fallen so viele Münzen heraus, leicht verstreut. Tipp: Schau dir `beute()` im Glibber an, und für das Verstreuen `Vector2(randf_range(-6, 6), randf_range(-6, 6))`.
 4. **Wer spricht da? (mittel):** Über der Box ein kleines Namensschild, zum Beispiel „Alter Mann“ oder „Händler“. `zeigen()` bekommt dafür einen zweiten Parameter mit Standardwert `""`. Ohne Namen bleibt das Schild weg, dann können die Schilder alles lassen, wie es ist. Und `frage()`? Achtung: Nenn die Variable in der Figur nicht `name`. Warum nicht?
 5. **Türreparatur (mittel):** Im Original sitzt in einem Geheimraum ein Mann, der sagt: „Du hast meine Tür kaputt gemacht! Das macht 20 Münzen.“ Und kassiert, ohne zu fragen. Bau ihn hinter deine falsche Wand. Hat der Held weniger als 20, nimmt er eben alles. Tipp: `verbrauchen()` nimmt nur, wenn genug da ist. Wie viele kann er also höchstens nehmen? `mini()` hilft. 💸
+
+---
+
+## Kapitel 9: Die Welt merkt sich alles
+
+Bisher ist der Tod gnadenlos: Herz weg, Spiel vorbei, alles von vorn. Jede Truhe ist wieder zu, jeder Schlüssel weg, die Karte leer. Und wer das Spiel beendet, fängt beim nächsten Mal auch von vorn an.
+
+Ab jetzt merkt sich die Welt, was der Held getan hat. Bei jedem Raumwechsel wird gespeichert, wie ein Kontrollpunkt. Stirbt der Held, steht er wieder am Eingang des Raums, in dem er zuletzt gespeichert hat, mit allem, was er da hatte. Und beim nächsten Start geht es genau dort weiter.
+
+Neu sind **`ConfigFile`** zum Schreiben und Lesen einer Datei, der Ordner **`user://`**, **Knotenpfade** als Namen für Dinge, **Dictionaries als Verweis** statt als Kopie und **`_enter_tree`**.
+
+### 9.1 Was muss sich die Welt merken?
+
+Bevor du Code schreibst, eine Liste. Was soll nach dem Tod oder nach dem Neustart noch so sein wie vorher?
+
+| Was | Gemerkt? | Warum |
+|---|---|---|
+| Inventar, Herzcontainer | ja | sonst war alles umsonst |
+| Wo der Held steht | ja | der Eingang des letzten Raums |
+| Wie viele Herzen gerade voll sind | nein | wie im Original: weiter mit drei Herzen |
+| Offene Truhen und Türen | ja | sonst gäbe es Schlüssel doppelt |
+| Eingesammelte Fundstücke | ja | ein Herzcontainer liegt nur einmal rum |
+| Gekaufte Einmal-Angebote | ja | dasselbe im Laden |
+| Mit wem der Held schon geredet hat | ja | sonst schenkt der alte Mann jedes Mal wieder Münzen |
+| Zerstörte falsche Wände | ja | ein Geheimnis bleibt entdeckt |
+| Besuchte Räume für die Karte | ja | |
+| Monster | nein | die kommen wieder, wie im Original |
+| Töpfe, Münzen von Monstern | nein | kommen auch wieder (aber schau mal in die Übungen) |
+
+**Die wichtigste Regel:** Inventar und Welt werden **im selben Moment** gespeichert. Stell dir vor, nur das Inventar würde sofort gespeichert und die Welt erst später. Dann öffnest du eine Truhe, der Schlüssel ist im Inventar gespeichert, die Truhe aber noch nicht. Du stirbst, die Truhe ist wieder zu, und du holst dir den Schlüssel noch mal. Unendlich Schlüssel. Wird beides zusammen gespeichert, passt es immer: Stirbst du im selben Raum, ist die Truhe wieder zu **und** der Schlüssel wieder weg.
+
+### 9.2 Jedes Ding braucht einen Namen
+
+Für das Inventar reicht `Gegenstand.Art` als Schlüssel. Aber wie merkt man sich „Truhe 7 ist offen“? Jeder Knoten im Spiel hat einen **Pfad**, wie ein Ordner auf der Festplatte: `/root/Dungeon/Truhe7`. Den liefert `get_path()`, und er ist einmalig. Zwei Knoten mit demselben Namen nebeneinander lässt Godot nicht zu, deshalb heißen sie ja `Truhe`, `Truhe2`, `Truhe3`.
+
+Der Spielstand bekommt ein Dictionary `erledigt`: Jeder Pfad, der drinsteht, ist erledigt. Eine Truhe ist dann offen, eine Tür offen, ein Fundstück eingesammelt. Jedes Ding weiß selbst, was „erledigt“ für es bedeutet.
+
+> **Achtung beim Umbenennen:** Benennst du `Truhe7` später in `Truhe_Kompass` um, findet der Spielstand sie nicht mehr. Dann ist sie wieder zu. Schlimm ist das nicht, aber wundere dich nicht.
+
+### 9.3 Der Spielstand speichert und lädt
+
+`spielstand.gd` bekommt einiges dazu. Hier ist die ganze Datei. Alles ab `func anzahl` ist unverändert:
+
+```gdscript
+extends Node
+
+signal leben_geaendert
+signal inventar_geaendert
+
+const START_LEBEN = 6   # in halben Herzen: 6 sind drei ganze Herzen
+const MAX_HERZEN = 10
+const DATEI = "user://spielstand.cfg"
+
+var inventar := {}   # Gegenstand.Art -> Anzahl
+var erledigt := {}   # Pfad im Dungeon -> true: offene Truhen und Türen, eingesammelte Dinge, ...
+var besucht := {}    # Raum -> true, für die Karte
+var startpunkt: Variant = null   # Hier steht der Held nach dem Laden. null heißt: wo er in der Szene steht.
+var max_leben := START_LEBEN
+var leben := START_LEBEN:
+	set(wert):
+		max_leben = mini(max_leben, MAX_HERZEN * 2)
+		leben = clampi(wert, 0, mini(max_leben, MAX_HERZEN * 2))
+		leben_geaendert.emit()
+
+
+# _init statt _ready: Das läuft, sobald der Spielstand entsteht, noch bevor der Dungeon gebaut wird
+func _init() -> void:
+	laden()
+
+
+# Alles auf Anfang, für ein neues Spiel
+func neues_spiel() -> void:
+	max_leben = START_LEBEN
+	leben = max_leben
+	inventar.clear()
+	erledigt.clear()
+	besucht.clear()
+	startpunkt = null
+	inventar_geaendert.emit()
+
+
+# Alles, was sich der Held und die Welt merken müssen, in eine Datei
+func speichern(wo: Vector2) -> void:
+	startpunkt = wo
+	var datei := ConfigFile.new()
+	datei.set_value("held", "startpunkt", startpunkt)
+	datei.set_value("held", "max_leben", max_leben)
+	datei.set_value("held", "inventar", inventar)
+	datei.set_value("welt", "erledigt", erledigt)
+	datei.set_value("welt", "besucht", besucht)
+	datei.save(DATEI)
+
+
+# Den letzten Stand zurückholen. Gibt es noch keinen, beginnt ein neues Spiel.
+func laden() -> void:
+	var datei := ConfigFile.new()
+	if datei.load(DATEI) != OK:
+		neues_spiel()
+		return
+	startpunkt = datei.get_value("held", "startpunkt", null)
+	max_leben = datei.get_value("held", "max_leben", START_LEBEN)
+	leben = mini(START_LEBEN, max_leben)   # wie im Original: weiter mit drei Herzen
+	# assign statt =: dieselben Dictionaries behalten, nur ihren Inhalt austauschen. Die Karte hält besucht fest.
+	inventar.assign(datei.get_value("held", "inventar", {}))
+	erledigt.assign(datei.get_value("welt", "erledigt", {}))
+	besucht.assign(datei.get_value("welt", "besucht", {}))
+	inventar_geaendert.emit()
+
+
+# Hat der Held dieses Ding schon geöffnet, eingesammelt, gekauft, ...?
+func ist_erledigt(ding: Node) -> bool:
+	return str(ding.get_path()) in erledigt
+
+
+func erledigen(ding: Node) -> void:
+	erledigt[str(ding.get_path())] = true
+
+
+# Wie viele davon hat der Held?
+func anzahl(art: Gegenstand.Art) -> int:
+	...
+```
+
+### 9.4 Lies das Skript
+
+- **`ConfigFile`** ist Godots einfachste Art, eine Datei zu schreiben. Sie hat **Abschnitte** (hier `held` und `welt`) und darin **Schlüssel** mit Werten, wie ein kleines Dictionary in zwei Stufen. `set_value()` trägt ein, `save()` schreibt alles auf einmal auf die Festplatte.
+- **Warum nicht JSON?** JSON kennt nur Zahlen, Texte, Listen und Dictionaries mit Text-Schlüsseln. Aus `Vector2(-38, 90)` müsstest du selbst zwei Zahlen machen, und aus dem Inventar-Schlüssel `0` würde der Text `"0"`. `ConfigFile` schreibt Godot-Werte so, wie sie sind, und liest sie genauso zurück. So sieht die Datei nach einem Raumwechsel aus:
+
+  ```
+  [held]
+  startpunkt=Vector2(-38.889965, 90)
+  max_leben=8
+  inventar={
+  0: 1
+  }
+  [welt]
+  erledigt={
+  "/root/Dungeon/Fundstueck5": true,
+  "/root/Dungeon/Truhe3": true,
+  "/root/Dungeon/Tuer4": true
+  }
+  besucht={
+  Vector2i(-1, 0): true,
+  Vector2i(0, 0): true
+  }
+  ```
+
+  Ganz normaler Text. Den kannst du lesen und auch ändern (siehe Übung 1).
+- **`user://`** ist der Ordner, in den dein Spiel schreiben darf. `res://` ist dein Projekt, und das ist nach dem Export schreibgeschützt. Unter Windows liegt `user://` in `%APPDATA%\Godot\app_userdata\Kerkerheld\`. Am schnellsten findest du ihn über **Projekt → Benutzerdatenordner öffnen**. Im Browser (Kapitel 10) landet die Datei im Speicher des Browsers, und es funktioniert genauso.
+- **`get_value(abschnitt, schluessel, standard)`**: Der dritte Wert kommt zurück, wenn der Eintrag fehlt. Das ist praktisch, wenn du später etwas Neues speicherst und eine alte Datei das noch nicht kennt.
+- **`if datei.load(DATEI) != OK`**: `load()` gibt einen Fehlercode zurück. `OK` heißt geklappt. Beim allerersten Start gibt es noch keine Datei, dann beginnt einfach ein neues Spiel.
+- **`startpunkt: Variant = null`**: Ein `Vector2` kann nicht „nichts“ sein, `Vector2.ZERO` ist ja auch ein Ort. Darum `Variant`: Das darf ein `Vector2` sein oder `null`. `null` heißt hier: Es gibt noch keinen Spielstand, der Held bleibt, wo er in der Szene steht.
+- **`str(ding.get_path())`**: `get_path()` liefert einen `NodePath`, also keinen gewöhnlichen Text. Mit `str()` wird daraus ein normaler Text, und der lässt sich als Schlüssel verlässlich vergleichen.
+- **`_init()` ruft `laden()` auf, nicht `_ready()`:** Beim Start mit F5 baut Godot zuerst alle Knoten, auch den ganzen Dungeon. Dann hängt es alles in den Baum (`_enter_tree`), und erst ganz am Ende laufen die `_ready()`. Würde der Spielstand erst in `_ready()` laden, hätten der Held (`_enter_tree`, 9.7) und die Karte (`var besucht := ...`, 9.6) schon nachgefragt und nichts bekommen. `_init()` läuft dagegen, sobald der Spielstand selbst entsteht. Autoloads entstehen vor der ersten Szene, also ist der Stand rechtzeitig da.
+- **`leben` wird nicht gespeichert.** Nach dem Laden gibt es drei Herzen, mit `mini()`, damit es nicht mehr sind als die Container. Sonst könntest du mit einem halben Herzen speichern und nach jedem Tod mit einem halben Herzen weitermachen.
+
+### 9.5 Die Dinge erinnern sich
+
+Jedes Ding fragt in `_ready()`, ob es schon erledigt ist, und meldet sich als erledigt, sobald der Held etwas mit ihm macht. Immer dasselbe Muster, nur was „erledigt“ heißt, ist verschieden.
+
+**`truhe.gd`**: Eine erledigte Truhe ist offen. Ganz oben in `_ready()`:
+
+```gdscript
+func _ready() -> void:
+	if Spielstand.ist_erledigt(self):
+		offen = true
+		$Bild.frame = BILD_OFFEN
+		return
+	if belohnung:
+		...
+```
+
+Das `return` ist wichtig: Eine offene Belohnungstruhe soll sich nicht wieder verstecken, nur weil die Monster wieder da sind. In `benutzen()` direkt unter `offen = true`:
+
+```gdscript
+	Spielstand.erledigen(self)
+```
+
+**`tuer.gd`**: Eine erledigte Tür ist weg. Ganz oben in `_ready()`:
+
+```gdscript
+func _ready() -> void:
+	if Spielstand.ist_erledigt(self):
+		queue_free()
+		return
+	if master:
+		...
+```
+
+Und in `benutzen()` direkt nach dem `return` vom Wackeln, also erst, wenn der Schlüssel wirklich verbraucht ist:
+
+```gdscript
+	Spielstand.erledigen(self)
+```
+
+**`fundstueck.gd`**: Hier gibt es einen Haken. Fundstücke, die ein Glibber oder ein Topf fallen lässt, bekommen von Godot einen ausgedachten Namen wie `@Area2D@37`. Den gibt es beim nächsten Mal vielleicht wieder, aber für ein ganz anderes Ding. Darum merken wir uns nur die, die fest im Level liegen:
+
+```gdscript
+func _ready() -> void:
+	# Fallen gelassene Dinge sind jedes Mal neu, nur die fest im Level liegenden merken wir uns
+	if not drop and Spielstand.ist_erledigt(self):
+		queue_free()
+```
+
+In `_on_body_entered()` direkt unter `Spielstand.hinzufuegen(art)`, also **bevor** `drop = false` gesetzt wird:
+
+```gdscript
+	if not drop:
+		Spielstand.erledigen(self)
+```
+
+**`angebot.gd`**: Nur Einmal-Angebote merken sich etwas. Ganz oben in `_ready()`:
+
+```gdscript
+	if einmalig and Spielstand.ist_erledigt(self):
+		queue_free()
+		return
+```
+
+Und beim Kaufen:
+
+```gdscript
+			if einmalig:
+				Spielstand.erledigen(self)
+				queue_free()
+```
+
+**`figur.gd`**: Hier ist „erledigt“ einfach `schon_geredet`. Als erste Zeile in `_ready()`:
+
+```gdscript
+	schon_geredet = Spielstand.ist_erledigt(self)
+```
+
+Und in `benutzen()` direkt unter `schon_geredet = true`:
+
+```gdscript
+	Spielstand.erledigen(self)
+```
+
+Das gilt für den alten Mann, den Händler und den Türmann. Alle drei erben ja von der Figur. Der Türmann kassiert also nur einmal, auch nach dem Tod.
+
+**`falschewand.gd`**: Eine erledigte Wand ist weg. Neu:
+
+```gdscript
+func _ready() -> void:
+	if Spielstand.ist_erledigt(self):
+		queue_free()
+```
+
+Und als erste Zeile in `zerbrechen()`:
+
+```gdscript
+	Spielstand.erledigen(self)
+```
+
+### 9.6 Die Karte erinnert sich
+
+Die Karte hat ihr eigenes Dictionary `besucht`. Das muss jetzt in den Spielstand, damit es gespeichert wird. Dafür musst du in `karte.gd` genau eine Zeile ändern:
+
+```gdscript
+var besucht := Spielstand.besucht   # dasselbe Dictionary wie im Spielstand, keine Kopie
+```
+
+Alles andere in der Karte bleibt, wie es ist. Warum klappt das?
+
+- **Ein Dictionary wird nicht kopiert, sondern geteilt.** Bei `var a := 5` und `var b := a` hat `b` seine eigene 5. Ein Dictionary ist aber zu groß, um es bei jeder Zuweisung zu kopieren. `besucht` in der Karte und `besucht` im Spielstand sind danach **dasselbe** Dictionary, nur unter zwei Namen. Trägt die Karte einen Raum ein, steht er auch im Spielstand. Willst du wirklich eine Kopie, gibt es `duplicate()`, das kennst du aus der Dialogbox.
+- **Warum gleich bei `var` und nicht in `_ready()`?** Die Kamera steht im Szenenbaum über der Anzeige. Ihr `_ready()` läuft also zuerst und trägt schon den Startraum in die Karte ein. Würde die Karte erst in ihrem eigenen `_ready()` umschalten, wäre dieser Eintrag im alten, leeren Dictionary gelandet. Werte hinter `var` werden dagegen gesetzt, sobald der Knoten entsteht, also noch vor jedem `_ready()`.
+- **Darum `clear()` in `neues_spiel()`:** `clear()` leert dasselbe Dictionary, und die Karte merkt es sofort. `besucht = {}` würde dagegen ein neues Dictionary anlegen, und die Karte hielte noch das alte fest. Aus demselben Grund steht in `laden()` `besucht.assign(...)` statt `besucht = ...`. `assign()` tauscht den Inhalt aus, und das Dictionary bleibt dasselbe. Mit `=` hätte die Karte nach F5 ein leeres altes Dictionary festgehalten, ihre neuen Räume dort eingetragen, und gespeichert worden wäre das andere.
+
+### 9.7 Der Held speichert und steht wieder auf
+
+Drei Stellen in `held.gd`.
+
+**Speichern beim Raumwechsel.** Dein Held läuft nach dem Raumwechsel schon 18 Pixel in den neuen Raum hinein, und die Funktion wartet mit `await tween.finished`, bis er da ist. Genau danach wird gespeichert:
+
+```gdscript
+func _on_camera_2d_raumwechsel(wechselrichtung: Variant) -> void:
+	var tween := create_tween()
+	tween.tween_property(self, "position", position + Vector2(18 * wechselrichtung.x, 18 * wechselrichtung.y), 0.2)
+	await tween.finished
+	Spielstand.speichern(global_position)   # ganz im neuen Raum angekommen: speichern
+```
+
+Warum erst danach? Direkt nach dem Wechsel steht der Held noch im Türrahmen auf der Grenze. Nach den 18 Pixeln steht er sicher im Raum. Und spricht ihn beim Betreten jemand an, etwa der Türmann, wartet der Tween, bis der Dialog zu ist. Gespeichert wird also erst, wenn das Geld schon weg ist. Gut so.
+
+**Nach dem Tod laden statt neu anfangen.** In `sterben()` wird aus `Spielstand.neues_spiel()`:
+
+```gdscript
+	Spielstand.laden()
+	get_tree().reload_current_scene()
+```
+
+**Am Startpunkt aufstehen.** Neue Funktion, zum Beispiel direkt unter den Variablen:
+
+```gdscript
+# Nach dem Laden dort anfangen, wo zuletzt gespeichert wurde.
+# _enter_tree statt _ready: Die Kamera fragt in ihrem _ready schon nach der Position des Helden.
+func _enter_tree() -> void:
+	if Spielstand.startpunkt != null:
+		global_position = Spielstand.startpunkt
+		unverwundbar = SCHONZEIT   # kurz Zeit zum Umschauen
+```
+
+- **`_enter_tree()`** läuft, sobald der Knoten im Baum hängt, und zwar für **alle** Knoten der Szene, bevor irgendein `_ready()` drankommt. Die Kamera steht über dem Held und hätte in ihrem `_ready()` sonst noch die alte Position gesehen. Dann hätte sie den falschen Raum gezeigt und gleich wieder umgeschaltet.
+- **`unverwundbar = SCHONZEIT`**: Wer mitten in einem Raum voller Glibber aufsteht, bekommt eine Sekunde Blinken geschenkt.
+
+### 9.8 Ausprobieren
+
+- Öffne eine Truhe und geh in den nächsten Raum. Lass dich besiegen. Du stehst am Eingang dieses Raums, die Truhe ist offen, und der Schlüssel ist noch da.
+- Öffne eine Truhe und stirb, **ohne** den Raum zu verlassen. Die Truhe ist wieder zu und der Schlüssel weg. Genau so soll es sein (9.1).
+- Rede mit dem alten Mann, wechsle den Raum, stirb. Er schenkt nichts mehr.
+- Mach eine falsche Wand kaputt, wechsle den Raum, stirb. Die Wand bleibt weg, der Raum steht auf der Karte.
+- Beende das Spiel und starte es neu. Es geht weiter, wo du zuletzt einen Raum betreten hast.
+- Schau dir die Datei an: **Projekt → Benutzerdatenordner öffnen**, dann `spielstand.cfg` mit einem Texteditor öffnen.
+- **Von vorn anfangen:** Lösch `spielstand.cfg` in diesem Ordner. Das ist auf Dauer lästig, deshalb kommt in Übung 4 ein besserer Weg, und in Kapitel 10 ein Titelbild mit „Neues Spiel“.
+
+### 9.9 Noch zwei Dinge aus Kapitel 8
+
+Zuerst das Lob: Alle fünf Übungen laufen. Das Plappern piept bei jedem zweiten Buchstaben und bleibt bei Leerzeichen still. Der Händler prüft die vollen Herzen, **bevor** er fragt, genau richtig. Der Türmann kassiert beim Betreten und nimmt mit `mini()` höchstens, was da ist. Und die Inventur meldet alle Ziele erreicht: 7 Herzcontainer, 10 Schlüssel für 10 Türen, je einmal Karte, Kompass, Masterschlüssel und Bosstür. Die Antwort auf die Frage aus Übung 4: Jeder Node hat schon eine Eigenschaft `name`, nämlich seinen Namen im Szenenbaum. Eine eigene Variable `name` darf es daneben nicht geben, Godot meldet dann einen Fehler. `NPC_Name` umgeht das.
+
+Diese zwei wirken sich auf das Verhalten aus:
+
+1. **Die Dornen piksen nur einmal.** `body_entered` meldet sich nur im Moment des Betretens. Bleibt der Held auf den Dornen stehen, passiert nach der Schonzeit nichts mehr. Und wird er gerade blinkend auf ein zweites Dornenfeld gestoßen, ist das Betreten schon vorbei, bevor er wieder verwundbar ist. Ausprobiert: Auf den Dornen festgehalten verliert er in drei Sekunden genau ein halbes Herz. Besser ist es, jedes Bild nachzusehen, wie der Held es bei Monstern auch macht. Neues `dornen.gd`:
+
+   ```gdscript
+   extends Area2D
+
+   var schaden := 1   # in halben Herzen
+
+
+   # Jedes Bild nachsehen, nicht nur beim Betreten: Wer stehen bleibt, wird nach der Schonzeit wieder gepikst
+   func _physics_process(_delta: float) -> void:
+   	for body in get_overlapping_bodies():
+   		if body.is_in_group("held") and body.unverwundbar <= 0:
+   			body.getroffen(self)
+   ```
+
+   Und in der Dornen-Szene unter **Node → Signale** die Verbindung von `body_entered` trennen (Rechtsklick → **Trennen**). Sonst sucht Godot die Funktion `_on_body_entered`, die es nicht mehr gibt. Danach verliert der Held auf den Dornen jede Sekunde ein halbes Herz. `is_in_group("held")` ist übrigens klarer als `has_method("treffer_pruefen")`: Es fragt, **wer** das ist, nicht, was er zufällig kann.
+
+2. **`herzcontainer.tscn` ist kaputt.** `herz.gd` und `herzcontainer.gd` sind gelöscht, aber in den beiden Szenen steckt der alte Code noch als eingebautes Skript. In `herzcontainer.tscn` ist dabei eine Zeile zerbrochen, und beim Start meldet Godot `Parse Error: Mixed use of tabs and spaces for indentation`. Benutzt werden beide Szenen nicht mehr, das macht ja jetzt das Fundstück. Lösch `herz.tscn` und `herzcontainer.tscn` im Dateisystem-Dock. Rechtsklick → **Löschen** prüft auch gleich, ob sie doch noch irgendwo gebraucht werden.
+
+Die Formatierung habe ich korrigiert: In `figur.gd` stand am `NPC_Name` noch der kopierte Kommentar „0 heißt: kein Geschenk“. `angebot.gd` und `dialog.gd` haben einen Typ und einen Kommentar bekommen. In `topf.gd` sind der kopierte Kommentar über `beute()` und `range(0, muenzen)` korrigiert, `muenzen` allein reicht. Außerdem `00` → `0` in `gegenstand.gd`, `min` → `mini` für ganze Zahlen in `spielstand.gd` und eine fehlende Leerzeile in `held.gd`.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 9
+
+1. **Schummeln (leicht):** Öffne `spielstand.cfg` in einem Texteditor und gib dir 99 Münzen. Welcher Schlüssel im Inventar ist die Münze? Schau ins `enum` in `gegenstand.gd`, und denk daran, dass gezählt wird ab 0. Starte das Spiel, geh einkaufen. Und dann überleg: Wie könnte man das verhindern? Tipp: `ConfigFile` hat neben `save()` auch `save_encrypted_pass()`. Für dieses Spiel lohnt es sich nicht, aber jetzt weißt du, dass es geht.
+2. **Sparschwein (leicht):** Töpfe kommen nach jedem Tod wieder, und mit ihnen ihre Münzen. Wer will, stirbt sich also reich. Sorg dafür, dass Töpfe **mit** Münzen sich merken, dass sie zerbrochen sind. Leere Töpfe dürfen gern wiederkommen. Wo gehört `ist_erledigt` hin, und wo `erledigen`?
+3. **Gespeichert! (leicht):** Ein kleines „Gespeichert“ in einer Ecke der Anzeige, das nach dem Speichern kurz erscheint und dann verblasst. Tipp: Ein neues Signal `gespeichert` im Spielstand, ein Label in der Anzeige, das auf das Signal hört, und ein Tween auf `modulate:a`.
+4. **Neu anfangen (mittel):** Stell ein Schild oder eine Figur an den Eingang, die fragt: „Alles vergessen und von vorn anfangen?“ Bei `Ja`: `Spielstand.neues_spiel()`, die Datei löschen mit `DirAccess.remove_absolute(ProjectSettings.globalize_path(Spielstand.DATEI))` und die Szene neu laden. Denkfrage: `neues_spiel()` leert doch schon alles. Warum muss die Datei trotzdem weg? Was passiert sonst, wenn der Held stirbt, bevor er den ersten Raum wechselt?
+5. **Friedhof (mittel):** Der Spielstand zählt, wie oft der Held gestorben ist, und speichert es mit. Ein Grabstein-Schild am Eingang sagt dann zum Beispiel: „Hier ruhen 7 Helden. Alle sahen aus wie du.“ Tipp: Schreib in den Text des Schilds ein Zeichen wie `#` und ersetz es mit `replace("#", str(...))` durch die Zahl. Achtung, Falle: Wenn du in `sterben()` zuerst zählst und dann `laden()` aufrufst, was passiert mit deinem frisch erhöhten Zähler? 🪦

@@ -21,6 +21,15 @@ var angriff_buffer_timer := 0.0
 var unverwundbar := 0.0
 var rueckstoss_zeit := 0.0
 
+
+# Nach dem Laden dort anfangen, wo zuletzt gespeichert wurde.
+# _enter_tree statt _ready: Die Kamera fragt in ihrem _ready schon nach der Position des Helden.
+func _enter_tree() -> void:
+	if Spielstand.startpunkt != null:
+		global_position = Spielstand.startpunkt
+		unverwundbar = SCHONZEIT   # kurz Zeit zum Umschauen
+
+
 # Stößt der Held gerade gegen eine Kante, und daneben ist frei: zur Seite rutschen
 func ecke_umrunden(richtung: Vector2, delta: float) -> void:
 	# Nur wenn er gegen etwas läuft, und nur fast gerade (nicht schräg)
@@ -112,7 +121,7 @@ func sterben() -> void:
 	tween.tween_property($Bild, "rotation", TAU * 3, 1.0)
 	tween.tween_property($Bild, "modulate:a", 0.0, 0.3)
 	await tween.finished
-	Spielstand.neues_spiel()
+	Spielstand.laden()
 	get_tree().reload_current_scene()
 
 
@@ -164,3 +173,4 @@ func _on_camera_2d_raumwechsel(wechselrichtung: Variant) -> void:
 	var tween := create_tween()
 	tween.tween_property(self, "position", position + Vector2(18 * wechselrichtung.x, 18 * wechselrichtung.y), 0.2)
 	await tween.finished
+	Spielstand.speichern(global_position)   # ganz im neuen Raum angekommen: speichern

@@ -3,9 +3,13 @@ extends StaticBody2D
 @export var ware: Gegenstand.Art = Gegenstand.Art.HERZ
 @export var preis := 10
 @export var einmalig := false   # nur einmal zu haben, zum Beispiel der Herzcontainer
-var NPC_Name = "Händler"
+
+var NPC_Name := "Händler"   # wer an der Theke spricht
 
 func _ready() -> void:
+	if einmalig and Spielstand.ist_erledigt(self):
+		queue_free()
+		return
 	$Preis.text = str(preis)
 
 
@@ -27,5 +31,6 @@ func benutzen() -> void:
 			Spielstand.hinzufuegen(ware)
 			Schatz.zeigen(get_tree().get_first_node_in_group("held"), ware)
 			if einmalig:
+				Spielstand.erledigen(self)
 				queue_free()
 			Dialog.zeigen(["Gute Wahl! Umtausch ausgeschlossen."], NPC_Name)

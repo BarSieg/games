@@ -5,6 +5,7 @@ const FUNDSTUECK = preload("res://fundstueck.tscn")
 @export var bewohnt := false
 @export var muenzen := 0
 
+
 func _on_hurtbox_area_entered(_area: Area2D) -> void:
 	zerbrechen()
 
@@ -33,9 +34,9 @@ func zerbrechen() -> void:
 	queue_free()
 
 
-# Ein Herz oder eine Münze fallen lassen. Oder nichts.
+# Die Münzen aus dem Topf leicht verstreut fallen lassen
 func beute() -> void:
-	for i in range(0, muenzen):
+	for i in muenzen:
 		var ding = FUNDSTUECK.instantiate()
 		ding.art = Gegenstand.Art.MUENZE
 		ding.drop = true

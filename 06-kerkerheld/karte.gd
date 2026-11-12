@@ -9,7 +9,7 @@ const MAP_RAUM_HOEHE = 4
 const MAP_RAUM_ABSTAND = 2
 const DOOR_PIXELS = 2
 
-var besucht := {}             # jeder besuchte Raum ist ein Schlüssel
+var besucht := Spielstand.besucht   # dasselbe Dictionary wie im Spielstand, keine Kopie
 var aktuell := Vector2i.ZERO
 var alle_raeume := {}         # jeder Raum, in dem eine Wandkachel liegt
 var geheime_raeume := {}      # diese Räume erscheinen erst auf der Karte, wenn man sie betreten hat

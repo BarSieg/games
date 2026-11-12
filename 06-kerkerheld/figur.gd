@@ -1,6 +1,6 @@
 extends StaticBody2D
 
-@export var NPC_Name := "Alter Mann"   # 0 heißt: kein Geschenk
+@export var NPC_Name := "Alter Mann"   # steht über der Dialogbox
 @export_multiline var seiten: Array[String] = ["Es ist gefährlich, allein zu gehen!", "Nimm das hier."]
 @export_multiline var danach: Array[String] = ["Was denn noch? Mehr hab ich nicht."]
 @export var geschenk: Gegenstand.Art = Gegenstand.Art.MUENZE
@@ -11,6 +11,7 @@ var schon_geredet := false
 
 
 func _ready() -> void:
+	schon_geredet = Spielstand.ist_erledigt(self)
 	if beim_betreten:
 		%Camera2D.raumwechsel.connect(raum_betreten)
 
@@ -27,6 +28,7 @@ func benutzen() -> void:
 		Dialog.zeigen(danach, NPC_Name)
 		return
 	schon_geredet = true
+	Spielstand.erledigen(self)
 	await Dialog.zeigen(seiten, NPC_Name)
 	if geschenk_anzahl > 0:
 		for i in geschenk_anzahl:
