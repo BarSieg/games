@@ -24,6 +24,7 @@ const BRAUN = Color(0.24, 0.14, 0.04)
 const BEIGE = Color(1.0, 0.95, 0.7)
 const SMARAGD = Color(00, 0.95, 0.3)
 const LEER = Color(0.3, 0.3, 0.3)
+const WHITE = Color.WHITE
 const LEER_GLANZ = Color(0.47, 0.47, 0.47)
 
 # Zu jeder Art ein Bild aus Text und welche Farbe welches Zeichen hat. Andere Zeichen bleiben durchsichtig.
@@ -149,7 +150,7 @@ const BILDER = {
 			"...o##o...",
 			"....oo....",
 		],
-		{"o": RAND, "#": SMARAGD, "+": BEIGE},
+		{"o": Color(00, 0.4, 0.05), "#": SMARAGD, "+": WHITE},
 	],
 }
 

@@ -1,5 +1,6 @@
 extends StaticBody2D
 
+@export var NPC_Name := "Alter Mann"   # 0 heißt: kein Geschenk
 @export_multiline var seiten: Array[String] = ["Es ist gefährlich, allein zu gehen!", "Nimm das hier."]
 @export_multiline var danach: Array[String] = ["Was denn noch? Mehr hab ich nicht."]
 @export var geschenk: Gegenstand.Art = Gegenstand.Art.MUENZE
@@ -11,10 +12,10 @@ var schon_geredet := false
 # Beim ersten Mal reden und vielleicht etwas schenken, danach nur noch reden
 func benutzen() -> void:
 	if schon_geredet:
-		Dialog.zeigen(danach)
+		Dialog.zeigen(danach, NPC_Name)
 		return
 	schon_geredet = true
-	await Dialog.zeigen(seiten)
+	await Dialog.zeigen(seiten, NPC_Name)
 	if geschenk_anzahl > 0:
 		for i in geschenk_anzahl:
 			Spielstand.hinzufuegen(geschenk)

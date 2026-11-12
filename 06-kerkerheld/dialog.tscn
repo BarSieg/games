@@ -11,9 +11,9 @@ script = ExtResource("1_5wlj5")
 
 [node name="Rahmen" type="ColorRect" parent="." unique_id=1999831460]
 offset_left = 8.0
-offset_top = 164.0
+offset_top = 161.0
 offset_right = 248.0
-offset_bottom = 220.0
+offset_bottom = 219.0
 color = Color(0.63375676, 0.6337568, 0.63375676, 1)
 
 [node name="Innen" type="ColorRect" parent="Rahmen" unique_id=1952855550]
@@ -21,7 +21,7 @@ layout_mode = 0
 offset_left = 1.0
 offset_top = 1.0
 offset_right = 239.0
-offset_bottom = 55.0
+offset_bottom = 57.0
 color = Color(0, 0, 0, 1)
 
 [node name="Text" type="Label" parent="Rahmen" unique_id=1309675935]
@@ -47,6 +47,31 @@ label_settings = ExtResource("1_7voku")
 [node name="Weiter" type="Polygon2D" parent="Rahmen" unique_id=1126443195]
 position = Vector2(229, 49)
 polygon = PackedVector2Array(0, 0, 6, 0, 3, 3)
+
+[node name="Sprecherrahmen" type="ColorRect" parent="." unique_id=2136797812]
+offset_left = 2.0
+offset_top = 147.0
+offset_right = 72.0
+offset_bottom = 163.0
+color = Color(0.63529414, 0.63529414, 0.63529414, 1)
+
+[node name="Sprecherinnen" type="ColorRect" parent="Sprecherrahmen" unique_id=447055298]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 1.0
+offset_right = 69.0
+offset_bottom = 15.0
+color = Color(0, 0, 0, 1)
+
+[node name="Sprechername" type="Label" parent="Sprecherrahmen/Sprecherinnen" unique_id=1347611776]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(2, 0)
+layout_mode = 0
+offset_left = 3.0
+offset_right = 70.0
+offset_bottom = 23.0
+text = "Händler:"
+label_settings = ExtResource("1_7voku")
 
 [node name="Chat" type="AudioStreamPlayer" parent="." unique_id=1206146571]
 stream = ExtResource("3_w7j6r")

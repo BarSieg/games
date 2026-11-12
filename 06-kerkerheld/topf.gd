@@ -1,7 +1,9 @@
 extends StaticBody2D
 
-@export var bewohnt := false
+const FUNDSTUECK = preload("res://fundstueck.tscn")
 
+@export var bewohnt := false
+@export var muenzen := 0
 
 func _on_hurtbox_area_entered(_area: Area2D) -> void:
 	zerbrechen()
@@ -26,5 +28,16 @@ func zerbrechen() -> void:
 		tween.tween_property($Bild, "position:y", $Bild.position.y + 224, 1.0)
 	else:
 		tween.tween_property($Bild, "visible", false, 1.0)
+	beute()
 	await tween.finished
 	queue_free()
+
+
+# Ein Herz oder eine Münze fallen lassen. Oder nichts.
+func beute() -> void:
+	for i in range(0, muenzen):
+		var ding = FUNDSTUECK.instantiate()
+		ding.art = Gegenstand.Art.MUENZE
+		ding.drop = true
+		ding.position = position + Vector2(randf_range(-6, 6), randf_range(-6, 6))
+		get_parent().add_child.call_deferred(ding)

@@ -18,19 +18,21 @@ func _ready() -> void:
 
 
 # Eine oder mehrere Seiten nacheinander zeigen. Solange steht das Spiel still.
-func zeigen(neue_seiten: Array[String]) -> void:
+func zeigen(neue_seiten: Array[String], sprecher: String = "") -> void:
 	seiten = neue_seiten.duplicate()
 	get_tree().paused = true
 	show()
+	%Sprechername.text = sprecher + ":"
+	$Sprecherrahmen.visible = (sprecher != "")
 	umblaettern()
 	await fertig
 
 
 # Eine Frage stellen. Die Antwort ist true für Ja und false für Nein.
-func frage(seite: String) -> bool:
+func frage(seite: String, sprecher: String = "") -> bool:
 	fragend = true
 	antwort = true
-	await zeigen([seite])
+	await zeigen([seite], sprecher)
 	fragend = false
 	return antwort
 

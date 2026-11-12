@@ -201,7 +201,7 @@ anchor_mode = 0
 script = ExtResource("2_q5kms")
 
 [node name="Held" parent="." unique_id=1612745786 instance=ExtResource("3_tgur7")]
-position = Vector2(-142, 126)
+position = Vector2(-75, 127)
 
 [node name="Saeule" parent="." unique_id=1017626744 instance=ExtResource("4_kun6q")]
 position = Vector2(40, 40)
@@ -214,6 +214,7 @@ position = Vector2(216, -136)
 
 [node name="Topf" parent="." unique_id=404548848 instance=ExtResource("5_7wc3a")]
 position = Vector2(200, 136)
+muenzen = 1
 
 [node name="Topf2" parent="." unique_id=1027663443 instance=ExtResource("5_7wc3a")]
 position = Vector2(232, 24)
@@ -221,6 +222,7 @@ bewohnt = true
 
 [node name="Topf3" parent="." unique_id=1486422539 instance=ExtResource("5_7wc3a")]
 position = Vector2(232, 136)
+muenzen = 1
 
 [node name="Topf4" parent="." unique_id=1294544046 instance=ExtResource("5_7wc3a")]
 position = Vector2(42, -120)
@@ -558,6 +560,7 @@ geschenk_anzahl = 50
 
 [node name="Haendler" parent="." unique_id=1504936069 instance=ExtResource("28_ynsks")]
 position = Vector2(-313, 40)
+NPC_Name = "Händler"
 
 [node name="Angebot" parent="." unique_id=1433362626 instance=ExtResource("29_pedrn")]
 position = Vector2(-335, 61)
@@ -573,5 +576,8 @@ position = Vector2(-376, 65)
 ware = 0
 preis = 25
 einmalig = true
+
+[node name="Schild6" parent="." unique_id=1568853872 instance=ExtResource("24_tkvb4")]
+position = Vector2(-113, 73)
 
 [connection signal="raumwechsel" from="Camera2D" to="Held" method="_on_camera_2d_raumwechsel"]
