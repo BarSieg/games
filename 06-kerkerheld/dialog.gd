@@ -24,6 +24,10 @@ func zeigen(neue_seiten: Array[String], sprecher: String = "") -> void:
 	show()
 	%Sprechername.text = sprecher + ":"
 	$Sprecherrahmen.visible = (sprecher != "")
+	# Der Rahmen wächst und schrumpft mit dem Namen: Textbreite plus 3 Pixel Luft links und rechts
+	var breite: float = %Sprechername.get_minimum_size().x + 6
+	$Sprecherrahmen/Sprecherinnen.size.x = breite
+	$Sprecherrahmen.size.x = breite + 2
 	umblaettern()
 	await fertig
 

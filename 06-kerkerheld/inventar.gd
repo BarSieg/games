@@ -13,11 +13,11 @@ func aktualisieren() -> void:
 
 
 func _draw() -> void:
-	Gegenstand.malen(self, Gegenstand.Art.MUENZE, Vector2(4, 47))
-	Gegenstand.malen(self, Gegenstand.Art.SCHLUESSEL, Vector2(4, 30))
+	Gegenstand.malen(self, Gegenstand.Art.MUENZE, Vector2(14, 47))
+	Gegenstand.malen(self, Gegenstand.Art.SCHLUESSEL, Vector2(14, 30))
 	if Spielstand.anzahl(Gegenstand.Art.MASTERSCHLUESSEL) > 0:
-		Gegenstand.malen(self, Gegenstand.Art.MASTERSCHLUESSEL, Vector2(28, 30))
+		Gegenstand.malen(self, Gegenstand.Art.MASTERSCHLUESSEL, Vector2(52, 40))
 	if Spielstand.anzahl(Gegenstand.Art.KARTE) > 0:
-		Gegenstand.malen(self, Gegenstand.Art.KARTE, Vector2(46, 21))
+		Gegenstand.malen(self, Gegenstand.Art.KARTE, Vector2(68, 31))
 	if Spielstand.anzahl(Gegenstand.Art.KOMPASS) > 0:
-		Gegenstand.malen(self, Gegenstand.Art.KOMPASS, Vector2(46, 34))
+		Gegenstand.malen(self, Gegenstand.Art.KOMPASS, Vector2(68, 44))

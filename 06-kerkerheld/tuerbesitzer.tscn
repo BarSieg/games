@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://c4pawru7lh20l"]
+
+[ext_resource type="PackedScene" uid="uid://b746f4bguw80a" path="res://figur.tscn" id="1_t08po"]
+
+[node name="Tuerbesitzer" unique_id=1900369273 instance=ExtResource("1_t08po")]
+geschenk_anzahl = -20
+
+[node name="Bild" parent="." index="0" unique_id=1358289850]
+frame = 86

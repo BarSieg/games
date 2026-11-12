@@ -35,7 +35,7 @@ func hinzufuegen(art: Gegenstand.Art) -> void:
 	elif art == Gegenstand.Art.HERZ:
 		leben += 2
 	else:
-		inventar[art] = anzahl(art) + 1
+		inventar[art] = min(anzahl(art) + 1, 99)
 		inventar_geaendert.emit()
 
 

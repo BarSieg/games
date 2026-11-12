@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://b1e280yvtp1at"]
+
+[ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="1_7p6kp"]
+[ext_resource type="Script" uid="uid://dg8pv03njriqm" path="res://dornen.gd" id="1_l4y4y"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(12, 11.5)
+
+[node name="Dornen" type="Area2D" unique_id=1419659414]
+collision_layer = 5
+collision_mask = 6
+script = ExtResource("1_l4y4y")
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=150282846]
+texture = ExtResource("1_7p6kp")
+hframes = 12
+vframes = 11
+frame = 41
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1281753054]
+position = Vector2(0, 1.25)
+shape = SubResource("RectangleShape2D_s017u")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

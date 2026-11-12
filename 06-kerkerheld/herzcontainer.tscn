@@ -1,12 +1,28 @@
 [gd_scene format=3 uid="uid://bcip2v3h2bkye"]
 
-[ext_resource type="Script" uid="uid://b0nfw5hhfjupl" path="res://herzcontainer.gd" id="1_4tfrh"]
+[sub_resource type="GDScript" id="GDScript_edmnv"]
+script/source = "extends Node2D
+
+
+func _ready() -> void:
+	queue_redraw()
+
+
+func _on_bild_body_entered(_body: Node2D) -> void:
+	Spielstand.hinzufuegen(Gegenstand.Art.HERZCONTAINER)
+	queue_free()
+
+
+func _draw() -> void:
+	# Ein goldgerahmtes Herz
+	 $Bild.position)
+"
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
 size = Vector2(14, 14)
 
 [node name="Herzcontainer" type="Node2D" unique_id=1340754339]
-script = ExtResource("1_4tfrh")
+script = SubResource("GDScript_edmnv")
 
 [node name="Bild" type="Area2D" parent="." unique_id=1198964340]
 position = Vector2(0, 7)

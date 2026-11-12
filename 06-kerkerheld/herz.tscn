@@ -1,12 +1,45 @@
 [gd_scene format=3 uid="uid://1smdykr0ea7a"]
 
-[ext_resource type="Script" uid="uid://dcd1kr32oo3hb" path="res://herz.gd" id="1_2y4ie"]
+[sub_resource type="GDScript" id="GDScript_bcvp6"]
+script/source = "extends Node2D
+
+
+const ZEIT_ZUM_SAMMELN = 15.0
+const ZEIT_VERSCHWINDEN = 5.0
+
+var drop := false   # Aus Gegner ausgeschlagen statt im Level liegend
+var zeit := 0.0
+
+
+func _ready() -> void:
+	if drop:
+		zeit = ZEIT_ZUM_SAMMELN
+	queue_redraw()
+
+
+func _physics_process(delta: float) -> void:
+	if drop:
+		zeit -= delta
+		queue_redraw()
+		if zeit < 0:
+			queue_free()
+
+
+func _on_bild_body_entered(_body: Node2D) -> void:
+	Spielstand.hinzufuegen(Gegenstand.Art.HERZ)
+	queue_free()
+
+
+func _draw() -> void:
+	var alpha := 1.0 if (zeit > ZEIT_VERSCHWINDEN or not drop) else zeit / ZEIT_VERSCHWINDEN
+	Gegenstand.malen(self, Gegenstand.Art.HERZ, $Bild.position, alpha)
+"
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
 size = Vector2(14, 14)
 
 [node name="Herz" type="Node2D" unique_id=1340754339]
-script = ExtResource("1_2y4ie")
+script = SubResource("GDScript_bcvp6")
 
 [node name="Bild" type="Area2D" parent="." unique_id=1198964340]
 position = Vector2(0, 8)
