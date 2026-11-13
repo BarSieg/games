@@ -2,7 +2,6 @@ extends Monster
 
 enum Zustand { WANDERN, JAGEN, ANLAUF, SPRUNG, RUHE, GETROFFEN }
 
-const FUNDSTUECK = preload("res://fundstueck.tscn")
 const WANDER_TEMPO = 25.0
 const JAGD_TEMPO = 40.0
 const SPRUNG_TEMPO = 160.0
@@ -13,7 +12,7 @@ const VERGESSWEITE = 96.0     # so weit weg muss der Held sein, damit er ihn wie
 const SPRUNGWEITE = 28.0      # aus dieser Nähe springt er an
 const HERZ_DROPRATE = 0.2
 const MUENZ_DROPRATE = 0.3
-const MUENZ_DROP_MAX = 3
+const MUENZ_DROP_MAX = 2
 
 @export var leben := 2
 @export var schaden := 1   # in halben Herzen
@@ -32,6 +31,9 @@ func _ready() -> void:
 	start_leben = leben
 	wechseln(Zustand.WANDERN)
 	$Anzeige.visible = zeige_zustand
+	herzdroprate = HERZ_DROPRATE
+	muenzdroprate = MUENZ_DROPRATE
+	muenzdropmax = MUENZ_DROP_MAX
 
 
 func _physics_process(delta: float) -> void:
@@ -117,7 +119,6 @@ func _on_hurtbox_area_entered(_area: Area2D) -> void:
 	var tween := create_tween()
 	tween.tween_property($Bild, "modulate", Color.RED, 0.05)
 	tween.tween_property($Bild, "modulate", Color.WHITE, 0.2)
-
 	if leben <= 0:
 		sterben()
 
@@ -128,25 +129,10 @@ func hat_getroffen() -> void:
 
 func heilen() -> void:
 	leben = start_leben
+	wechseln(Zustand.WANDERN)
+	$Anzeige.visible = zeige_zustand
 
-
-# Zusammenschrumpfen und weg
+# Wie jedes Monster sterben, aber vorher noch die Anzeige weg
 func sterben() -> void:
 	$Anzeige.hide()
 	super()
-	beute()
-
-
-# Ein Herz oder eine Münze fallen lassen. Oder nichts.
-func beute() -> void:
-	var los := randf()
-	var ding   # ohne Typ: Herz und Fundstück haben beide ein drop, aber sonst wenig gemeinsam
-	if los < HERZ_DROPRATE + MUENZ_DROPRATE:
-		ding = FUNDSTUECK.instantiate()
-		if los < HERZ_DROPRATE:
-			ding.art = Gegenstand.Art.HERZ
-	else:
-		return
-	ding.drop = true
-	ding.position = position
-	get_parent().add_child.call_deferred(ding)

@@ -3,8 +3,10 @@ extends Monster
 enum Zustand { SCHWEBEN }
 
 const SCHWEBEN_TEMPO = 20.0
-const ALPHA_MIN = 0.2
-const ALPHA_MAX = 0.5
+const ALPHA_MIN = 0.1
+const ALPHA_MAX = 0.4
+const MUENZ_DROPRATE = 0.7
+const MUENZ_DROP_MAX = 7
 
 var zustand := Zustand.SCHWEBEN
 var zustand_zeit := 0.0         # wie lange der aktuelle Zustand noch dauert
@@ -19,6 +21,8 @@ var alpha_ziel := 0.25
 func _ready() -> void:
 	super()
 	wechseln(Zustand.SCHWEBEN)
+	muenzdroprate = MUENZ_DROPRATE
+	muenzdropmax = MUENZ_DROP_MAX
 
 
 func _physics_process(delta: float) -> void:
@@ -52,11 +56,7 @@ func _on_hurtbox_area_entered(_area: Area2D) -> void:
 	Engine.time_scale = 0.0
 	await get_tree().create_timer(0.06, true, false, true).timeout
 	Engine.time_scale = 1.0
-	set_physics_process(false)
 	var tween := create_tween()
 	tween.tween_property($Bild, "modulate", Color.RED, 0.05)
 	tween.tween_property($Bild, "modulate", Color.WHITE, 0.2)
-	$CollisionShape2D.set_deferred("disabled", true)
-	$Hurtbox.set_deferred("monitoring", false)
-	tween.tween_property($Bild, "scale", Vector2.ZERO, 0.3)
-	tween.tween_callback(queue_free)
+	sterben()

@@ -6,6 +6,7 @@ signal gespeichert
 
 const START_LEBEN = 6   # in halben Herzen: 6 sind drei ganze Herzen
 const MAX_HERZEN = 10
+const MONSTER_RAUMWECHSEL = 3   # Monster bleiben tot, bis der Held so viele andere Räume betreten hat
 const DATEI = "user://spielstand.cfg"
 const SALZ = "Glibber essen keine Kekse"
 
@@ -21,6 +22,8 @@ var leben := START_LEBEN:
 		leben_geaendert.emit()
 var gestorben := 0   # wie oft der Held schon gestorben ist, für den Grabstein
 var iron_man := false   # Tot ist tot: kein Speichern, kein Laden
+# Wie die Dictionaries: immer dasselbe Ding, nur der Inhalt wechselt. Die Kamera hält es fest.
+var letzte_raeume := LetzteRaeume.new(MONSTER_RAUMWECHSEL)
 
 
 # _init statt _ready: Das läuft, sobald der Spielstand entsteht, noch bevor der Dungeon gebaut wird
@@ -38,10 +41,11 @@ func neues_spiel() -> void:
 	startpunkt = null
 	inventar_geaendert.emit()
 	gestorben = 0
+	letzte_raeume.leeren()
 
 
 # Alles, was sich der Held und die Welt merken müssen, in eine Datei
-func speichern(wo: Vector2) -> void:
+func speichern(wo: Variant) -> void:
 	if iron_man:
 		return   # Ein eiserner Held hat keinen Kontrollpunkt
 	startpunkt = wo
@@ -52,6 +56,7 @@ func speichern(wo: Vector2) -> void:
 	datei.set_value("held", "gestorben", gestorben)
 	datei.set_value("welt", "erledigt", erledigt)
 	datei.set_value("welt", "besucht", besucht)
+	datei.set_value("welt", "letzte_raeume", letzte_raeume.raeume)   # nur die Liste, ein Objekt kann ConfigFile nicht speichern
 	datei.set_value("schutz", "pruefsumme", pruefsumme(datei))
 	datei.save(DATEI)
 	gespeichert.emit()
@@ -69,19 +74,21 @@ func laden() -> void:
 		neues_spiel()
 		return
 	# Die Prüfsumme herausnehmen und neu ausrechnen. Passt sie nicht, hat jemand die Datei verändert.
-	var pruefsumme: String = datei.get_value("schutz", "pruefsumme", "")
+	var hashwert: String = datei.get_value("schutz", "pruefsumme", "")
 	datei.erase_section("schutz")
-	if pruefsumme != pruefsumme(datei):
+	if hashwert != pruefsumme(datei):
 		push_warning("Spielstand wurde verändert. Selber schuld!")
 		neues_spiel()
 		return
-	startpunkt = datei.get_value("held", "startpunkt", null)
+	# Fehlt, wenn vor dem ersten Raumwechsel gespeichert wurde. null als Ersatzwert zählt für Godot nicht.
+	startpunkt = datei.get_value("held", "startpunkt") if datei.has_section_key("held", "startpunkt") else null
 	max_leben = datei.get_value("held", "max_leben", START_LEBEN)
 	leben = mini(START_LEBEN, max_leben)   # wie im Original: weiter mit drei Herzen
 	gestorben = datei.get_value("held", "gestorben", 0)
 	# assign statt =: dieselben Dictionaries behalten, nur ihren Inhalt austauschen. Die Karte hält besucht fest.
 	inventar.assign(datei.get_value("held", "inventar", {}))
 	erledigt.assign(datei.get_value("welt", "erledigt", {}))
+	letzte_raeume.uebernehmen(datei.get_value("welt", "letzte_raeume", []))
 	besucht.assign(datei.get_value("welt", "besucht", {}))
 	inventar_geaendert.emit()
 
@@ -128,3 +135,37 @@ func verbrauchen(art: Gegenstand.Art, menge := 1) -> bool:
 	inventar[art] -= menge
 	inventar_geaendert.emit()
 	return true
+
+
+# Merkt sich die letzten paar Räume, jeden nur einmal. Ist sie voll, fällt der älteste heraus.
+# Ein Raum, der schon drin ist, rückt nicht wieder nach hinten. Das wäre genauer, merkt aber kein Spieler.
+class LetzteRaeume:
+	var platz: int                   # so viele Räume passen hinein
+	var raeume: Array[Vector2i] = []   # vorn der älteste, hinten der neueste
+
+
+	func _init(anzahl: int) -> void:
+		platz = anzahl
+
+
+	func hinzufuegen(neu: Vector2i) -> void:
+		if neu in raeume:
+			return
+		raeume.append(neu)
+		if raeume.size() > platz:
+			raeume.pop_front()
+
+
+	func enthaelt(gesucht: Vector2i) -> bool:
+		return gesucht in raeume
+
+
+	func leeren() -> void:
+		raeume.clear()
+
+
+	# Wie assign bei den Dictionaries: den Inhalt austauschen, das Ding selbst bleibt dasselbe
+	func uebernehmen(liste: Array) -> void:
+		raeume.assign(liste)
+		while raeume.size() > platz:   # falls MONSTER_RAUMWECHSEL inzwischen kleiner ist als beim Speichern
+			raeume.pop_front()

@@ -6,7 +6,7 @@ const DUNGEON = "res://dungeon.tscn"
 const ERKLAERUNG = {
 	"Weiter": "Da weitermachen, wo du zuletzt einen Raum betreten hast.",
 	"Neues Spiel": "Wie im Original: Wer stirbt, steht am Eingang wieder auf. Monster auch.",
-	"Iron Man": "Tot ist tot. Für Monster und für dich. Kein Speichern, kein Weiter.",
+	"Iron Man": "Tot ist tot. Für Monster und für dich.\n Kein Speichern, kein Weiter.",
 }
 
 var eintraege: Array[String] = []
@@ -46,6 +46,9 @@ func starten(was: String) -> void:
 		"Weiter":
 			Spielstand.laden()
 		"Neues Spiel":
+			if Spielstand.spielstand_datei_vorhanden():
+				if not await Dialog.frage("Dein altes Spiel wird gelöscht. Wirklich?"):
+					return
 			Spielstand.loeschen()
 			Spielstand.neues_spiel()
 		"Iron Man":

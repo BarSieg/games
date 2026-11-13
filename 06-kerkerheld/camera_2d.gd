@@ -7,6 +7,7 @@ const ANZEIGE_HOEHE = 48                 # Platz für die Anzeige oben
 const SCHIEBE_ZEIT = 0.6                 # so lange dauert ein Raumwechsel
 
 var raum := Vector2i.ZERO   # welchen Raum die Kamera gerade zeigt
+var letzte_raeume := Spielstand.letzte_raeume   # in welchen Räumen die Monster noch tot bleiben
 
 @onready var held: Node2D = get_tree().get_first_node_in_group("held")
 
@@ -15,7 +16,7 @@ func _ready() -> void:
 	# Beim Start ohne Schieben gleich zum Raum des Helden
 	raum = raum_von(held.global_position)
 	position = kamera_position(raum)
-	monster_wecken.call_deferred()
+	monster_wecken.call_deferred(true)
 	%Karte.zeigen(raum)
 
 
@@ -43,17 +44,21 @@ func schieben(neu: Vector2i) -> void:
 	var tween := create_tween()
 	tween.tween_property(self, "position", kamera_position(neu), SCHIEBE_ZEIT)
 	await tween.finished
-	monster_wecken()
+	monster_wecken(letzte_raeume.enthaelt(neu))
+	letzte_raeume.hinzufuegen(neu)
 	get_tree().paused = false
 	raumwechsel.emit(richtung)
 	%Karte.zeigen(raum)
 
 
 # Nur die Monster im aktuellen Raum sind wach, alle anderen schlafen
-func monster_wecken() -> void:
+func monster_wecken(nur_heilen: bool) -> void:
 	for monster: Monster in get_tree().get_nodes_in_group("monster"):
 		if raum_von(monster.start_position) == raum:
 			monster.process_mode = Node.PROCESS_MODE_INHERIT
-			monster.wecken()
+			if nur_heilen:
+				monster.heilen()
+			else:
+				monster.wecken()
 		else:
 			monster.process_mode = Node.PROCESS_MODE_DISABLED

@@ -204,7 +204,7 @@ anchor_mode = 0
 script = ExtResource("2_q5kms")
 
 [node name="Held" parent="." unique_id=1612745786 instance=ExtResource("3_tgur7")]
-position = Vector2(164, 134)
+position = Vector2(189, 104)
 
 [node name="Saeule" parent="." unique_id=1017626744 instance=ExtResource("4_kun6q")]
 position = Vector2(40, 40)
@@ -1015,5 +1015,17 @@ position = Vector2(121, 84)
 
 [node name="Grabstein" parent="." unique_id=1949395194 instance=ExtResource("32_gus3p")]
 position = Vector2(-158, -231)
+
+[node name="Glibber31" parent="." unique_id=608732030 instance=ExtResource("6_uag5o")]
+position = Vector2(363, -618)
+
+[node name="Geist9" parent="." unique_id=1916130810 instance=ExtResource("9_tgur7")]
+position = Vector2(134, -624)
+
+[node name="Fledermaus14" parent="." unique_id=1040825166 instance=ExtResource("7_jqckn")]
+position = Vector2(-148, -623)
+
+[node name="Fledermaus15" parent="." unique_id=997802945 instance=ExtResource("7_jqckn")]
+position = Vector2(-364, -608)
 
 [connection signal="raumwechsel" from="Camera2D" to="Held" method="_on_camera_2d_raumwechsel"]

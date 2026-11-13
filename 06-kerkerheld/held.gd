@@ -12,6 +12,7 @@ const ANGRIFF_BUFFER = 0.1    # so lange wird ein zu früher Angriff gemerkt
 const RUECKSTOSS = 160.0          # so schnell fliegt der Held nach einem Treffer zurück
 const RUECKSTOSS_ZEIT = 0.2       # so lange fliegt er
 const SCHONZEIT = 1.0             # so lange kann ihm danach nichts passieren
+const IRONMAN_FRAME = 97
 
 var blick := Vector2.DOWN   # wohin der Held schaut, nur vier Richtungen
 var steh_zeit := 0.0
@@ -20,6 +21,11 @@ var zustand := Zustand.LAUFEN
 var angriff_buffer_timer := 0.0
 var unverwundbar := 0.0
 var rueckstoss_zeit := 0.0
+
+
+func _ready() -> void:
+	if Spielstand.iron_man:
+		$Bild.frame = IRONMAN_FRAME
 
 
 # Nach dem Laden dort anfangen, wo zuletzt gespeichert wurde.
@@ -58,6 +64,13 @@ func schritt() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if Input.is_action_just_pressed("pause"):
+		if await Dialog.frage("Zurück zum Titelbildshirm?"):
+			if Spielstand.iron_man:
+				if await Dialog.frage("Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildshirm?"):
+					get_tree().change_scene_to_file("res://titel.tscn")
+			else:
+				get_tree().change_scene_to_file("res://titel.tscn")
 	match zustand:
 		Zustand.LAUFEN:
 			laufen(delta)
