@@ -547,15 +547,19 @@ position = Vector2(1240, 40)
 
 [node name="Schild2" parent="." unique_id=678842862 instance=ExtResource("24_tkvb4")]
 position = Vector2(42, -79)
+seiten = Array[String](["Achtung, Glibber! Bitte nicht füttern."])
 
 [node name="Schild3" parent="." unique_id=1923102186 instance=ExtResource("24_tkvb4")]
 position = Vector2(120, -264)
+seiten = Array[String](["Links: Ausgang. Rechts: auch Ausgang. Oben: ebenfalls Ausgang."])
 
 [node name="Schild4" parent="." unique_id=1186791480 instance=ExtResource("24_tkvb4")]
 position = Vector2(216, -760)
+seiten = Array[String](["Schilder dürfen hier lügen."])
 
 [node name="Schild5" parent="." unique_id=2073156093 instance=ExtResource("24_tkvb4")]
 position = Vector2(1200, -456)
+seiten = Array[String](["Dieses Schild wurde von einem Monster aufgestellt. Gehen Sie weiter. Hier gibt es nichts zu sehen."])
 
 [node name="Fundstueck" parent="." unique_id=1125213161 instance=ExtResource("25_ojnyd")]
 position = Vector2(-39, 55)
@@ -586,6 +590,7 @@ einmalig = true
 
 [node name="Schild6" parent="." unique_id=1568853872 instance=ExtResource("24_tkvb4")]
 position = Vector2(-488, -152)
+seiten = Array[String](["Das Schwert kann gebrochen werden, wenn du mit ihm auf Steine schägst..."])
 
 [node name="Tuerbesitzer" parent="." unique_id=1742259291 instance=ExtResource("30_px763")]
 position = Vector2(472, -73)
@@ -675,12 +680,14 @@ position = Vector2(-47, -149)
 
 [node name="Schild7" parent="." unique_id=1273979879 instance=ExtResource("24_tkvb4")]
 position = Vector2(488, -152)
+seiten = Array[String](["Wie man richtig Geister jagt. Ein bildliche Einleitung für Beginner.", "1) Drehe mit dem Rücken zu dem Geist und bück dich ein wenig.", "2) Warte, bis der Geist näher kommt.", "3) Spring in einem Salto über den Geist, jetzt bist di hinter ihm.", "4) Schnapp ihn dir mit den bloßen Händen!", "Oder war das ein anderes Spiel?..."])
 
 [node name="Tuer11" parent="." unique_id=571674704 instance=ExtResource("17_85cul")]
 position = Vector2(-128, -696)
 
 [node name="Schild8" parent="." unique_id=2132037046 instance=ExtResource("24_tkvb4")]
 position = Vector2(1191, -121)
+seiten = Array[String](["Hier gibt es nichts zu sehen."])
 
 [node name="Truhe11" parent="." unique_id=766409942 instance=ExtResource("16_6gydx")]
 position = Vector2(560, -654)
@@ -902,6 +909,7 @@ position = Vector2(199, -663)
 
 [node name="Schild9" parent="." unique_id=1756530058 instance=ExtResource("24_tkvb4")]
 position = Vector2(209, -576)
+seiten = Array[String](["Magst du keine Glibber?", "Vielleicht kochst du sie falsch?"])
 
 [node name="Truhe17" parent="." unique_id=1680394466 instance=ExtResource("16_6gydx")]
 position = Vector2(629, -783)
@@ -924,6 +932,7 @@ leben = 5
 
 [node name="Schild10" parent="." unique_id=641370061 instance=ExtResource("24_tkvb4")]
 position = Vector2(-184, 40)
+seiten = Array[String](["Töpfe zerschlagen ist Sachbeschädigung.", "Aber wer soll dich hier verhaften?"])
 
 [node name="Topf26" parent="." unique_id=924791451 instance=ExtResource("5_7wc3a")]
 position = Vector2(-72, 104)
@@ -978,15 +987,18 @@ position = Vector2(-24, 152)
 
 [node name="Schild11" parent="." unique_id=951988797 instance=ExtResource("24_tkvb4")]
 position = Vector2(-170, -305)
+seiten = Array[String](["Nicht jede Truhe ist eine Truhe.", "Manche Truhen sind hungrig."])
 
 [node name="Mimic5" parent="." unique_id=85025922 instance=ExtResource("11_uj8uw")]
 position = Vector2(965, -279)
 
 [node name="Schild12" parent="." unique_id=1392185341 instance=ExtResource("24_tkvb4")]
 position = Vector2(844, -230)
+seiten = Array[String](["Diese Truhe ist garantiert echt!"])
 
 [node name="Schild13" parent="." unique_id=1314025186 instance=ExtResource("24_tkvb4")]
 position = Vector2(565, -584)
+seiten = Array[String](["Truhen, die nach dem Kampf erscheinen, haben nur Lampenfieber."])
 
 [node name="Glibber29" parent="." unique_id=1167863970 instance=ExtResource("6_uag5o")]
 position = Vector2(583, -634)
@@ -1002,9 +1014,11 @@ inhalt = 4
 
 [node name="Schild14" parent="." unique_id=1056298001 instance=ExtResource("24_tkvb4")]
 position = Vector2(324, -649)
+seiten = Array[String](["Dieses Schild hat keine Botschaft.", "Danke fürs Lesen."])
 
 [node name="Schild15" parent="." unique_id=1847169649 instance=ExtResource("24_tkvb4")]
 position = Vector2(1097, -650)
+seiten = Array[String](["Letzte Chance zum Umkehren.", "Die vorletzte war das letzte Schild."])
 
 [node name="Fundstueck10" parent="." unique_id=847084357 instance=ExtResource("25_ojnyd")]
 position = Vector2(954, -108)

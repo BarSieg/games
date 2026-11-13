@@ -65,9 +65,9 @@ func schritt() -> void:
 
 func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("pause"):
-		if await Dialog.frage("Zurück zum Titelbildshirm?"):
+		if await Dialog.frage("Zurück zum Titelbildschirm?"):
 			if Spielstand.iron_man:
-				if await Dialog.frage("Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildshirm?"):
+				if await Dialog.frage("Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildschirm?"):
 					get_tree().change_scene_to_file("res://titel.tscn")
 			else:
 				get_tree().change_scene_to_file("res://titel.tscn")
@@ -138,7 +138,6 @@ func sterben() -> void:
 		await Dialog.zeigen(["Tot ist tot.", "Hier endet die Geschichte des eisernen Helden."])
 		get_tree().change_scene_to_file("res://titel.tscn")
 		return
-	Spielstand.laden()
 	Spielstand.laden()
 	Spielstand.gestorben += 1
 	Spielstand.speichern(Spielstand.startpunkt)

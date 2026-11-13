@@ -14,8 +14,8 @@ Vieles kennst du schon: TileMapLayer, Kollisionsebenen, Tweens, Autoload, HUD, S
 7. Schlüssel, Truhen und verschlossene Türen (Inventar), Masterschlüssel für den Bossraum, dazu Karte und Kompass ✔
 8. Dialoge: Schilder, ein alter Mann, Münzen und ein Händler ✔
 9. Die Welt merkt sich alles: Speichern und Laden ✔
-10. Titelbild und zwei Spielarten: Normal und Iron Man ← *du bist hier*
-11. Der Boss
+10. Titelbild und zwei Spielarten: Normal und Iron Man ✔
+11. Der Boss, Spielzeit, Erkundung und ein Abspann ← *du bist hier*
 12. Optionen (z. B. schräg laufen ja/nein), Musik und Web-Export
 
 ---
@@ -2785,6 +2785,659 @@ Die Formatierung habe ich korrigiert: In `held.gd` und `restart.gd` fehlten Leer
 2. **Eiserne Anzeige (leicht):** Im Iron-Man-Spiel soll man sehen, dass es ernst ist. Zum Beispiel ein kleiner Totenkopf neben den Herzen oder graue statt roter Herzen. 💀
 3. **Zurück zum Titel (mittel):** Eine neue Aktion `pause` (Escape und die Start-Taste am Controller). Sie fragt „Zurück zum Titelbild?“. Im normalen Spiel ist nichts verloren außer dem aktuellen Raum. Und im Iron-Man-Spiel? Ist Aufhören dort nicht dasselbe wie Sterben? Entscheide selbst, und schreib die Frage passend.
 4. **Gedächtnis wie im Original (schwer):** In den Dungeons von Zelda bleiben besiegte Monster eine Weile weg. Erst wenn man ein paar andere Räume besucht hat, sind sie wieder da. Lass deine Monster erst zurückkommen, wenn der Held seitdem mindestens 3 **verschiedene** andere Räume betreten hat. Einfach die Raumwechsel zählen reicht nicht, denn dann läuft man zwischen zwei Räumen hin und her, und alles ist wieder da. Die Kamera braucht ein Gedächtnis für die letzten Räume, jeden nur einmal: die Klasse `LetzteRaeume` unten in `camera_2d.gd`. Wann fragst du sie, ob der Raum drin ist, und wann kommt er hinein? Die Reihenfolge ist wichtig.
-5. **Ehrentafel (mittel):** Iron Man ohne Bestenliste ist nur halb so schön. Merk dir in einer eigenen Datei `user://ironman.cfg`, wie viele Räume der beste eiserne Held gesehen hat, bevor er starb. `Spielstand.besucht.size()` weiß das. Auf dem Titelbild steht dann zum Beispiel: „Bester eiserner Held: 14 Räume“. Und weil man so etwas gern fälscht: Die Prüfsumme aus Kapitel 9 passt hier auch. 🏆
+5. **Ehrentafel:** Verschoben in Kapitel 11. Eine Bestenliste nach Räumen ist nur halb so spannend wie eine nach Zeit, und für eine Zeit braucht es ein Ende: den Boss.
+
+Fertig? Committen und Bescheid geben.
+
+---
+
+## Kapitel 11: Der Boss
+
+Hinter der goldenen Tür wartet bisher: nichts. Ein leerer Raum mit vier Statuen, die sich langweilen. Das ändert sich jetzt. Dort wohnt ab heute die **Kerkerkrabbe**: läuft seitwärts, spuckt Blasen, und wenn sie wütend wird, rennt sie los. Wer sie besiegt, findet die **Kerkerkrone**, und dann kommt ein richtiger **Abspann**.
+
+Ein Abspann ohne Zahlen ist langweilig. Deshalb läuft ab jetzt eine **Uhr** mit, und das Spiel weiß, wie viel du **erkundet** hast: Alle Türen, die falsche Wand und alle Herzcontainer zusammen sind 100 %. So siehst du, ob noch etwas fehlt, aber nicht, was.
+
+Und dann sind da noch die Töpfe. Monster kommen seit Kapitel 10 wieder, Töpfe nur nach dem Laden. Beim normalen Raumwechsel bleiben sie kaputt. Das ist ungerecht gegenüber den Monstern, also kommen die Töpfe jetzt auch wieder.
+
+Neu sind ein **eigenes Signal im Spielstand**, ein Tween, den man **abbricht**, Kreise mit **`draw_circle()`** und ein Boss, der von `Monster` erbt und trotzdem **nie wiederkommt**.
+
+### 11.1 Was kommt wohin?
+
+| Was | Wo |
+|---|---|
+| Töpfe kommen wieder | `topf.gd`, `topf.tscn`, `camera_2d.gd` |
+| Spielzeit | `spielstand.gd`, neues Label `Uhr` mit `uhr.gd`, `held.gd` |
+| Erkundet in Prozent | `spielstand.gd` und fünf kleine Zeilen in `tuer.gd`, `falschewand.gd`, `fundstueck.gd`, `truhe.gd`, `angebot.gd` |
+| Die Krone | `gegenstand.gd`, `spielstand.gd`, `held.gd` |
+| Der Boss | `monster.gd`, neue Szenen `blase.tscn` und `krabbe.tscn` |
+| Abspann | neue Szene `abschluss.tscn` mit `abschluss.gd` |
+
+Iron Man und normal unterscheiden sich wieder ein bisschen:
+
+| | Normal | Iron Man |
+|---|---|---|
+| Töpfe | kommen wieder wie die Monster | bleiben kaputt |
+| Uhr | läuft unsichtbar mit, zu sehen in der Pausenfrage und im Abspann | steht oben in der Anzeige: Man spielt gegen die Uhr |
+| Boss besiegt | bleibt besiegt, mit „Weiter“ kannst du danach den Rest suchen | Abspann, dann Titelbild |
+
+### 11.2 Töpfe kommen wieder
+
+Die Idee ist dieselbe wie bei den Monstern in Kapitel 10: **verstecken statt löschen**. Was mit `queue_free()` weg ist, kommt nicht wieder.
+
+**Erst die Gruppe.** Öffne `topf.tscn`, wähl den Wurzelnode `Topf` → **Node → Gruppen** → `topf` eintippen → **Hinzufügen**. Damit findet die Kamera alle Töpfe, so wie sie über `monster` alle Monster findet.
+
+**Dann `topf.gd`.** Oben bei den Variablen:
+
+```gdscript
+var ganz := true
+var tween: Tween   # das Zerbrechen. Gemerkt, damit reparieren() es abbrechen kann.
+
+@onready var start_frame: int = $Bild.frame
+@onready var start_bild_position: Vector2 = $Bild.position
+```
+
+In `zerbrechen()` drei Änderungen: ganz oben `ganz = false`, aus `var tween := create_tween()` wird `tween = create_tween()`, und die letzten beiden Zeilen (`await tween.finished` und `queue_free()`) fliegen raus:
+
+```gdscript
+# Kurz plattdrücken, dann weg
+func zerbrechen() -> void:
+	ganz = false
+	Engine.time_scale = 0.0
+	await get_tree().create_timer(0.06, true, false, true).timeout
+	Engine.time_scale = 1.0
+	$CollisionShape2D.set_deferred("disabled", true)
+	$Hurtbox.set_deferred("monitoring", false)
+	tween = create_tween()
+	# ... alles andere wie bisher ...
+	beute()
+```
+
+In `beute()` ganz unten, nach der Schleife:
+
+```gdscript
+	muenzen = 0   # Ein reparierter Topf ist leer
+```
+
+Und eine neue Funktion:
+
+```gdscript
+# Wieder ganz wie am Anfang. Im Iron-Man-Spiel bleibt kaputt kaputt.
+func reparieren() -> void:
+	if ganz or Spielstand.iron_man:
+		return
+	ganz = true
+	if tween:
+		tween.kill()   # falls es noch nicht fertig ist, zum Beispiel nach einer Pause
+	$Bild.frame = start_frame
+	$Bild.position = start_bild_position
+	$Bild.scale = Vector2.ONE
+	$Bild.visible = true
+	$CollisionShape2D.set_deferred("disabled", false)
+	$Hurtbox.set_deferred("monitoring", true)
+```
+
+- **`muenzen = 0`:** Ohne diese Zeile wäre jeder Topf mit Münzen eine Geldquelle ohne Boden. Zerschlagen, drei Räume weiter, zurück, wieder zerschlagen, wieder Münzen. Der Händler würde sich freuen, der Spielspaß nicht.
+- **Alles zurück, was das Zerbrechen verstellt hat.** Der bewohnte Topf ändert sogar `frame` und `position` seines Bildes, denn da krabbelt ja die Spinne heraus. Deshalb merken wir uns beides gleich beim Start mit `@onready`.
+- **`tween.kill()`:** Ein Tween hält an, wenn das Spiel pausiert, zum Beispiel beim Raumwechsel. Er ist dann nicht weg, er wartet nur. Wird der Topf repariert, während der alte Tween noch wartet, läuft er nach der Pause einfach weiter und macht den frisch reparierten Topf wieder platt. Das ist mir beim Testen genau so passiert. `kill()` wirft den Tween endgültig weg. Kennst du das Problem? Richtig, die Fledermaus aus Kapitel 10 hatte es auch. Dort lösen wir es anders herum: Der Tween läuft mit `PAUSE_PROCESS` immer zu Ende.
+- **`if tween:`** Ein Topf, der nie zerbrochen ist, hat noch keinen Tween. `tween` ist dann `null`, und `null.kill()` wäre ein Absturz.
+
+**Die Kamera** repariert die Töpfe genau dann, wenn sie auch die Monster weckt statt nur heilt. In `schieben()`:
+
+```gdscript
+	await tween.finished
+	monster_wecken(letzte_raeume.enthaelt(neu))
+	if not letzte_raeume.enthaelt(neu):
+		toepfe_reparieren()
+	letzte_raeume.hinzufuegen(neu)
+```
+
+Und ganz unten in `camera_2d.gd`:
+
+```gdscript
+# Zerbrochene Töpfe im aktuellen Raum wieder ganz machen
+func toepfe_reparieren() -> void:
+	for topf in get_tree().get_nodes_in_group("topf"):
+		if raum_von(topf.global_position) == raum:
+			topf.reparieren()
+```
+
+Wieder vor dem `hinzufuegen()`, aus demselben Grund wie in Übung 4 von Kapitel 10: Danach ist der Raum immer drin, und die Frage wäre sinnlos.
+
+### 11.3 Die Uhr
+
+Die Zeit gehört in den Spielstand, denn sie soll mitgespeichert werden. In `spielstand.gd` bei den Variablen:
+
+```gdscript
+var spielzeit := 0.0      # in Sekunden. Läuft nur, wenn das Spiel nicht angehalten ist.
+```
+
+In `neues_spiel()`:
+
+```gdscript
+	spielzeit = 0.0
+```
+
+In `speichern()` zu den anderen `set_value`:
+
+```gdscript
+	datei.set_value("held", "spielzeit", int(spielzeit))   # ganze Sekunden: Kommazahlen kommen nicht immer genau so zurück, und die Prüfsumme passt nicht mehr
+```
+
+In `laden()` zu den anderen `get_value`:
+
+```gdscript
+	spielzeit = datei.get_value("held", "spielzeit", 0.0)
+```
+
+Und eine Funktion, die aus Sekunden etwas Lesbares macht:
+
+```gdscript
+# Sekunden als Uhrzeit: 125 wird zu "2:05", 3725 zu "1:02:05"
+func zeit_text(sekunden: float) -> String:
+	var stunden := floori(sekunden / 3600)
+	var minuten := floori(sekunden / 60) % 60
+	var rest := floori(sekunden) % 60
+	if stunden > 0:
+		return "%d:%02d:%02d" % [stunden, minuten, rest]
+	return "%d:%02d" % [minuten, rest]
+```
+
+- **Warum `int(spielzeit)` beim Speichern?** Das habe ich beim Testen auf die harte Tour gelernt. Die Zeit ist eine Kommazahl mit vielen Stellen, zum Beispiel `3726.2345678912345`. `ConfigFile` schreibt sie als Text in die Datei, aber nicht mit allen Stellen. Beim Laden kommt eine minimal andere Zahl heraus, der Text der Datei sieht dadurch beim Nachrechnen anders aus, und die Prüfsumme aus Kapitel 9 passt nicht mehr. Ergebnis: „Spielstand wurde verändert. Selber schuld!“, obwohl niemand etwas verändert hat. Ganze Sekunden kommen immer genau so zurück. Die halbe Sekunde, die dabei verloren geht, verschmerzt der Held.
+- **`%02d`:** eine ganze Zahl, mindestens zwei Stellen, vorne mit Nullen aufgefüllt. Sonst stünde da `1:2:5` statt `1:02:05`.
+- **`%` bei Zahlen** ist der Rest beim Teilen, wie bei den Herzen in Kapitel 6. 125 Sekunden sind 2 Minuten und **Rest** 5.
+
+**Wer zählt?** Ein neues Label in der Anzeige. Rechtsklick auf `Anzeige` im Dungeon → **Kind-Node hinzufügen** → `Label`, Name `Uhr`. Position etwa (120, 33), also rechts neben den Münzen. Text `0:00`, bei **Label Settings** `schrift_settings.tres`. Neues Skript `uhr.gd`:
+
+```gdscript
+extends Label
+
+# Zählt die Spielzeit. Bei Dialogen und Raumwechseln ist das Spiel angehalten, dann steht auch die Uhr.
+
+
+func _ready() -> void:
+	visible = Spielstand.iron_man   # Nur der eiserne Held spielt gegen die Uhr
+
+
+func _process(delta: float) -> void:
+	Spielstand.spielzeit += delta
+	text = Spielstand.zeit_text(Spielstand.spielzeit)
+```
+
+- **Warum zählt nicht der Spielstand selbst?** Der ist ein Autoload und läuft immer, auch auf dem Titelbild und im Abspann. Die Uhr gibt es nur im Dungeon. Und weil sie ganz normal pausiert, steht die Zeit bei jedem Dialog still. Wer einen Schild in Ruhe liest, wird dafür nicht bestraft. Auch die Pause mit Escape aus Übung 3 hält die Uhr an.
+- **Unsichtbar zählt sie trotzdem.** `visible = false` versteckt nur das Bild, `_process` läuft weiter.
+
+**Sterben darf die Zeit nicht zurückdrehen.** In `held.gd` in `sterben()` holt `laden()` alles vom letzten Speichern zurück, auch die Zeit. Dann wären die Sekunden seit dem letzten Raumwechsel verloren. Also kurz festhalten:
+
+```gdscript
+	var zeit := Spielstand.spielzeit   # Die Uhr läuft weiter, auch wenn der Held von vorn anfängt
+	Spielstand.laden()
+	Spielstand.spielzeit = zeit
+	Spielstand.gestorben += 1
+	Spielstand.speichern(Spielstand.startpunkt)
+	get_tree().reload_current_scene()
+```
+
+Bei `gestorben` haben wir genau das umgekehrt gemacht: erst laden, dann eins dazu. Beide Male geht es um dieselbe Frage: Was soll das Sterben überleben?
+
+### 11.4 Erkundet
+
+Was zählt für 100 %? Alle Türen, die falsche Wand und alle Herzcontainer, egal ob sie frei herumliegen, in einer Truhe stecken oder beim Händler stehen. Das Schöne: Alle diese Dinge melden sich schon mit `Spielstand.erledigen(self)`, wenn sie geöffnet, zerbrochen, eingesammelt oder gekauft werden. Wir müssen nur noch wissen, wie viele es **insgesamt** gibt.
+
+In `spielstand.gd` bei den Variablen:
+
+```gdscript
+var zu_erkunden := {}    # Pfad im Dungeon -> true: alles, was für 100 % zählt. Füllt sich beim Bauen des Dungeons.
+```
+
+Und zwei Funktionen:
+
+```gdscript
+# Dieses Ding zählt für die Erkundung. Gehört in _ready(), noch vor ein mögliches queue_free().
+func zaehlt_mit(ding: Node) -> void:
+	zu_erkunden[str(ding.get_path())] = true
+
+
+# Wie viel Prozent davon schon erledigt ist. floori: 100 % gibt es erst, wenn wirklich alles gefunden ist.
+func erkundet() -> int:
+	if zu_erkunden.is_empty():
+		return 0
+	var gefunden := zu_erkunden.keys().filter(func(pfad: String) -> bool: return pfad in erledigt).size()
+	return floori(100.0 * gefunden / zu_erkunden.size())
+```
+
+Jetzt melden sich die Dinge an, jeweils als **erste Zeile** in `_ready()`:
+
+`tuer.gd` und `falschewand.gd`:
+
+```gdscript
+	Spielstand.zaehlt_mit(self)
+```
+
+`fundstueck.gd`:
+
+```gdscript
+	if art == Gegenstand.Art.HERZCONTAINER and not drop:
+		Spielstand.zaehlt_mit(self)
+```
+
+`truhe.gd`:
+
+```gdscript
+	if inhalt == Gegenstand.Art.HERZCONTAINER:
+		Spielstand.zaehlt_mit(self)
+```
+
+`angebot.gd`:
+
+```gdscript
+	if ware == Gegenstand.Art.HERZCONTAINER and einmalig:
+		Spielstand.zaehlt_mit(self)
+```
+
+- **Warum als erste Zeile?** Eine offene Tür löscht sich in `_ready()` gleich wieder mit `queue_free()` und `return`. Was danach steht, erreicht sie nie. Dann würde jede offene Tür aus der Rechnung verschwinden, und je mehr du öffnest, desto weniger gäbe es insgesamt. Nach dem Laden hättest du plötzlich 100 %, obwohl noch die Hälfte fehlt.
+- **Warum wird `zu_erkunden` nicht gespeichert?** Es ist bei jedem Bauen des Dungeons wieder gleich, denn es hängt nur davon ab, was du im Editor hingestellt hast. Stellst du später einen neuen Herzcontainer auf, zählt er sofort mit, auch für alte Spielstände.
+- **`floori` statt `roundi`:** Bei 19 Dingen sind 18 gefunden 94,7 %. `roundi` macht daraus 95 %, das ist in Ordnung. Aber wie wäre es bei 199 von 200? 99,5 % würden auf **100 %** gerundet, obwohl noch etwas fehlt. Genau das soll die Anzeige aber verraten. `floori` rundet immer ab.
+- **`filter` mit einer Funktion ohne Namen** kennst du von `all()` aus Kapitel 10. `filter` behält nur die Pfade, für die die Funktion `true` sagt, also die schon erledigten.
+- Bei mir zählt dein Dungeon gerade **19** Dinge: 11 Türen, eine falsche Wand, 7 Herzcontainer.
+
+**Wo sieht man das?** In der Pause. In `held.gd` wird die erste Frage etwas länger:
+
+```gdscript
+	if Input.is_action_just_pressed("pause"):
+		var stand := "Erkundet: %d %%   Zeit: %s\n" % [Spielstand.erkundet(), Spielstand.zeit_text(Spielstand.spielzeit)]
+		if await Dialog.frage(stand + "Zurück zum Titelbildschirm?"):
+```
+
+**`%%`** ist ein echtes Prozentzeichen. Ein einzelnes `%` hält Godot für den Anfang eines Platzhalters wie `%d`.
+
+### 11.5 Die Krone
+
+Ein neuer Gegenstand. In `gegenstand.gd` kommt `KRONE` ans **Ende** des Enums:
+
+```gdscript
+enum Art { SCHLUESSEL, MASTERSCHLUESSEL, KARTE, KOMPASS, HERZ, HERZCONTAINER, MUENZE, KRONE }
+```
+
+Bei `NAMEN`:
+
+```gdscript
+	Art.KRONE: "Die Kerkerkrone",
+```
+
+Und bei `BILDER` ein neues Bild, wie immer aus Text:
+
+```gdscript
+	Art.KRONE: [
+		[
+			".o...o...o.",
+			"o+o.o+o.o#o",
+			"o#+o#+#o##o",
+			"o#########o",
+			"o#r##b##r#o",
+			"o#########o",
+			"ooooooooooo",
+		],
+		{"o": BRAUN, "#": GOLD, "+": BEIGE, "r": ROT, "b": Color(0.2, 0.5, 1.0)},
+	],
+```
+
+**Warum ans Ende?** Hinter jedem Namen im Enum steckt eine Zahl: `SCHLUESSEL` ist 0, `MASTERSCHLUESSEL` 1, ... `MUENZE` 6. Im Spielstand steht das Inventar mit diesen **Zahlen**, nicht mit den Namen. Schreibst du `KRONE` zwischen `HERZ` und `HERZCONTAINER`, wird `HERZCONTAINER` zur 6 und `MUENZE` zur 7. Beim nächsten Laden sind aus deinen 42 Münzen plötzlich 42 Herzcontainer geworden. Klingt erst mal gut, ist aber falsch. Und an den Truhen im Editor stehen auch nur Zahlen (`inhalt = 4`), die würden sich genauso verschieben.
+
+**Wer merkt, dass die Krone da ist?** Der Spielstand, denn bei ihm kommt jeder Gegenstand an. Oben ein neues Signal:
+
+```gdscript
+signal gewonnen
+```
+
+Und ganz unten in `hinzufuegen()`, nach dem `else`-Block:
+
+```gdscript
+	if art == Gegenstand.Art.KRONE:
+		gewonnen.emit()
+```
+
+Die Krone landet dabei ganz normal im Inventar und wird mitgespeichert. Das Signal ruft nur zusätzlich „Gewonnen!“ in die Runde. Wer zuhört, entscheidet selbst, was er damit macht.
+
+**Der Held hört zu.** In `held.gd` in `_ready()`:
+
+```gdscript
+	Spielstand.gewonnen.connect(gewinnen)
+```
+
+Und neben `sterben()`:
+
+```gdscript
+# Die Krone ist da: stehen bleiben, staunen, ab zum Abspann
+func gewinnen() -> void:
+	set_physics_process(false)
+	$AnimationPlayer.play("stehen")
+	await get_tree().create_timer(2.0).timeout
+	await Dialog.zeigen(["Die Kerkerkrone! Der Kerker ist befreit."])
+	Spielstand.speichern(Spielstand.startpunkt)   # Krabbe und Krone merken. Im Iron-Man-Spiel passiert hier nichts.
+	get_tree().change_scene_to_file("res://abschluss.tscn")
+```
+
+- **`connect` an einen Autoload:** Der Held verbindet sich mit dem Spielstand, der Spielstand lebt aber viel länger als der Held. Stirbt der Held, wird der Dungeon neu gebaut, und der alte Held ist weg. Godot löst die Verbindung dann von selbst, du musst nichts aufräumen.
+- **`set_physics_process(false)`:** Während der Held staunt, kann er nicht laufen. Und weil `treffer_pruefen()` auch in `_physics_process` steckt, kann ihn auch keine letzte Blase mehr treffen.
+- **Speichern mit dem alten Startpunkt:** Im normalen Spiel steht der Held nach „Weiter“ am Eingang des Bossraums. Die Krabbe ist dann besiegt, die Truhe offen, und du kannst in Ruhe den Rest suchen.
+
+### 11.6 Ein Boss ist größer
+
+Die Krabbe wird dreimal so groß wie die anderen Monster. Das Bild bekommt dafür `scale = (3, 3)`. Aber `wecken()` in `monster.gd` setzt beim Wiederbeleben `$Bild.scale = Vector2.ONE`, und schon wäre der Boss so klein wie ein Glibber. Die Vorlage hat einfach angenommen, dass alle Monster gleich groß sind. Das ändern wir. In `monster.gd`:
+
+```gdscript
+var start_groesse := Vector2.ONE     # so groß war das Bild beim Start. Der Boss ist größer als die anderen.
+```
+
+In `_ready()`:
+
+```gdscript
+func _ready() -> void:
+	start_position = global_position
+	start_groesse = $Bild.scale
+```
+
+Und in `wecken()` aus `$Bild.scale = Vector2.ONE`:
+
+```gdscript
+	$Bild.scale = start_groesse
+```
+
+Genau wie bei `start_position`: Was beim Start war, merken, und beim Wecken dahin zurück.
+
+### 11.7 Die Blase
+
+Bevor die Krabbe spucken kann, braucht sie etwas zum Spucken. Neue Szene:
+
+1. Wurzel **CharacterBody2D**, Name `Blase`. **Motion Mode** auf **Floating**, wie beim Helden: Oben und unten gibt es in einem Dungeon von oben nicht.
+2. **Collision → Layer** nur `3` (Gegner), **Mask** nur `1` (Welt).
+3. Kind **CollisionShape2D** mit einem **CircleShape2D**, Radius 4.
+4. Kind **Area2D**, Name `Hurtbox`. **Layer** leer, **Mask** nur `4` (Schwert). Darunter wieder eine **CollisionShape2D** mit einem Kreis, Radius 4.
+5. Signal `area_entered` der Hurtbox mit der Blase verbinden.
+6. Speichern als `blase.tscn`, Skript `blase.gd`:
+
+```gdscript
+extends CharacterBody2D
+
+# Eine Blase der Kerkerkrabbe: fliegt geradeaus und platzt an der Wand, am Helden oder am Schwert
+
+const TEMPO = 70.0
+const RADIUS = 4.0
+
+@export var schaden := 1   # in halben Herzen
+
+var richtung := Vector2.DOWN
+
+
+func _physics_process(delta: float) -> void:
+	if move_and_collide(richtung * TEMPO * delta):
+		platzen()
+
+
+func _draw() -> void:
+	draw_circle(Vector2.ZERO, RADIUS, Color(0.6, 0.85, 1.0, 0.5))
+	draw_arc(Vector2.ZERO, RADIUS, 0, TAU, 16, Color(0.85, 0.95, 1.0))
+	draw_rect(Rect2(-2, -2, 1, 1), Color.WHITE)   # ein Glanzpunkt
+
+
+# Der Held meldet: getroffen
+func hat_getroffen() -> void:
+	platzen()
+
+
+func _on_hurtbox_area_entered(_area: Area2D) -> void:
+	platzen()
+
+
+func platzen() -> void:
+	queue_free()
+```
+
+- **Kein Bild nötig:** Im Kenney-Paket gibt es keine Blase. Also malen wir eine: ein halb durchsichtiger Kreis, ein heller Rand, ein Glanzpunkt. `draw_circle()` malt einen gefüllten Kreis, `draw_arc()` einen Kreisbogen, und von 0 bis `TAU` ist das einmal ganz herum.
+- **Warum trifft die Blase den Helden?** Seine Hurtbox schaut auf Ebene 3 (Gegner) nach Körpern, und die Blase ist ein Körper auf Ebene 3. Für die Hurtbox ist sie ein Monster wie jedes andere. Sie braucht nur ein `schaden`, und das hat sie.
+- **`hat_getroffen()`** ruft der Held schon lange bei jedem Monster auf, das ihn erwischt, falls es die Funktion hat. Der Glibber ruht sich danach aus, die Blase platzt.
+- **`move_and_collide()`** statt `move_and_slide()`: Es bewegt und meldet die erste Kollision zurück, sonst `null`. Eine Blase soll an der Wand nicht entlangrutschen, sondern platzen.
+- **Mit dem Schwert zerstechen:** Die Hurtbox der Blase merkt das Schwert, genau wie bei den Töpfen.
+
+### 11.8 Die Kerkerkrabbe
+
+Neue Szene:
+
+1. Wurzel **CharacterBody2D**, Name `Krabbe`, in die Gruppe `monster`. **Motion Mode** auf **Floating**.
+2. **Collision → Layer** nur `3` (Gegner), **Mask** `1` (Welt) und `5` (Gegnersperre). **Nicht** `3`! Sonst stolpert die Krabbe über ihre eigenen Blasen, die ja auch auf Ebene 3 sind und genau unter ihr entstehen.
+3. Kind **Sprite2D**, Name `Bild`: `tilemap_packed.png`, **Hframes** 12, **Vframes** 11, **Frame** 110 (das rote Ding mit den Scheren). **Scale** (3, 3).
+4. Kind **CollisionShape2D** mit einem Rechteck 36 × 20, **Position** (0, 10). Das sind ihre Füße: Mit dem Kopf darf sie ruhig über eine Wand ragen.
+5. Kind **Area2D**, Name `Hurtbox`, **Layer** leer, **Mask** nur `4` (Schwert). Darunter eine **CollisionShape2D** mit einem Rechteck 42 × 40, also fast die ganze Krabbe.
+6. Kind **AudioStreamPlayer**, Name `Treffer`, mit `hit.wav`.
+7. Signal `area_entered` der Hurtbox mit der Krabbe verbinden.
+8. Speichern als `krabbe.tscn`, Skript `krabbe.gd`:
+
+```gdscript
+extends Monster
+
+# Die Kerkerkrabbe: läuft seitwärts hin und her, spuckt Blasen, und wenn sie wütend ist, rennt sie los
+
+enum Zustand { SEITWAERTS, ZIELEN, ANLAUF, STURM }
+
+const BLASE = preload("res://blase.tscn")
+const MAX_LEBEN = 8
+const SEIT_TEMPO = 40.0
+const STURM_TEMPO = 150.0
+const FAECHER = [-0.35, 0.0, 0.35]   # drei Blasen, leicht gefächert (Winkel im Bogenmaß)
+const SCHONZEIT = 0.5                # so lange nach einem Treffer unverwundbar
+
+@export var schaden := 2   # in halben Herzen
+
+var leben := MAX_LEBEN
+var zustand := Zustand.SEITWAERTS
+var zustand_zeit := 0.0
+var richtung := Vector2.LEFT
+var schonzeit := 0.0
+
+@onready var held: Node2D = get_tree().get_first_node_in_group("held")
+
+
+func _ready() -> void:
+	super()
+	# Schon besiegt? Dann tot bleiben. Nicht löschen, sonst wüsste die Truhe nicht, dass sie erscheinen darf.
+	if Spielstand.ist_erledigt(self):
+		tot = true
+		hide()
+		$CollisionShape2D.set_deferred("disabled", true)
+		$Hurtbox.set_deferred("monitoring", false)
+		set_physics_process(false)
+		return
+	heilen()
+
+
+# Ein Boss kommt nie wieder, auch nicht im normalen Spiel
+func wecken() -> void:
+	if Spielstand.ist_erledigt(self):
+		return
+	super()
+
+
+func heilen() -> void:
+	leben = MAX_LEBEN
+	schonzeit = 0.0
+	wechseln(Zustand.SEITWAERTS)
+
+
+# Wütend ist sie ab der Hälfte
+func wuetend() -> bool:
+	return leben <= MAX_LEBEN / 2.0
+
+
+func _physics_process(delta: float) -> void:
+	zustand_zeit -= delta
+	schonzeit -= delta
+	$Bild.position.x = 0
+
+	match zustand:
+		Zustand.SEITWAERTS:
+			# Erst umdrehen, dann losgehen. Andersherum zappelt sie an der Wand hin und her.
+			if is_on_wall():
+				richtung = -richtung   # umdrehen, ohne den Kopf zu drehen: Krabben eben
+			velocity = richtung * SEIT_TEMPO * (1.5 if wuetend() else 1.0)
+			if zustand_zeit <= 0:
+				wechseln(Zustand.ANLAUF if wuetend() and randf() < 0.5 else Zustand.ZIELEN)
+		Zustand.ZIELEN, Zustand.ANLAUF:
+			velocity = Vector2.ZERO
+			$Bild.position.x = randi_range(-1, 1)   # zittern: Gleich passiert was!
+			if zustand_zeit <= 0:
+				if zustand == Zustand.ZIELEN:
+					spucken()
+					wechseln(Zustand.SEITWAERTS)
+				else:
+					wechseln(Zustand.STURM)
+		Zustand.STURM:
+			velocity = richtung * STURM_TEMPO
+			if get_slide_collision_count() > 0:   # gegen die Wand gerannt
+				wechseln(Zustand.SEITWAERTS)
+
+	move_and_slide()
+
+
+func wechseln(neu: Zustand) -> void:
+	zustand = neu
+	match neu:
+		Zustand.SEITWAERTS:
+			richtung = [Vector2.LEFT, Vector2.RIGHT].pick_random()
+			zustand_zeit = randf_range(1.5, 3.0)
+		Zustand.ZIELEN:
+			zustand_zeit = 0.5
+		Zustand.ANLAUF:
+			zustand_zeit = 0.7
+		Zustand.STURM:
+			# Die Richtung wird beim Losrennen festgelegt. Wer jetzt ausweicht, wird verfehlt.
+			richtung = global_position.direction_to(held.global_position)
+
+
+# Drei Blasen auf den Helden zu, wütend fünf
+func spucken() -> void:
+	var winkel: Array = FAECHER
+	if wuetend():
+		winkel = [-0.7] + FAECHER + [0.7]
+	for w: float in winkel:
+		var blase := BLASE.instantiate()
+		blase.position = position + Vector2(0, 8)
+		blase.richtung = global_position.direction_to(held.global_position).rotated(w)
+		get_parent().add_child(blase)
+
+
+func _on_hurtbox_area_entered(_area: Area2D) -> void:
+	if schonzeit > 0:
+		return
+	schonzeit = SCHONZEIT
+	leben -= 1
+	$Treffer.play()
+	Engine.time_scale = 0.0
+	await get_tree().create_timer(0.06, true, false, true).timeout
+	Engine.time_scale = 1.0
+	var tween := create_tween()
+	tween.tween_property($Bild, "modulate", Color.RED, 0.05)
+	tween.tween_property($Bild, "modulate", Color.WHITE, 0.2)
+	if leben <= 0:
+		sterben()
+
+
+# Erst lange blinken, dann wie jedes Monster verschwinden
+func sterben() -> void:
+	Spielstand.erledigen(self)
+	set_physics_process(false)
+	$CollisionShape2D.set_deferred("disabled", true)
+	$Hurtbox.set_deferred("monitoring", false)
+	var tween := create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	for i in 8:
+		tween.tween_property($Bild, "modulate", Color.RED, 0.1)
+		tween.tween_property($Bild, "modulate", Color.WHITE, 0.1)
+	await tween.finished
+	super()
+```
+
+Das meiste kennst du vom Glibber. Neu sind ein paar Dinge:
+
+- **Ein Monster, das nie wiederkommt.** Die Krabbe erbt von `Monster`, damit die Kamera sie schlafen schickt und weckt wie alle anderen. Aber ihr `wecken()` fragt zuerst: Bin ich schon erledigt? Dann bleibt sie, wo sie ist, nämlich unsichtbar und tot. Das gilt auch im normalen Spiel. Gemerkt wird das mit `Spielstand.erledigen(self)` beim Sterben, wie bei einer Truhe. Das kommt also mit in den Spielstand und überlebt auch das Laden.
+- **Warum nicht einfach `queue_free()`, wenn sie schon besiegt ist?** Weil die Truhe mit der Krone eine Belohnungstruhe ist. Sie schaut in ihrem `_ready()` nach, welche Monster im Raum sind, und wartet, bis alle `tot` sind. Ist die Krabbe gelöscht, fragt die Truhe ein Monster, das es nicht mehr gibt, und das gibt einen Fehler. Ob die Truhe vorher dran ist oder die Krabbe, hängt nur von der Reihenfolge im Szenenbaum ab. Auf so etwas will man sich nicht verlassen. Eine tote, unsichtbare Krabbe dagegen sagt brav `tot = true`.
+- **Erst umdrehen, dann losgehen.** Das hatte ich zuerst andersherum, und die Krabbe ist an der Wand kleben geblieben. Warum? `is_on_wall()` meldet, ob beim **letzten** `move_and_slide()` eine Wand im Weg war. Steht die Berechnung von `velocity` vor dem Umdrehen, läuft sie noch ein Bild lang gegen die Wand. Im nächsten Bild meldet `is_on_wall()` also wieder `true`, sie dreht zurück, läuft wieder gegen die Wand, und so weiter. Ein Bild nach links, eins nach rechts, für immer.
+- **`MAX_LEBEN / 2.0`:** Mit `/ 2` wäre das eine Ganzzahl-Division, und Godot warnt davor (bei 8 kommt zwar dasselbe heraus, bei 7 nicht). Mit `2.0` wird gerechnet, wie man es erwartet.
+- **`winkel = [-0.7] + FAECHER + [0.7]`:** Arrays kann man mit `+` aneinanderhängen. Wütend spuckt sie also fünf Blasen statt drei. `rotated(w)` dreht die Richtung zum Helden um diesen Winkel. 0.35 im Bogenmaß sind ungefähr 20 Grad.
+- **Schonzeit statt GETROFFEN-Zustand:** Der Glibber fliegt nach einem Treffer zurück. Eine Krabbe dreimal so groß wie der Held fliegt nirgendwohin, sie zuckt nur kurz rot. Damit ein Schwertstich nicht mehrfach zählt, ist sie danach eine halbe Sekunde unverwundbar.
+- **Ein langer Tod mit `super()` am Ende:** Erst acht Mal rot blinken, dann ruft sie das normale `sterben()` aus `monster.gd` auf: schrumpfen, verschwinden, `tot = true`. In `super()` steht auch noch `beute()`. Die Krabbe stellt aber keine Droprate ein, also fällt nichts heraus. Ihre Beute ist die Krone.
+
+### 11.9 Ab in den Bossraum
+
+Im Dungeon:
+
+1. Zieh `krabbe.tscn` in den Bossraum, oben in die Mitte, ungefähr (1152, -824).
+2. Zieh eine `truhe.tscn` in die Mitte darunter, ungefähr (1152, -776). Im Inspector: **Inhalt** auf **Krone**, **Belohnung** an.
+
+Das ist alles. Eine Belohnungstruhe erscheint schon lange von selbst, wenn alle Monster im Raum besiegt sind, und die Krabbe ist ein Monster. Dein Marker `Bossraum` bleibt, wo er ist. Der Kompass braucht ihn weiter.
+
+### 11.10 Der Abspann
+
+Neue Szene, aufgebaut wie das Titelbild:
+
+1. Wurzel **Control**, Name `Abschluss`, **Layout → Ganzes Rechteck** (Full Rect).
+2. Kind **ColorRect** `Hintergrund`, ebenfalls Ganzes Rechteck, schwarz.
+3. Kind **Label** `Ueberschrift`: Position (0, 30), Größe 256 × 30, Text „DER KERKER IST BEFREIT!“, zentriert, in Gold und gern etwas größer (eigene Label Settings mit der Kenney-Schrift und Größe 16).
+4. Kind **Label** `Ergebnis`: Position (16, 80), Größe 224 × 120, `schrift_settings.tres`, zentriert, **Autowrap** auf **Word (Smart)**.
+5. Speichern als `abschluss.tscn`, Skript `abschluss.gd`:
+
+```gdscript
+extends Control
+
+# Der Abspann: wie lange, wie gründlich, wie oft gestorben
+
+
+func _ready() -> void:
+	var text := "Zeit: %s\nErkundet: %d %%\n" % [Spielstand.zeit_text(Spielstand.spielzeit), Spielstand.erkundet()]
+	if Spielstand.iron_man:
+		text += "Kein einziges Mal gestorben!"
+	else:
+		text += "Gestorben: %d-mal" % Spielstand.gestorben
+		if Spielstand.erkundet() < 100:
+			text += "\n\nDa fehlt noch was ...\nMit \"Weiter\" suchst du es."
+	$Ergebnis.text = text
+
+
+func _process(_delta: float) -> void:
+	if Input.is_action_just_pressed("angriff"):
+		get_tree().change_scene_to_file("res://titel.tscn")
+```
+
+- **„Kein einziges Mal gestorben!“** steht da im Iron-Man-Spiel immer. Wer dort stirbt, sieht den Abspann ja nie. Klingt trotzdem gut.
+- **`\"` im Text:** ein Anführungszeichen, das den Text nicht beendet.
+- **Woher kennt der Abspann `erkundet()`?** `zu_erkunden` steckt im Spielstand, und der Spielstand ist ein Autoload. Er überlebt den Szenenwechsel, mitsamt allem, was der Dungeon beim Bauen hineingeschrieben hat.
+
+### 11.11 Ausprobieren
+
+- [ ] Topf zerschlagen, drei andere Räume besuchen, zurück: Der Topf ist wieder ganz. Ein Topf mit Münzen gibt beim zweiten Mal nichts mehr.
+- [ ] Topf zerschlagen, raus und sofort wieder rein: Der Topf bleibt kaputt, wie die Monster.
+- [ ] Iron Man: Die Uhr läuft oben neben den Münzen. Sie steht, solange ein Schild offen ist.
+- [ ] Escape: In der Pausenfrage stehen Erkundet und Zeit. Tür aufschließen, wieder Escape: Die Prozent sind gestiegen.
+- [ ] Normal: Sterben, Escape: Die Zeit ist nicht zurückgesprungen.
+- [ ] Spiel beenden, „Weiter“: Die Zeit ist noch da, und es gibt **keine** Warnung „Spielstand wurde verändert“.
+- [ ] Bossraum: Die Krabbe läuft seitwärts, zittert, spuckt drei Blasen. Blasen platzen an der Wand, am Helden und am Schwert.
+- [ ] Nach vier Treffern ist sie wütend: schneller, fünf Blasen, und manchmal rennt sie auf dich zu.
+- [ ] Raus aus dem Bossraum und wieder rein: Sie hat wieder volle Lebenspunkte.
+- [ ] Besiegt: langes Blinken, dann erscheint die Truhe. Darin die Krone, dann der Abspann.
+- [ ] Normal: Titelbild → „Weiter“: Du stehst am Eingang des Bossraums, die Krabbe ist weg, die Truhe offen.
+
+### 11.12 Was beim Bauen schiefging
+
+Damit du siehst, dass auch ich nicht alles beim ersten Mal richtig mache:
+
+- **Die Prüfsumme und die Kommazahl:** Die Zeit stand zuerst als Kommazahl in der Datei. Nach dem ersten Laden kam „Spielstand wurde verändert. Selber schuld!“, obwohl niemand dran war. Lösung: ganze Sekunden (11.3).
+- **Die zappelnde Krabbe:** Erst `velocity`, dann umdrehen, und sie klebte an der Wand (11.8).
+- **Der Topf, der sich selbst wieder kaputt macht:** Ohne `tween.kill()` hat ein noch wartender Tween den frisch reparierten Topf nach der Pause wieder plattgedrückt (11.2).
+
+### Übungsaufgaben zu Kapitel 11
+
+1. **Ehrentafel (mittel):** Die Übung aus Kapitel 10, jetzt mit Zeit statt Räumen. Merk dir in einer eigenen Datei `user://ironman.cfg` die **fünf schnellsten** eisernen Helden. Nach dem Abspann im Iron-Man-Spiel kommt die Zeit dazu, wenn sie gut genug ist. Auf dem Titelbild steht dann zum Beispiel „Schnellster eiserner Held: 12:34“, und im Abspann siehst du die ganze Liste. Ein paar Tipps: `Array.sort()` sortiert, `resize(5)` schneidet ab. Speicher ganze Sekunden, du weißt jetzt warum. Und weil man so etwas gern fälscht: Die Prüfsumme aus Kapitel 9 passt hier auch. 🏆
+2. **Kein Entkommen (mittel):** Im Original schließen sich die Türen hinter dem Helden, sobald er den Bossraum betritt, und gehen erst wieder auf, wenn der Boss besiegt ist. Bau ein Gitter in den Eingang des Bossraums. Wann geht es zu? Wann auf? Und was ist nach dem Laden, wenn die Krabbe schon besiegt ist?
+3. **Lebensbalken (leicht):** Ein Boss ohne Lebensbalken ist wie eine Krabbe ohne Scheren. Mal mit `_draw()` einen kleinen Balken über die Krabbe, der mit jedem Treffer kürzer wird. Tipp: `queue_redraw()` nicht vergessen, wenn sich `leben` ändert.
+4. **Fortschritt auf dem Titelbild (mittel):** Unter „Weiter“ soll stehen, wie weit du bist: „Erkundet 63 %, Zeit 1:02:05“. Die Zeit ist leicht, die kommt ja mit `laden()`. Aber `erkundet()` sagt auf dem Titelbild immer 0. Warum? Und wie kommt die Zahl trotzdem dorthin? Tipp: Was der Dungeon weiß, muss in die Datei.
+5. **Man sieht die Wut (leicht):** Ab der Hälfte ist die Krabbe wütend, aber man sieht es ihr nicht an. Färb sie dann etwas dunkler rot ein, und lass sie beim Zittern stärker wackeln. Aufpassen: `wecken()` setzt `modulate` zurück auf Weiß, und das Blinken bei Treffern auch. Und als Bonus: die Krone im Inventar oben anzeigen, sobald man sie hat. 👑
 
 Fertig? Committen und Bescheid geben.
