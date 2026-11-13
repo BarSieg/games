@@ -44,7 +44,6 @@ func schieben(neu: Vector2i) -> void:
 	tween.tween_property(self, "position", kamera_position(neu), SCHIEBE_ZEIT)
 	await tween.finished
 	monster_wecken()
-	restart_zeigen()
 	get_tree().paused = false
 	raumwechsel.emit(richtung)
 	%Karte.zeigen(raum)
@@ -59,9 +58,3 @@ func monster_wecken() -> void:
 				monster.heilen()
 		else:
 			monster.process_mode = Node.PROCESS_MODE_DISABLED
-
-
-func restart_zeigen() -> void:
-	for restartschild in get_tree().get_nodes_in_group("restart"):
-		if raum_von(restartschild.global_position) == raum:
-			restartschild.init()

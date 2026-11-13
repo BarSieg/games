@@ -19,7 +19,7 @@ var leben := START_LEBEN:
 		max_leben = mini(max_leben, MAX_HERZEN * 2)
 		leben = clampi(wert, 0, mini(max_leben, MAX_HERZEN * 2))
 		leben_geaendert.emit()
-var gestorben := 0
+var gestorben := 0   # wie oft der Held schon gestorben ist, für den Grabstein
 
 
 # _init statt _ready: Das läuft, sobald der Spielstand entsteht, noch bevor der Dungeon gebaut wird
@@ -54,9 +54,11 @@ func speichern(wo: Vector2) -> void:
 	gespeichert.emit()
 
 
+# Gibt es überhaupt schon einen Spielstand?
 func spielstand_datei_vorhanden() -> bool:
 	var datei := ConfigFile.new()
-	return (datei.load(DATEI) == OK)
+	return datei.load(DATEI) == OK
+
 
 # Den letzten Stand zurückholen. Gibt es noch keinen, beginnt ein neues Spiel.
 func laden() -> void:

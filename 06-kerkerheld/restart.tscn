@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://cx1whi8u2838i" path="res://schild.tscn" id="1_gkhr7"]
 [ext_resource type="Script" uid="uid://wjmgk33vraf5" path="res://restart.gd" id="2_d0liw"]
 
-[node name="Restart" unique_id=1900369273 groups=["restart"] instance=ExtResource("1_gkhr7")]
+[node name="Restart" unique_id=1900369273 instance=ExtResource("1_gkhr7")]
 script = ExtResource("2_d0liw")
 
 [node name="Bild" parent="." index="0" unique_id=1358289850]

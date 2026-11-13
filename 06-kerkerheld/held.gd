@@ -122,9 +122,9 @@ func sterben() -> void:
 	tween.tween_property($Bild, "modulate:a", 0.0, 0.3)
 	await tween.finished
 	Spielstand.laden()
-	get_tree().reload_current_scene()
 	Spielstand.gestorben += 1
-	Spielstand.speichern(global_position)
+	Spielstand.speichern(Spielstand.startpunkt)
+	get_tree().reload_current_scene()
 
 
 # Zustechen in Blickrichtung, danach wieder laufen

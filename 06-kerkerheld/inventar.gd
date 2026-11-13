@@ -18,7 +18,7 @@ func gespeichert_animation() -> void:
 	await tween.finished
 	$Speichern.visible = false
 	$Speichern.modulate.a = 1.0
-	
+
 
 func aktualisieren() -> void:
 	$Anzahl.text = " x %d" % Spielstand.anzahl(Gegenstand.Art.SCHLUESSEL)

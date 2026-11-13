@@ -3,7 +3,12 @@ extends StaticBody2D
 var seite: String = "Willst du deinen gesamten Fortschritt zurücksetzen und von vorne anfangen?"
 
 
-# Nur sichtbar, wenn es einen Spielstand gibt. Die Kamera ruft das auf, sobald sie den Raum betritt.
+func _ready() -> void:
+	init()
+	Spielstand.gespeichert.connect(init)   # sobald es eine Datei gibt, auftauchen
+
+
+# Nur sichtbar, wenn es einen Spielstand gibt
 func init() -> void:
 	var activ := Spielstand.spielstand_datei_vorhanden()
 	$Bild.visible = activ

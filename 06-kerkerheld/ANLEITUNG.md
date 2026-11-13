@@ -13,8 +13,10 @@ Vieles kennst du schon: TileMapLayer, Kollisionsebenen, Tweens, Autoload, HUD, S
 6. Herzen, Schaden und die Anzeige oben ✔
 7. Schlüssel, Truhen und verschlossene Türen (Inventar), Masterschlüssel für den Bossraum, dazu Karte und Kompass ✔
 8. Dialoge: Schilder, ein alter Mann, Münzen und ein Händler ✔
-9. Die Welt merkt sich alles: Speichern und Laden ← *du bist hier*
-10. Boss, Titelbild mit Optionen (z. B. schräg laufen ja/nein), Musik und Web-Export
+9. Die Welt merkt sich alles: Speichern und Laden ✔
+10. Titelbild und zwei Spielarten: Normal und Iron Man ← *du bist hier*
+11. Der Boss
+12. Optionen (z. B. schräg laufen ja/nein), Musik und Web-Export
 
 ---
 
@@ -2451,3 +2453,338 @@ Fertig? Committen und Bescheid geben.
 3. **Gespeichert! (leicht):** Ein kleines „Gespeichert“ in einer Ecke der Anzeige, das nach dem Speichern kurz erscheint und dann verblasst. Tipp: Ein neues Signal `gespeichert` im Spielstand, ein Label in der Anzeige, das auf das Signal hört, und ein Tween auf `modulate:a`.
 4. **Neu anfangen (mittel):** Stell ein Schild oder eine Figur an den Eingang, die fragt: „Alles vergessen und von vorn anfangen?“ Bei `Ja`: `Spielstand.neues_spiel()`, die Datei löschen mit `DirAccess.remove_absolute(ProjectSettings.globalize_path(Spielstand.DATEI))` und die Szene neu laden. Denkfrage: `neues_spiel()` leert doch schon alles. Warum muss die Datei trotzdem weg? Was passiert sonst, wenn der Held stirbt, bevor er den ersten Raum wechselt?
 5. **Friedhof (mittel):** Der Spielstand zählt, wie oft der Held gestorben ist, und speichert es mit. Ein Grabstein-Schild am Eingang sagt dann zum Beispiel: „Hier ruhen 7 Helden. Alle sahen aus wie du.“ Tipp: Schreib in den Text des Schilds ein Zeichen wie `#` und ersetz es mit `replace("#", str(...))` durch die Zahl. Achtung, Falle: Wenn du in `sterben()` zuerst zählst und dann `laden()` aufrufst, was passiert mit deinem frisch erhöhten Zähler? 🪦
+
+
+---
+
+## Kapitel 10: Zwei Arten zu sterben
+
+Bisher bleibt ein besiegtes Monster weg, bis der Held stirbt. Im Original ist das anders: Wer einen Raum verlässt und wiederkommt, trifft die Monster wieder an. Das machen wir jetzt auch, aber nur im **normalen** Spiel. Dazu kommt eine zweite Art zu spielen, für Leute mit Nerven aus Stahl: **Iron Man**. Tot ist tot, für Monster und für den Helden. Kein Speichern, kein Weiter. Wer stirbt, landet auf dem Titelbild.
+
+Ein Titelbild gab es bisher auch noch nicht. Es kommt jetzt, mit **Weiter**, **Neues Spiel** und **Iron Man**.
+
+Neu sind eine **eigene Klasse, von der die Monster erben**, **`super()`**, eine **Funktion ohne Namen** (Lambda), **`Input.is_action_just_pressed()`** und ein Tween, der auch dann weiterläuft, wenn sein Node schläft.
+
+### 10.1 Was ist anders?
+
+| | Normal | Iron Man |
+|---|---|---|
+| Speichern beim Raumwechsel | ja | nein |
+| Held stirbt | steht am letzten Raumeingang wieder auf | Titelbild, alles vorbei |
+| Monster besiegt | kommt zurück, sobald der Held den Raum wieder betritt | bleibt tot |
+| Titelbild | „Weiter“ gibt es, wenn eine Datei da ist | startet immer neu |
+
+Iron Man fasst den normalen Spielstand nicht an. Wer mittendrin eine eiserne Runde dreht und stirbt, kann danach mit „Weiter“ sein normales Spiel fortsetzen.
+
+### 10.2 Eine Vorlage für alle Monster
+
+Glibber, Fledermaus und Geist sterben alle gleich: anhalten, Kollision aus, zusammenschrumpfen, `queue_free()`. Das steht dreimal fast gleich da. Jetzt sollen sie auch noch wiederkommen, und das stünde dann auch dreimal da. Zeit für eine **gemeinsame Vorlage**.
+
+Neues Skript `monster.gd`, nicht an einen Node gehängt (**Dateisystem → Rechtsklick → Neu → Skript**, „Erbt von“ `CharacterBody2D`):
+
+```gdscript
+class_name Monster
+extends CharacterBody2D
+
+# Was alle Monster gemeinsam haben: Sie sterben, und im normalen Spiel kommen sie wieder.
+
+var tot := false
+var start_position := Vector2.ZERO   # hier stand das Monster beim Start, hierhin kommt es zurück
+
+
+func _ready() -> void:
+	start_position = global_position
+
+
+# Der Held betritt meinen Raum: alles wie neu. Nur wer im Iron-Man-Spiel tot ist, bleibt tot.
+func wecken() -> void:
+	if tot and Spielstand.iron_man:
+		return
+	tot = false
+	show()
+	global_position = start_position
+	velocity = Vector2.ZERO
+	$Bild.scale = Vector2.ONE
+	$Bild.modulate = Color.WHITE
+	$CollisionShape2D.disabled = false
+	$Hurtbox.monitoring = true
+	set_physics_process(true)
+	heilen()
+
+
+# Volle Lebenspunkte. Monster, die mehr als einen Treffer aushalten, schreiben ihr eigenes heilen().
+func heilen() -> void:
+	pass
+
+
+# Nicht mehr bewegen, nicht mehr treffen, zusammenschrumpfen
+func sterben() -> void:
+	set_physics_process(false)
+	$CollisionShape2D.set_deferred("disabled", true)
+	$Hurtbox.set_deferred("monitoring", false)
+	# PAUSE_PROCESS: Der Tween läuft auch weiter, wenn der Held schnell den Raum verlässt und das Monster einschläft
+	var tween := create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tween.tween_property($Bild, "scale", Vector2.ZERO, 0.3)
+	tween.tween_callback(verschwinden)
+
+
+# Unsichtbar statt gelöscht, damit wecken() mich zurückholen kann
+func verschwinden() -> void:
+	tot = true
+	hide()
+```
+
+- **`class_name Monster`** kennst du von `Gegenstand`. Diesmal steht dahinter aber kein Werkzeugkasten mit `static func`, sondern eine Vorlage, von der andere Skripte **erben**. Gleich steht in `glibber.gd` oben `extends Monster` statt `extends CharacterBody2D`. Dann ist der Glibber ein Monster, und ein Monster ist ein CharacterBody2D. Er bekommt alles von beidem: `move_and_slide()` von Godot, `tot`, `wecken()` und `sterben()` von uns.
+- **Unsichtbar statt gelöscht:** Was mit `queue_free()` weg ist, kommt nicht wieder. Wer nur versteckt ist, kann mit `wecken()` zurückgeholt werden. Dabei muss alles zurück, was beim Sterben ausgeschaltet wurde: sichtbar, Kollision, Hurtbox, Physik, Größe, Farbe. Und das Monster steht wieder an seinem Startplatz. Auch Monster, die noch leben, laufen beim Betreten zurück an den Start, genau wie im Original.
+- **`heilen()` mit `pass`:** Fledermaus und Geist sterben beim ersten Treffer, die müssen nichts heilen. `pass` heißt „nichts tun“. Der Glibber schreibt sein eigenes `heilen()`, und dann gilt seins. Das nennt man **überschreiben**. `wecken()` ruft einfach `heilen()` auf und muss nicht wissen, wer da gerade geweckt wird.
+- **`$Bild`, `$Hurtbox` und `$CollisionShape2D`** gibt es in `monster.gd` selbst gar nicht. Das Skript verlässt sich darauf, dass jedes Monster diese drei Kinder hat. Deine drei haben sie. Ein neues Monster ohne `Hurtbox` gäbe einen Fehler, sobald es geweckt wird.
+- **`set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)`:** Ein Tween, den ein Node erzeugt, läuft nur, solange der Node selbst läuft. Jetzt stell dir vor, der Held besiegt eine Fledermaus direkt an der Tür und geht sofort hinaus. Die Kamera schickt die Fledermaus schlafen, mitten im Schrumpfen. Der Tween hält an, und `verschwinden()` ist noch nicht gelaufen. Kommt der Held zurück, wird die Fledermaus geweckt, und **danach** läuft der alte Tween weiter: Sie schrumpft und verschwindet, obwohl sie gerade wiederbelebt wurde. Ausprobiert, genau so passiert es. Mit `PAUSE_PROCESS` läuft der Tween einfach weiter, egal was mit dem Node ist.
+
+### 10.3 Die Monster erben
+
+**Glibber.** Drei Stellen in `glibber.gd`. Ganz oben:
+
+```gdscript
+extends Monster
+```
+
+In `_ready()` als erste Zeile `super()`:
+
+```gdscript
+func _ready() -> void:
+	super()
+	start_leben = leben
+	wechseln(Zustand.WANDERN)
+	$Anzeige.visible = zeige_zustand
+```
+
+`heilen()` und `sterben()` werden kürzer. Den Rest von `sterben()` macht jetzt das Monster:
+
+```gdscript
+# Volle Lebenspunkte und von vorn anfangen
+func heilen() -> void:
+	leben = start_leben
+	wechseln(Zustand.WANDERN)
+	$Anzeige.visible = zeige_zustand
+
+
+# Wie jedes Monster sterben, aber vorher noch die Anzeige weg und danach Beute fallen lassen
+func sterben() -> void:
+	$Anzeige.hide()
+	super()
+	beute()
+```
+
+**Fledermaus und Geist.** Beide bekommen oben `extends Monster` und in `_ready()` als erste Zeile `super()`. Am Ende von `_on_hurtbox_area_entered` fällt alles ab `set_physics_process(false)` weg, bis auf das rote Aufblitzen:
+
+```gdscript
+	Engine.time_scale = 1.0
+	var tween := create_tween()
+	tween.tween_property($Bild, "modulate", Color.RED, 0.05)
+	tween.tween_property($Bild, "modulate", Color.WHITE, 0.2)
+	sterben()
+```
+
+Das Blitzen und das Schrumpfen laufen jetzt gleichzeitig statt nacheinander, wie beim Glibber schon immer. Merkt man kaum.
+
+- **`super()`**: Der Glibber hat sein eigenes `_ready()`. Damit überschreibt er das `_ready()` aus `monster.gd`, und das würde nie laufen. Dann bliebe `start_position` auf (0, 0), und beim ersten Wecken stünde der Glibber in der linken oberen Ecke des Startraums. `super()` heißt: „Mach erst, was die Vorlage hier tun würde.“ Bei `sterben()` genauso: erst die Anzeige weg, dann das ganz normale Monster-Sterben, dann die Beute.
+- **Vergessen?** Godot meckert nicht, wenn `super()` fehlt. Das ist der häufigste Fehler beim Erben. Ein Monster, das beim Wiederkommen in der Ecke steht, hat ihn.
+
+### 10.4 Die Kamera weckt, die Truhe zählt Tote
+
+In `camera_2d.gd` weckt `monster_wecken()` jetzt richtig, statt nur zu heilen:
+
+```gdscript
+# Nur die Monster im aktuellen Raum sind wach, alle anderen schlafen
+func monster_wecken() -> void:
+	for monster: Monster in get_tree().get_nodes_in_group("monster"):
+		if raum_von(monster.start_position) == raum:
+			monster.process_mode = Node.PROCESS_MODE_INHERIT
+			monster.wecken()
+		else:
+			monster.process_mode = Node.PROCESS_MODE_DISABLED
+```
+
+- **`for monster: Monster in ...`**: Jetzt weiß Godot, dass in der Gruppe nur Monster stecken, und kennt `start_position` und `wecken()`. Das `has_method("heilen")` braucht es nicht mehr, jedes Monster hat `heilen()`.
+- **`start_position` statt `global_position`**: Gezählt wird der Raum, in dem das Monster **zu Hause** ist. Ein totes Monster liegt ja unsichtbar irgendwo herum.
+
+Die Belohnungstruhe hat bisher gewartet, bis alle Monster im Raum **gelöscht** sind. Gelöscht wird jetzt keins mehr. In `truhe.gd`:
+
+```gdscript
+func _physics_process(_delta: float) -> void:
+	if versteckt and monster_im_raum.all(func(monster: Monster) -> bool: return monster.tot):
+		erscheinen()
+```
+
+- **`all(...)`** fragt jedes Element der Liste und antwortet `true`, wenn **alle** mit Ja antworten.
+- **`func(monster: Monster) -> bool: return monster.tot`** ist eine Funktion ohne Namen, eine **Lambda**. `filter(is_instance_valid)` hat eine fertige Funktion bekommen. Hier gibt es keine fertige, die fragt „bist du tot?“, also wird sie direkt an Ort und Stelle geschrieben. Für eine Zeile lohnt sich keine eigene `func`.
+- **Kommen die Monster zurück, wenn die Truhe schon da ist?** Ja, aber die Truhe bleibt. Einmal verdient ist verdient.
+
+### 10.5 Der Spielstand kennt Iron Man
+
+In `spielstand.gd` kommt eine Variable dazu, zum Beispiel unter `gestorben`:
+
+```gdscript
+var iron_man := false   # Tot ist tot: kein Speichern, kein Laden
+```
+
+`speichern()` hört gleich wieder auf, wenn es eine eiserne Runde ist:
+
+```gdscript
+func speichern(wo: Variant) -> void:
+	if iron_man:
+		return   # Ein eiserner Held hat keinen Kontrollpunkt
+	startpunkt = wo
+	...
+```
+
+Und eine neue Funktion zum Wegwerfen. Das stand bisher im Lotosstein, jetzt braucht es auch das Titelbild:
+
+```gdscript
+# Den Spielstand wegwerfen. Sonst holt der erste Tod ihn zurück.
+func loeschen() -> void:
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(DATEI))
+```
+
+Im Lotosstein wird aus der langen `DirAccess`-Zeile dann `Spielstand.loeschen()`.
+
+- **Warum wird nicht gespeichert, ob es eine eiserne Runde ist?** Eine eiserne Runde hat gar keine Datei. Gibt es eine Datei, ist sie also immer von einem normalen Spiel.
+- **Nur eine Stelle:** Der Held ruft `speichern()` weiter bei jedem Raumwechsel auf und muss von Iron Man nichts wissen. Das Signal `gespeichert` kommt dann auch nicht, also blinkt auch kein „Gespeichert“.
+
+### 10.6 Der eiserne Held stirbt
+
+In `held.gd` bekommt `sterben()` nach dem `await tween.finished` eine Abzweigung:
+
+```gdscript
+	await tween.finished
+	if Spielstand.iron_man:
+		await Dialog.zeigen(["Tot ist tot.", "Hier endet die Geschichte des eisernen Helden."])
+		get_tree().change_scene_to_file("res://titel.tscn")
+		return
+	Spielstand.laden()
+	...
+```
+
+`change_scene_to_file` kennst du aus Hüpfheld. Die Datei `titel.tscn` gibt es gleich.
+
+### 10.7 Das Titelbild
+
+Neue Szene, Wurzel **Control**, Name `Titel`. Oben im Editor bei Layout **Ganzes Rechteck** (Full Rect) wählen. Speichern als `titel.tscn`. Darunter:
+
+1. **ColorRect** `Hintergrund`: auch **Ganzes Rechteck**, Farbe Schwarz.
+2. **Label** `Name`: Text `KERKERHELD`. Position (0, 40), Größe (256, 32), Horizontal Alignment **Center**. Unter **Label Settings → Neue LabelSettings** die Schrift `Kenney Pixel.ttf`, Größe 32, und eine schöne Farbe. Ich hab Gold genommen.
+3. **Label** `Menue`: Position (88, 100), Größe (112, 50), Label Settings `schrift_settings.tres`. Text bleibt leer, den schreibt das Skript.
+4. **Label** `Hinweis`: Position (16, 170), Größe (224, 44), `schrift_settings.tres`, Horizontal Alignment **Center**, Autowrap Mode **Word (Smart)**. Hier steht, was der ausgewählte Eintrag bedeutet.
+
+Skript an `Titel`, `titel.gd`:
+
+```gdscript
+extends Control
+
+const DUNGEON = "res://dungeon.tscn"
+
+# Was unter dem Menü steht, je nachdem, was gerade ausgewählt ist
+const ERKLAERUNG = {
+	"Weiter": "Da weitermachen, wo du zuletzt einen Raum betreten hast.",
+	"Neues Spiel": "Wie im Original: Wer stirbt, steht am Eingang wieder auf. Monster auch.",
+	"Iron Man": "Tot ist tot. Für Monster und für dich. Kein Speichern, kein Weiter.",
+}
+
+var eintraege: Array[String] = []
+var auswahl := 0
+
+
+func _ready() -> void:
+	if Spielstand.spielstand_datei_vorhanden():
+		eintraege.append("Weiter")
+	eintraege.append_array(["Neues Spiel", "Iron Man"])
+	anzeigen()
+
+
+# Input statt _unhandled_input: just_pressed meldet sich nur einmal, auch wenn der Stick länger gedrückt bleibt
+func _process(_delta: float) -> void:
+	if Input.is_action_just_pressed("hoch"):
+		auswahl = posmod(auswahl - 1, eintraege.size())
+		anzeigen()
+	elif Input.is_action_just_pressed("runter"):
+		auswahl = posmod(auswahl + 1, eintraege.size())
+		anzeigen()
+	elif Input.is_action_just_pressed("angriff"):
+		starten(eintraege[auswahl])
+
+
+func anzeigen() -> void:
+	var text := ""
+	for i in eintraege.size():
+		text += ("> " if i == auswahl else "  ") + eintraege[i] + "\n"
+	$Menue.text = text
+	$Hinweis.text = ERKLAERUNG[eintraege[auswahl]]
+
+
+func starten(was: String) -> void:
+	Spielstand.iron_man = was == "Iron Man"
+	match was:
+		"Weiter":
+			Spielstand.laden()
+		"Neues Spiel":
+			Spielstand.loeschen()
+			Spielstand.neues_spiel()
+		"Iron Man":
+			Spielstand.neues_spiel()   # der normale Spielstand bleibt, wie er ist
+	get_tree().change_scene_to_file(DUNGEON)
+```
+
+Zum Schluss **Projekt → Projekteinstellungen → Anwendung → Ausführen → Hauptszene** auf `titel.tscn` stellen. Mit F6 kannst du den Dungeon weiterhin direkt starten. Dann ist es ein normales Spiel mit dem gespeicherten Stand, dafür sorgt das `_init()` im Spielstand.
+
+- **`Input.is_action_just_pressed()`** fragt nicht nach einem Ereignis, sondern nach dem Zustand: „Wurde das genau in diesem Bild gedrückt?“ Mit dem Steuerkreuz macht das keinen Unterschied. Aber ein Analogstick schickt beim Drücken eine ganze Reihe von Bewegungsereignissen, und mit `event.is_action_pressed()` würde die Auswahl durch das Menü rasen. `just_pressed` ist nur ein einziges Bild lang wahr.
+- **`posmod(auswahl - 1, 3)`** ist der Rest wie `%`, aber nie negativ. Aus −1 wird 2: Oben über den Rand springt die Auswahl nach unten. `-1 % 3` wäre −1, und dann stünde der Pfeil nirgends, weil kein Eintrag die Nummer −1 hat.
+- **`Spielstand.iron_man = was == "Iron Man"`** sieht seltsam aus, ist aber einfach: Rechts steht ein Vergleich, der `true` oder `false` ergibt, und das kommt in die Variable. Erst wird verglichen, dann zugewiesen.
+- **Warum `laden()` bei „Weiter“?** Der Spielstand hat beim Start zwar schon geladen. Aber wer gerade aus einer eisernen Runde kommt, hat einen leeren Spielstand im Speicher. Also lieber noch einmal frisch aus der Datei.
+- **Warum löschen bei „Neues Spiel“?** Das ist die Denkfrage aus Übung 4 von Kapitel 9: Stirbt der Held, bevor er zum ersten Mal einen Raum wechselt, würde `laden()` sonst den alten Stand zurückholen.
+
+### 10.8 Der Lotosstein
+
+Im Iron-Man-Spiel gibt es nichts zurückzusetzen. Der Stein soll dann verschwinden, auch wenn auf der Platte ein normaler Spielstand liegt. In `restart.gd`:
+
+```gdscript
+	var activ := Spielstand.spielstand_datei_vorhanden() and not Spielstand.iron_man
+```
+
+Eigentlich kann „Neues Spiel“ auf dem Titelbild jetzt dasselbe. Ob der Stein bleibt, entscheidest du. Er ist ja ganz nett.
+
+### 10.9 Ausprobieren
+
+- **Titelbild ohne Datei:** Nur „Neues Spiel“ und „Iron Man“. Mit hoch und runter wechselt der Text darunter.
+- **Normal:** Besiege einen Glibber, geh raus und wieder rein. Er ist zurück, mit vollen Lebenspunkten, an seinem alten Platz.
+- **Belohnungstruhe:** Besiege alle Monster im Raum. Die Truhe erscheint, sobald das letzte ganz geschrumpft ist. Raus, wieder rein: Die Monster sind zurück, die Truhe auch.
+- **Schnell raus:** Besiege eine Fledermaus direkt an der Tür und lauf sofort hinaus. Wieder rein: Sie ist ganz da, nicht unsichtbar.
+- **Iron Man:** Besiege einen Glibber, raus, wieder rein: Er bleibt weg. Es blinkt kein „Gespeichert“. Stirb: „Tot ist tot.“, dann das Titelbild.
+- **Danach „Weiter“:** Hattest du vorher ein normales Spiel, geht es da weiter, wo es war.
+- **Neues Spiel bei vorhandener Datei:** Der alte Stand ist weg, auch wenn du sofort stirbst.
+
+### 10.10 Noch zwei Dinge aus Kapitel 9
+
+Zuerst das Lob: Alle fünf Übungen laufen, und dazu die Prüfsumme gegen Schummler. Die Töpfe merken sich nur, wenn sie Münzen hatten, leere kommen wieder. Das „Gespeichert“ blinkt dreimal, bevor es verblasst. Der Grabstein zählt **nach** `laden()`, die Falle aus Übung 5 hast du also umgangen. Und der Lotosstein lädt die Szene neu und kümmert sich jetzt selbst darum, wann er sichtbar ist.
+
+Diese zwei wirken sich auf das Verhalten aus:
+
+1. **`speichern(wo: Vector2)` und `null`.** In `sterben()` steht jetzt `Spielstand.speichern(Spielstand.startpunkt)`. Stirbt der Held, bevor er je einen Raum gewechselt hat, ist `startpunkt` aber `null`, und `null` ist kein `Vector2`. Ausprobiert: Godot meldet `Cannot convert argument 1 from Nil to Vector2` und bricht `sterben()` an der Stelle ab. Die Szene wird nie neu geladen, der Held bleibt tot liegen. Lösung: `wo: Variant`, so wie oben in 10.5 schon steht.
+
+2. **Mein Fehler: `null` als Ersatzwert.** Ich hatte dir gesagt, `get_value("held", "startpunkt", null)` liefert einfach `null`, wenn der Schlüssel fehlt. Stimmt nicht ganz. Für Godot heißt `null` als drittes Argument „kein Ersatzwert angegeben“, und es meldet `ERROR: Couldn't find the given section "held" and key "startpunkt", and no default was given.` Das Spiel läuft trotzdem weiter, aber eine rote Fehlermeldung bei jedem Laden ist nicht schön. In `laden()` besser vorher nachfragen, ob es den Schlüssel gibt:
+
+   ```gdscript
+   	# Fehlt, wenn vor dem ersten Raumwechsel gespeichert wurde. null als Ersatzwert zählt für Godot nicht.
+   	startpunkt = datei.get_value("held", "startpunkt") if datei.has_section_key("held", "startpunkt") else null
+   ```
+
+Die Formatierung habe ich korrigiert: In `held.gd` und `restart.gd` fehlten Leerzeilen zwischen Funktionen. Der Kommentar über `init()` im Lotosstein sprach noch von der Kamera, die das gar nicht mehr aufruft. Außerdem habe ich einen Tab in einer Leerzeile in `inventar.gd` entfernt und Kommentare in `spielstand.gd` ergänzt.
+
+### Übungsaufgaben zu Kapitel 10
+
+1. **Sicher ist sicher (leicht):** „Neues Spiel“ löscht den alten Spielstand ohne Nachfrage. Gibt es eine Datei, soll vorher gefragt werden: „Dein altes Spiel wird gelöscht. Wirklich?“ Tipp: `Dialog` ist ein Autoload, `Dialog.frage()` geht also auch auf dem Titelbild. Und das Menü darf nicht auf die Taste reagieren, solange der Dialog offen ist. Woran merkst du das?
+2. **Eiserne Anzeige (leicht):** Im Iron-Man-Spiel soll man sehen, dass es ernst ist. Zum Beispiel ein kleiner Totenkopf neben den Herzen oder graue statt roter Herzen. 💀
+3. **Zurück zum Titel (mittel):** Eine neue Aktion `pause` (Escape und die Start-Taste am Controller). Sie fragt „Zurück zum Titelbild?“. Im normalen Spiel ist nichts verloren außer dem aktuellen Raum. Und im Iron-Man-Spiel? Ist Aufhören dort nicht dasselbe wie Sterben? Entscheide selbst, und schreib die Frage passend.
+4. **Gedächtnis wie im Original (mittel):** In den Dungeons von Zelda bleiben besiegte Monster eine Weile weg. Erst wenn man ein paar andere Räume besucht hat, sind sie wieder da. Lass deine Monster erst zurückkommen, wenn der Held seitdem mindestens 3 andere Räume betreten hat. Tipp: Die Kamera zählt jeden Raumwechsel mit. Das Monster merkt sich beim Sterben den Zählerstand, und `wecken()` vergleicht.
+5. **Ehrentafel (mittel):** Iron Man ohne Bestenliste ist nur halb so schön. Merk dir in einer eigenen Datei `user://ironman.cfg`, wie viele Räume der beste eiserne Held gesehen hat, bevor er starb. `Spielstand.besucht.size()` weiß das. Auf dem Titelbild steht dann zum Beispiel: „Bester eiserner Held: 14 Räume“. Und weil man so etwas gern fälscht: Die Prüfsumme aus Kapitel 9 passt hier auch. 🏆
+
+Fertig? Committen und Bescheid geben.
