@@ -123,6 +123,8 @@ func sterben() -> void:
 	await tween.finished
 	Spielstand.laden()
 	get_tree().reload_current_scene()
+	Spielstand.gestorben += 1
+	Spielstand.speichern(global_position)
 
 
 # Zustechen in Blickrichtung, danach wieder laufen

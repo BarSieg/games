@@ -6,6 +6,12 @@ const FUNDSTUECK = preload("res://fundstueck.tscn")
 @export var muenzen := 0
 
 
+func _ready() -> void:
+	if muenzen > 0:
+		if Spielstand.ist_erledigt(self):
+			muenzen = 0
+
+
 func _on_hurtbox_area_entered(_area: Area2D) -> void:
 	zerbrechen()
 
@@ -36,6 +42,8 @@ func zerbrechen() -> void:
 
 # Die Münzen aus dem Topf leicht verstreut fallen lassen
 func beute() -> void:
+	if muenzen > 0:
+		Spielstand.erledigen(self)
 	for i in muenzen:
 		var ding = FUNDSTUECK.instantiate()
 		ding.art = Gegenstand.Art.MUENZE

@@ -3,8 +3,22 @@ extends Node2D
 
 func _ready() -> void:
 	Spielstand.inventar_geaendert.connect(aktualisieren)
+	Spielstand.gespeichert.connect(gespeichert_animation)
 	aktualisieren()
 
+
+func gespeichert_animation() -> void:
+	var tween := create_tween()
+	tween.tween_property($Speichern, "visible", true, 0.2)
+	tween.tween_property($Speichern, "visible", false, 0.2)
+	tween.tween_property($Speichern, "visible", true, 0.2)
+	tween.tween_property($Speichern, "visible", false, 0.2)
+	tween.tween_property($Speichern, "visible", true, 0.2)
+	tween.tween_property($Speichern, "modulate:a", 0, 1.0)
+	await tween.finished
+	$Speichern.visible = false
+	$Speichern.modulate.a = 1.0
+	
 
 func aktualisieren() -> void:
 	$Anzahl.text = " x %d" % Spielstand.anzahl(Gegenstand.Art.SCHLUESSEL)

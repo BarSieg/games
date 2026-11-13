@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://dy3vdfbr6hgfy"]
+
+[ext_resource type="Script" uid="uid://cgbpg0evoqv77" path="res://grabstein.gd" id="1_lgm07"]
+[ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="2_5vxui"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(14, 10)
+
+[node name="Grabstein" type="StaticBody2D" unique_id=1900369273]
+collision_mask = 0
+script = ExtResource("1_lgm07")
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=1358289850]
+texture = ExtResource("2_5vxui")
+hframes = 12
+vframes = 11
+frame = 64
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1652194874]
+position = Vector2(0, 3)
+shape = SubResource("RectangleShape2D_s017u")
