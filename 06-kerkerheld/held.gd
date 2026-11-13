@@ -121,6 +121,11 @@ func sterben() -> void:
 	tween.tween_property($Bild, "rotation", TAU * 3, 1.0)
 	tween.tween_property($Bild, "modulate:a", 0.0, 0.3)
 	await tween.finished
+	if Spielstand.iron_man:
+		await Dialog.zeigen(["Tot ist tot.", "Hier endet die Geschichte des eisernen Helden."])
+		get_tree().change_scene_to_file("res://titel.tscn")
+		return
+	Spielstand.laden()
 	Spielstand.laden()
 	Spielstand.gestorben += 1
 	Spielstand.speichern(Spielstand.startpunkt)

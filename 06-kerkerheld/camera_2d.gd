@@ -51,10 +51,9 @@ func schieben(neu: Vector2i) -> void:
 
 # Nur die Monster im aktuellen Raum sind wach, alle anderen schlafen
 func monster_wecken() -> void:
-	for monster in get_tree().get_nodes_in_group("monster"):
-		if raum_von(monster.global_position) == raum:
+	for monster: Monster in get_tree().get_nodes_in_group("monster"):
+		if raum_von(monster.start_position) == raum:
 			monster.process_mode = Node.PROCESS_MODE_INHERIT
-			if monster.has_method("heilen"):
-				monster.heilen()
+			monster.wecken()
 		else:
 			monster.process_mode = Node.PROCESS_MODE_DISABLED

@@ -52,7 +52,5 @@ func erscheinen() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	if versteckt:
-		monster_im_raum = monster_im_raum.filter(is_instance_valid)
-		if monster_im_raum.size() == 0:
-			erscheinen()
+	if versteckt and monster_im_raum.all(func(monster: Monster) -> bool: return monster.tot):
+		erscheinen()

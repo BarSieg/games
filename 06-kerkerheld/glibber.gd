@@ -1,4 +1,4 @@
-extends CharacterBody2D
+extends Monster
 
 enum Zustand { WANDERN, JAGEN, ANLAUF, SPRUNG, RUHE, GETROFFEN }
 
@@ -13,6 +13,7 @@ const VERGESSWEITE = 96.0     # so weit weg muss der Held sein, damit er ihn wie
 const SPRUNGWEITE = 28.0      # aus dieser Nähe springt er an
 const HERZ_DROPRATE = 0.2
 const MUENZ_DROPRATE = 0.3
+const MUENZ_DROP_MAX = 3
 
 @export var leben := 2
 @export var schaden := 1   # in halben Herzen
@@ -27,6 +28,7 @@ var start_leben := 0          # wird in _ready() gesetzt
 
 
 func _ready() -> void:
+	super()
 	start_leben = leben
 	wechseln(Zustand.WANDERN)
 	$Anzeige.visible = zeige_zustand
@@ -130,13 +132,8 @@ func heilen() -> void:
 
 # Zusammenschrumpfen und weg
 func sterben() -> void:
-	set_physics_process(false)
-	$CollisionShape2D.set_deferred("disabled", true)
-	$Hurtbox.set_deferred("monitoring", false)
 	$Anzeige.hide()
-	var tween := create_tween()
-	tween.tween_property($Bild, "scale", Vector2.ZERO, 0.3)
-	tween.tween_callback(queue_free)
+	super()
 	beute()
 
 

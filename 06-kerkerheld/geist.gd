@@ -1,4 +1,4 @@
-extends CharacterBody2D
+extends Monster
 
 enum Zustand { SCHWEBEN }
 
@@ -17,6 +17,7 @@ var alpha_ziel := 0.25
 
 
 func _ready() -> void:
+	super()
 	wechseln(Zustand.SCHWEBEN)
 
 

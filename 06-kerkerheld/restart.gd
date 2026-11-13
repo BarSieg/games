@@ -10,7 +10,7 @@ func _ready() -> void:
 
 # Nur sichtbar, wenn es einen Spielstand gibt
 func init() -> void:
-	var activ := Spielstand.spielstand_datei_vorhanden()
+	var activ := Spielstand.spielstand_datei_vorhanden() and not Spielstand.iron_man
 	$Bild.visible = activ
 	$CollisionShape2D.disabled = not activ
 
@@ -20,6 +20,6 @@ func benutzen() -> void:
 	if Spielstand.spielstand_datei_vorhanden():
 		var ja: bool = await Dialog.frage(seite, "Lotosstein")
 		if ja:
-			DirAccess.remove_absolute(ProjectSettings.globalize_path(Spielstand.DATEI))
+			Spielstand.loeschen()
 			Spielstand.neues_spiel()
 			get_tree().reload_current_scene()   # Dungeon neu bauen, jetzt mit leerem Spielstand

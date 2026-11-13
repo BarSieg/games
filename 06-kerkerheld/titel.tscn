@@ -1,0 +1,55 @@
+[gd_scene format=3 uid="uid://c2jgxcigrwuri"]
+
+[ext_resource type="Script" uid="uid://xfqvh4ne57kw" path="res://titel.gd" id="1_js7em"]
+[ext_resource type="FontFile" uid="uid://dlkjlgec87e21" path="res://Kenney/Kenney Pixel.ttf" id="2_uykxl"]
+[ext_resource type="LabelSettings" uid="uid://cggyy4uae7ijw" path="res://schrift_settings.tres" id="3_0u8ot"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_0orc7"]
+font = ExtResource("2_uykxl")
+font_size = 32
+font_color = Color(0, 0.9776916, 0.58383155, 1)
+
+[node name="Titel" type="Control" unique_id=1460161574]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_js7em")
+
+[node name="Hintergrund" type="ColorRect" parent="." unique_id=1304912277]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Spielname" type="Label" parent="." unique_id=506695315]
+layout_mode = 0
+offset_top = 40.0
+offset_right = 256.0
+offset_bottom = 72.0
+text = "KERKERHELD"
+label_settings = SubResource("LabelSettings_0orc7")
+horizontal_alignment = 1
+
+[node name="Menue" type="Label" parent="." unique_id=1199787937]
+layout_mode = 0
+offset_left = 88.0
+offset_top = 100.0
+offset_right = 200.0
+offset_bottom = 150.0
+label_settings = ExtResource("3_0u8ot")
+
+[node name="Hinweis" type="Label" parent="." unique_id=2132352324]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 170.0
+offset_right = 240.0
+offset_bottom = 214.0
+label_settings = ExtResource("3_0u8ot")
+horizontal_alignment = 1
+autowrap_mode = 3

@@ -20,6 +20,7 @@ var leben := START_LEBEN:
 		leben = clampi(wert, 0, mini(max_leben, MAX_HERZEN * 2))
 		leben_geaendert.emit()
 var gestorben := 0   # wie oft der Held schon gestorben ist, für den Grabstein
+var iron_man := false   # Tot ist tot: kein Speichern, kein Laden
 
 
 # _init statt _ready: Das läuft, sobald der Spielstand entsteht, noch bevor der Dungeon gebaut wird
@@ -41,6 +42,8 @@ func neues_spiel() -> void:
 
 # Alles, was sich der Held und die Welt merken müssen, in eine Datei
 func speichern(wo: Vector2) -> void:
+	if iron_man:
+		return   # Ein eiserner Held hat keinen Kontrollpunkt
 	startpunkt = wo
 	var datei := ConfigFile.new()
 	datei.set_value("held", "startpunkt", startpunkt)
@@ -56,8 +59,7 @@ func speichern(wo: Vector2) -> void:
 
 # Gibt es überhaupt schon einen Spielstand?
 func spielstand_datei_vorhanden() -> bool:
-	var datei := ConfigFile.new()
-	return datei.load(DATEI) == OK
+	return FileAccess.file_exists(DATEI)
 
 
 # Den letzten Stand zurückholen. Gibt es noch keinen, beginnt ein neues Spiel.
@@ -67,9 +69,9 @@ func laden() -> void:
 		neues_spiel()
 		return
 	# Die Prüfsumme herausnehmen und neu ausrechnen. Passt sie nicht, hat jemand die Datei verändert.
-	var gespeichert: String = datei.get_value("schutz", "pruefsumme", "")
+	var pruefsumme: String = datei.get_value("schutz", "pruefsumme", "")
 	datei.erase_section("schutz")
-	if gespeichert != pruefsumme(datei):
+	if pruefsumme != pruefsumme(datei):
 		push_warning("Spielstand wurde verändert. Selber schuld!")
 		neues_spiel()
 		return
@@ -82,6 +84,11 @@ func laden() -> void:
 	erledigt.assign(datei.get_value("welt", "erledigt", {}))
 	besucht.assign(datei.get_value("welt", "besucht", {}))
 	inventar_geaendert.emit()
+
+
+# Den Spielstand wegwerfen. Sonst holt der erste Tod ihn zurück.
+func loeschen() -> void:
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(DATEI))
 
 
 # Ein Fingerabdruck der ganzen Datei. Ohne das Geheimnis kann ihn niemand passend neu ausrechnen.

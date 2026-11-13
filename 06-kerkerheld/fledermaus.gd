@@ -1,4 +1,4 @@
-extends CharacterBody2D
+extends Monster
 
 enum Zustand { FLATTERN, SITZEN }
 
@@ -11,6 +11,7 @@ var richtung := Vector2.ZERO
 @export var schaden := 1   # in halben Herzen
 
 func _ready() -> void:
+	super()
 	wechseln(Zustand.FLATTERN)
 
 
