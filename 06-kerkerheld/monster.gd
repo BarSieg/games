@@ -10,10 +10,11 @@ var start_position := Vector2.ZERO   # hier stand das Monster beim Start, hierhi
 var herzdroprate := 0.0    # die Monster stellen das in ihrem _ready() ein
 var muenzdroprate := 0.0
 var muenzdropmax := 0      # so viele Münzen fallen höchstens auf einmal
-
+var start_groesse := Vector2.ONE     # so groß war das Bild beim Start. Der Boss ist größer als die anderen.
 
 func _ready() -> void:
 	start_position = global_position
+	start_groesse = $Bild.scale
 
 
 # Der Held betritt meinen Raum: alles wie neu. Nur wer im Iron-Man-Spiel tot ist, bleibt tot.
@@ -24,7 +25,7 @@ func wecken() -> void:
 	show()
 	global_position = start_position
 	velocity = Vector2.ZERO
-	$Bild.scale = Vector2.ONE
+	$Bild.scale = start_groesse
 	$Bild.modulate = Color.WHITE
 	$CollisionShape2D.disabled = false
 	$Hurtbox.monitoring = true

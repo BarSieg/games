@@ -1,0 +1,40 @@
+[gd_scene format=3 uid="uid://dxc4hvtjfinap"]
+
+[ext_resource type="Script" uid="uid://b77edenotgsxk" path="res://krabbe.gd" id="1_vcr3q"]
+[ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="2_yvl4x"]
+[ext_resource type="AudioStream" uid="uid://daax50uowq84d" path="res://hit_boss.wav" id="3_vcr3q"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(36, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0orc7"]
+size = Vector2(42, 40)
+
+[node name="Krabbe" type="CharacterBody2D" unique_id=102720077 groups=["monster"]]
+collision_layer = 4
+collision_mask = 17
+motion_mode = 1
+script = ExtResource("1_vcr3q")
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=1464807612]
+scale = Vector2(3, 3)
+texture = ExtResource("2_yvl4x")
+hframes = 12
+vframes = 11
+frame = 110
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1286784850]
+position = Vector2(0, 10)
+shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=327846582]
+collision_layer = 0
+collision_mask = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=1639701076]
+shape = SubResource("RectangleShape2D_0orc7")
+
+[node name="Treffer" type="AudioStreamPlayer" parent="." unique_id=1409031745]
+stream = ExtResource("3_vcr3q")
+
+[connection signal="area_entered" from="Hurtbox" to="." method="_on_hurtbox_area_entered"]

@@ -45,6 +45,8 @@ func schieben(neu: Vector2i) -> void:
 	tween.tween_property(self, "position", kamera_position(neu), SCHIEBE_ZEIT)
 	await tween.finished
 	monster_wecken(letzte_raeume.enthaelt(neu))
+	if not letzte_raeume.enthaelt(neu):
+		toepfe_reparieren()
 	letzte_raeume.hinzufuegen(neu)
 	get_tree().paused = false
 	raumwechsel.emit(richtung)
@@ -62,3 +64,10 @@ func monster_wecken(nur_heilen: bool) -> void:
 				monster.wecken()
 		else:
 			monster.process_mode = Node.PROCESS_MODE_DISABLED
+
+
+# Zerbrochene Töpfe im aktuellen Raum wieder ganz machen
+func toepfe_reparieren() -> void:
+	for topf in get_tree().get_nodes_in_group("topf"):
+		if raum_von(topf.global_position) == raum:
+			topf.reparieren()

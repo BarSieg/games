@@ -3,6 +3,7 @@ extends Node
 signal leben_geaendert
 signal inventar_geaendert
 signal gespeichert
+signal gewonnen
 
 const START_LEBEN = 6   # in halben Herzen: 6 sind drei ganze Herzen
 const MAX_HERZEN = 10
@@ -24,6 +25,8 @@ var gestorben := 0   # wie oft der Held schon gestorben ist, für den Grabstein
 var iron_man := false   # Tot ist tot: kein Speichern, kein Laden
 # Wie die Dictionaries: immer dasselbe Ding, nur der Inhalt wechselt. Die Kamera hält es fest.
 var letzte_raeume := LetzteRaeume.new(MONSTER_RAUMWECHSEL)
+var spielzeit := 0.0      # in Sekunden. Läuft nur, wenn das Spiel nicht angehalten ist.
+var zu_erkunden := {}    # Pfad im Dungeon -> true: alles, was für 100 % zählt. Füllt sich beim Bauen des Dungeons.
 
 
 # _init statt _ready: Das läuft, sobald der Spielstand entsteht, noch bevor der Dungeon gebaut wird
@@ -42,6 +45,7 @@ func neues_spiel() -> void:
 	inventar_geaendert.emit()
 	gestorben = 0
 	letzte_raeume.leeren()
+	spielzeit = 0.0
 
 
 # Alles, was sich der Held und die Welt merken müssen, in eine Datei
@@ -53,6 +57,7 @@ func speichern(wo: Variant) -> void:
 	datei.set_value("held", "startpunkt", startpunkt)
 	datei.set_value("held", "max_leben", max_leben)
 	datei.set_value("held", "inventar", inventar)
+	datei.set_value("held", "spielzeit", int(spielzeit * 1000.0))   # ganze Millisekunden: Kommazahlen kommen nicht immer genau so zurück, und die Prüfsumme passt nicht mehr
 	datei.set_value("held", "gestorben", gestorben)
 	datei.set_value("welt", "erledigt", erledigt)
 	datei.set_value("welt", "besucht", besucht)
@@ -87,6 +92,7 @@ func laden() -> void:
 	gestorben = datei.get_value("held", "gestorben", 0)
 	# assign statt =: dieselben Dictionaries behalten, nur ihren Inhalt austauschen. Die Karte hält besucht fest.
 	inventar.assign(datei.get_value("held", "inventar", {}))
+	spielzeit = datei.get_value("held", "spielzeit", 0.0) / 1000.0
 	erledigt.assign(datei.get_value("welt", "erledigt", {}))
 	letzte_raeume.uebernehmen(datei.get_value("welt", "letzte_raeume", []))
 	besucht.assign(datei.get_value("welt", "besucht", {}))
@@ -126,6 +132,8 @@ func hinzufuegen(art: Gegenstand.Art) -> void:
 	else:
 		inventar[art] = mini(anzahl(art) + 1, 99)
 		inventar_geaendert.emit()
+	if art == Gegenstand.Art.KRONE:
+		gewonnen.emit()
 
 
 # Einen oder mehrere verbrauchen, falls der Held genug hat. Die Antwort sagt, ob es geklappt hat.
@@ -135,6 +143,29 @@ func verbrauchen(art: Gegenstand.Art, menge := 1) -> bool:
 	inventar[art] -= menge
 	inventar_geaendert.emit()
 	return true
+
+
+# Sekunden als Uhrzeit: 125 wird zu "2:05", 3725 zu "1:02:05"
+func zeit_text(sekunden: float) -> String:
+	var stunden := floori(sekunden / 3600)
+	var minuten := floori(sekunden / 60) % 60
+	var rest := floori(sekunden) % 60
+	if stunden > 0:
+		return "%d:%02d:%02d" % [stunden, minuten, rest]
+	return "%d:%02d" % [minuten, rest]
+
+
+# Dieses Ding zählt für die Erkundung. Gehört in _ready(), noch vor ein mögliches queue_free().
+func zaehlt_mit(ding: Node) -> void:
+	zu_erkunden[str(ding.get_path())] = true
+
+
+# Wie viel Prozent davon schon erledigt ist. floori: 100 % gibt es erst, wenn wirklich alles gefunden ist.
+func erkundet() -> int:
+	if zu_erkunden.is_empty():
+		return 0
+	var gefunden := zu_erkunden.keys().filter(func(pfad: String) -> bool: return pfad in erledigt).size()
+	return floori(100.0 * gefunden / zu_erkunden.size())
 
 
 # Merkt sich die letzten paar Räume, jeden nur einmal. Ist sie voll, fällt der älteste heraus.

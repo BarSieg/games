@@ -26,6 +26,7 @@ var rueckstoss_zeit := 0.0
 func _ready() -> void:
 	if Spielstand.iron_man:
 		$Bild.frame = IRONMAN_FRAME
+	Spielstand.gewonnen.connect(gewinnen)
 
 
 # Nach dem Laden dort anfangen, wo zuletzt gespeichert wurde.
@@ -65,12 +66,8 @@ func schritt() -> void:
 
 func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("pause"):
-		if await Dialog.frage("Zurück zum Titelbildschirm?"):
-			if Spielstand.iron_man:
-				if await Dialog.frage("Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildschirm?"):
-					get_tree().change_scene_to_file("res://titel.tscn")
-			else:
-				get_tree().change_scene_to_file("res://titel.tscn")
+		pause_menue()   # ohne await: läuft für sich, _physics_process ist sofort fertig
+		return
 	match zustand:
 		Zustand.LAUFEN:
 			laufen(delta)
@@ -94,6 +91,16 @@ func _physics_process(delta: float) -> void:
 				zustand = Zustand.LAUFEN
 	angriff_buffer_timer -= delta
 	treffer_pruefen(delta)
+
+
+# Pause: zeigt den Stand und fragt, ob es zurück zum Titelbild geht
+func pause_menue() -> void:
+	var stand := "Erkundet: %d %%   Zeit: %s\n" % [Spielstand.erkundet(), Spielstand.zeit_text(Spielstand.spielzeit)]
+	if not await Dialog.frage(stand + "Zurück zum Titelbildschirm?"):
+		return
+	if Spielstand.iron_man and not await Dialog.frage("Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildschirm?"):
+		return
+	get_tree().change_scene_to_file("res://titel.tscn")
 
 
 # Jedes Bild: Berührt der Held gerade ein Monster?
@@ -138,7 +145,9 @@ func sterben() -> void:
 		await Dialog.zeigen(["Tot ist tot.", "Hier endet die Geschichte des eisernen Helden."])
 		get_tree().change_scene_to_file("res://titel.tscn")
 		return
+	var zeit := Spielstand.spielzeit   # Die Uhr läuft weiter, auch wenn der Held von vorn anfängt
 	Spielstand.laden()
+	Spielstand.spielzeit = zeit
 	Spielstand.gestorben += 1
 	Spielstand.speichern(Spielstand.startpunkt)
 	get_tree().reload_current_scene()
@@ -193,3 +202,13 @@ func _on_camera_2d_raumwechsel(wechselrichtung: Variant) -> void:
 	tween.tween_property(self, "position", position + Vector2(18 * wechselrichtung.x, 18 * wechselrichtung.y), 0.2)
 	await tween.finished
 	Spielstand.speichern(global_position)   # ganz im neuen Raum angekommen: speichern
+
+
+# Die Krone ist da: stehen bleiben, staunen, ab zum Abspann
+func gewinnen() -> void:
+	set_physics_process(false)
+	$AnimationPlayer.play("stehen")
+	await get_tree().create_timer(2.0).timeout
+	await Dialog.zeigen(["Die Kerkerkrone! Der Kerker ist befreit."])
+	Spielstand.speichern(Spielstand.startpunkt)   # Krabbe und Krone merken. Im Iron-Man-Spiel passiert hier nichts.
+	get_tree().change_scene_to_file("res://abschluss.tscn")

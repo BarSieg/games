@@ -12,6 +12,8 @@ var versteckt := false
 
 
 func _ready() -> void:
+	if inhalt == Gegenstand.Art.HERZCONTAINER:
+		Spielstand.zaehlt_mit(self)
 	if Spielstand.ist_erledigt(self):
 		offen = true
 		$Bild.frame = BILD_OFFEN

@@ -30,8 +30,8 @@ func _draw() -> void:
 	Gegenstand.malen(self, Gegenstand.Art.MUENZE, Vector2(14, 47))
 	Gegenstand.malen(self, Gegenstand.Art.SCHLUESSEL, Vector2(14, 30))
 	if Spielstand.anzahl(Gegenstand.Art.MASTERSCHLUESSEL) > 0:
-		Gegenstand.malen(self, Gegenstand.Art.MASTERSCHLUESSEL, Vector2(52, 40))
+		Gegenstand.malen(self, Gegenstand.Art.MASTERSCHLUESSEL, Vector2(52, 30))
 	if Spielstand.anzahl(Gegenstand.Art.KARTE) > 0:
-		Gegenstand.malen(self, Gegenstand.Art.KARTE, Vector2(68, 31))
+		Gegenstand.malen(self, Gegenstand.Art.KARTE, Vector2(70, 28))
 	if Spielstand.anzahl(Gegenstand.Art.KOMPASS) > 0:
-		Gegenstand.malen(self, Gegenstand.Art.KOMPASS, Vector2(68, 44))
+		Gegenstand.malen(self, Gegenstand.Art.KOMPASS, Vector2(88, 28))

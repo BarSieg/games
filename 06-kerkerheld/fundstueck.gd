@@ -11,8 +11,12 @@ var zeit := ZEIT_ZUM_SAMMELN
 
 func _ready() -> void:
 	# Fallen gelassene Dinge sind jedes Mal neu, nur die fest im Level liegenden merken wir uns
+	if art == Gegenstand.Art.HERZCONTAINER:
+		Spielstand.zaehlt_mit(self)
 	if not drop and Spielstand.ist_erledigt(self):
 		queue_free()
+	if drop and art == Gegenstand.Art.HERZCONTAINER:
+		art =  Gegenstand.Art.HERZ # es gibt keine solchen drops
 
 
 func _physics_process(delta: float) -> void:

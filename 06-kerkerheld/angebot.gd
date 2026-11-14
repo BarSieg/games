@@ -7,6 +7,9 @@ extends StaticBody2D
 var NPC_Name := "Händler"   # wer an der Theke spricht
 
 func _ready() -> void:
+	if ware == Gegenstand.Art.HERZCONTAINER:
+		Spielstand.zaehlt_mit(self)
+		einmalig = true # solche angebote sind eben einmalig
 	if einmalig and Spielstand.ist_erledigt(self):
 		queue_free()
 		return

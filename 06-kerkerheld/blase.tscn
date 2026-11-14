@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://bwq7sbdldg0jf"]
+
+[ext_resource type="Script" uid="uid://hn36i6exslfd" path="res://blase.gd" id="1_mi0kk"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_s017u"]
+radius = 4.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_0orc7"]
+radius = 4.0
+
+[node name="Blase" type="CharacterBody2D" unique_id=1628300276]
+collision_layer = 4
+motion_mode = 1
+script = ExtResource("1_mi0kk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1017849717]
+shape = SubResource("CircleShape2D_s017u")
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=1325009148]
+collision_layer = 0
+collision_mask = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=1544126543]
+shape = SubResource("CircleShape2D_0orc7")
+
+[connection signal="area_entered" from="Hurtbox" to="." method="_on_hurtbox_area_entered"]

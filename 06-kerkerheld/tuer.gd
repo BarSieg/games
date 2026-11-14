@@ -7,6 +7,7 @@ const OFFEN_RECHTS = 23
 
 
 func _ready() -> void:
+	Spielstand.zaehlt_mit(self) # jede Tür wird im Fortschritt mitgezählt
 	if Spielstand.ist_erledigt(self):
 		queue_free()
 		return

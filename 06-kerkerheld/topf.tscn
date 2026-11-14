@@ -10,7 +10,7 @@ size = Vector2(12, 8)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_0orc7"]
 size = Vector2(14, 14)
 
-[node name="Topf" type="StaticBody2D" unique_id=404548848]
+[node name="Topf" type="StaticBody2D" unique_id=404548848 groups=["topf"]]
 collision_mask = 0
 script = ExtResource("1_kgl6q")
 

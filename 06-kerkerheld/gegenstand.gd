@@ -1,7 +1,7 @@
 class_name Gegenstand
 
 # Alles, was in einer Truhe liegen und ins Inventar wandern kann
-enum Art { SCHLUESSEL, MASTERSCHLUESSEL, KARTE, KOMPASS, HERZ, HERZCONTAINER, MUENZE }
+enum Art { SCHLUESSEL, MASTERSCHLUESSEL, KARTE, KOMPASS, HERZ, HERZCONTAINER, MUENZE, KRONE }
 
 # So heißen sie, wenn jemand über sie redet
 const NAMEN = {
@@ -12,6 +12,7 @@ const NAMEN = {
 	Art.HERZ: "Ein Herz",
 	Art.HERZCONTAINER: "Ein Herzcontainer",
 	Art.MUENZE: "Eine Münze",
+	Art.KRONE: "Die Kerkerkrone",
 }
 
 const RAND = Color(0.16, 0.04, 0.06)
@@ -151,6 +152,18 @@ const BILDER = {
 			"....oo....",
 		],
 		{"o": Color(0, 0.4, 0.05), "#": SMARAGD, "+": WHITE},
+	],
+	Art.KRONE: [
+		[
+			".o...o...o.",
+			"o+o.o+o.o#o",
+			"o#+o#+#o##o",
+			"o#########o",
+			"o#r##b##r#o",
+			"o#########o",
+			"ooooooooooo",
+		],
+		{"o": BRAUN, "#": GOLD, "+": BEIGE, "r": ROT, "b": Color(0.2, 0.5, 1.0)},
 	],
 }
 
