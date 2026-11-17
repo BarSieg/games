@@ -2,6 +2,7 @@ extends StaticBody2D
 
 const BILD_OEFFNEN = 90
 const BILD_OFFEN = 91
+const gross = [Gegenstand.Art.MASTERSCHLUESSEL, Gegenstand.Art.KOMPASS, Gegenstand.Art.KARTE, Gegenstand.Art.KRONE]
 
 @export var inhalt: Gegenstand.Art = Gegenstand.Art.SCHLUESSEL
 @export var belohnung := false   # erscheint wenn alle monster im raum besiegt sind
@@ -12,6 +13,8 @@ var versteckt := false
 
 
 func _ready() -> void:
+	if inhalt in gross:
+		$Bild.scale = Vector2(1.4, 1.4)
 	if inhalt == Gegenstand.Art.HERZCONTAINER:
 		Spielstand.zaehlt_mit(self)
 	if Spielstand.ist_erledigt(self):

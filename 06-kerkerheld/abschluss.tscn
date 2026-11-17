@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://c7rbowtgphcf7" path="res://abschluss.gd" id="1_6ltle"]
 [ext_resource type="FontFile" uid="uid://dlkjlgec87e21" path="res://Kenney/Kenney Pixel.ttf" id="1_psscn"]
-[ext_resource type="LabelSettings" uid="uid://cggyy4uae7ijw" path="res://schrift_settings.tres" id="2_6ltle"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_rebmp"]
 line_spacing = 1.0
@@ -37,12 +36,13 @@ text = "DER KERKER IST BEFREIT!"
 label_settings = SubResource("LabelSettings_rebmp")
 horizontal_alignment = 1
 
-[node name="Ergebnis" type="Label" parent="." unique_id=438319095]
-custom_minimum_size = Vector2(224, 0)
+[node name="Ergebnis" type="RichTextLabel" parent="." unique_id=46298673]
 layout_mode = 0
 offset_left = 16.0
 offset_top = 80.0
 offset_right = 240.0
 offset_bottom = 200.0
-label_settings = ExtResource("2_6ltle")
-autowrap_mode = 3
+theme_override_fonts/normal_font = ExtResource("1_psscn")
+theme_override_font_sizes/normal_font_size = 16
+bbcode_enabled = true
+text = "lorem..."

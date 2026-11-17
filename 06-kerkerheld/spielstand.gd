@@ -9,6 +9,8 @@ const START_LEBEN = 6   # in halben Herzen: 6 sind drei ganze Herzen
 const MAX_HERZEN = 10
 const MONSTER_RAUMWECHSEL = 3   # Monster bleiben tot, bis der Held so viele andere Räume betreten hat
 const DATEI = "user://spielstand.cfg"
+const REKORDE = "user://ironman.cfg"
+const REKORDE_ANZAHL = 5
 const SALZ = "Glibber essen keine Kekse"
 
 var inventar := {}   # Gegenstand.Art -> Anzahl
@@ -27,6 +29,7 @@ var iron_man := false   # Tot ist tot: kein Speichern, kein Laden
 var letzte_raeume := LetzteRaeume.new(MONSTER_RAUMWECHSEL)
 var spielzeit := 0.0      # in Sekunden. Läuft nur, wenn das Spiel nicht angehalten ist.
 var zu_erkunden := {}    # Pfad im Dungeon -> true: alles, was für 100 % zählt. Füllt sich beim Bauen des Dungeons.
+var ironman_platzierung := 0
 
 
 # _init statt _ready: Das läuft, sobald der Spielstand entsteht, noch bevor der Dungeon gebaut wird
@@ -61,6 +64,7 @@ func speichern(wo: Variant) -> void:
 	datei.set_value("held", "gestorben", gestorben)
 	datei.set_value("welt", "erledigt", erledigt)
 	datei.set_value("welt", "besucht", besucht)
+	datei.set_value("welt", "erkundet", erkundet())
 	datei.set_value("welt", "letzte_raeume", letzte_raeume.raeume)   # nur die Liste, ein Objekt kann ConfigFile nicht speichern
 	datei.set_value("schutz", "pruefsumme", pruefsumme(datei))
 	datei.save(DATEI)
@@ -99,6 +103,20 @@ func laden() -> void:
 	inventar_geaendert.emit()
 
 
+func load_stats_fuer_titel() -> Array[int]:
+	var titel_erkundet := 0
+	var titel_spielzeit := 0
+	var datei := ConfigFile.new()
+	if datei.load(Spielstand.DATEI) == OK:
+		# Die Prüfsumme herausnehmen und neu ausrechnen. Passt sie nicht, hat jemand die Datei verändert.
+		var hashwert: String = datei.get_value("schutz", "pruefsumme", "")
+		datei.erase_section("schutz")
+		if hashwert == pruefsumme(datei):
+			titel_spielzeit = datei.get_value("held", "spielzeit", 0.0)
+			titel_erkundet = datei.get_value("welt", "erkundet", 0)
+	return [titel_spielzeit, titel_erkundet]
+
+
 # Den Spielstand wegwerfen. Sonst holt der erste Tod ihn zurück.
 func loeschen() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(DATEI))
@@ -134,6 +152,39 @@ func hinzufuegen(art: Gegenstand.Art) -> void:
 		inventar_geaendert.emit()
 	if art == Gegenstand.Art.KRONE:
 		gewonnen.emit()
+		if iron_man:
+			rekord_eintragen()
+
+
+# Rekordzeiten werden in millisekunden gespeichert
+func rekorde_laden() -> Array[int]:
+	var ironman := ConfigFile.new()
+	var beste_zeiten : Array[int] = []
+	if ironman.load(REKORDE) == OK:
+		# Die Prüfsumme herausnehmen und neu ausrechnen. Passt sie nicht, hat jemand die Datei verändert.
+		var hashwert: String = ironman.get_value("schutz", "pruefsumme", "")
+		ironman.erase_section("schutz")
+		if hashwert == pruefsumme(ironman):
+			beste_zeiten.assign(ironman.get_value("ironman", "bestezeiten", []))
+	return beste_zeiten
+
+
+func rekorde_speichern(beste_zeiten: Array[int]) -> void:
+	var ironman := ConfigFile.new()
+	ironman.set_value("ironman", "bestezeiten", beste_zeiten)
+	ironman.set_value("schutz", "pruefsumme", pruefsumme(ironman))
+	ironman.save(REKORDE)
+
+
+func rekord_eintragen() -> void:
+	var beste_zeiten : Array[int] = rekorde_laden()
+	var neuer_rekord =  int(spielzeit * 1000.0) # in Millisekunden
+	ironman_platzierung = beste_zeiten.bsearch(neuer_rekord)
+	if ironman_platzierung < REKORDE_ANZAHL:
+		beste_zeiten.insert(ironman_platzierung, neuer_rekord)
+		if beste_zeiten.size() > REKORDE_ANZAHL:
+			beste_zeiten.resize(REKORDE_ANZAHL)
+		rekorde_speichern(beste_zeiten)
 
 
 # Einen oder mehrere verbrauchen, falls der Held genug hat. Die Antwort sagt, ob es geklappt hat.
@@ -145,14 +196,16 @@ func verbrauchen(art: Gegenstand.Art, menge := 1) -> bool:
 	return true
 
 
-# Sekunden als Uhrzeit: 125 wird zu "2:05", 3725 zu "1:02:05"
-func zeit_text(sekunden: float) -> String:
-	var stunden := floori(sekunden / 3600)
-	var minuten := floori(sekunden / 60) % 60
-	var rest := floori(sekunden) % 60
+# Sekunden als Uhrzeit: 125 wird zu "2:05", 3725 zu "1:02:05", Millisekunden genauigkeit
+func formatiere_spielzeit(spielzeit: float = spielzeit) -> String:
+	var zeit_in_millisekunden := spielzeit * 1000.0
+	var stunden: int = int((zeit_in_millisekunden / 1000.0) / 60.0 / 60.0)
+	var minuten: int = int((zeit_in_millisekunden / 1000.0) / 60.0) % 60
+	var sekunden: int = int(zeit_in_millisekunden / 1000.0) % 60
+	var millisekunden: int = int(zeit_in_millisekunden) % 1000
 	if stunden > 0:
-		return "%d:%02d:%02d" % [stunden, minuten, rest]
-	return "%d:%02d" % [minuten, rest]
+		return "%02d:%02d:%02d.%03d" % [stunden, minuten, sekunden, millisekunden]
+	return "%02d:%02d.%03d" % [minuten, sekunden, millisekunden]
 
 
 # Dieses Ding zählt für die Erkundung. Gehört in _ready(), noch vor ein mögliches queue_free().

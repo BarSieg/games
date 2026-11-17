@@ -4,9 +4,14 @@ extends Label
 
 
 func _ready() -> void:
-	visible = Spielstand.iron_man   # Nur der eiserne Held spielt gegen die Uhr
+	# visible = Spielstand.iron_man   # Nur der eiserne Held spielt gegen die Uhr
+	Spielstand.gewonnen.connect(stop_uhr)
 
 
 func _process(delta: float) -> void:
 	Spielstand.spielzeit += delta
-	text = Spielstand.zeit_text(Spielstand.spielzeit)
+	text = Spielstand.formatiere_spielzeit()
+
+
+func stop_uhr() -> void:
+	process_mode = Node.PROCESS_MODE_DISABLED

@@ -95,7 +95,7 @@ func _physics_process(delta: float) -> void:
 
 # Pause: zeigt den Stand und fragt, ob es zurück zum Titelbild geht
 func pause_menue() -> void:
-	var stand := "Erkundet: %d %%   Zeit: %s\n" % [Spielstand.erkundet(), Spielstand.zeit_text(Spielstand.spielzeit)]
+	var stand := "Erkundet: %d %%   Zeit: %s\n" % [Spielstand.erkundet(), Spielstand.formatiere_spielzeit()]
 	if not await Dialog.frage(stand + "Zurück zum Titelbildschirm?"):
 		return
 	if Spielstand.iron_man and not await Dialog.frage("Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildschirm?"):
@@ -199,10 +199,16 @@ func benutzen() -> bool:
 
 func _on_camera_2d_raumwechsel(wechselrichtung: Variant) -> void:
 	var tween := create_tween()
-	tween.tween_property(self, "position", position + Vector2(18 * wechselrichtung.x, 18 * wechselrichtung.y), 0.2)
+	tween.tween_property(self, "position", position + 6 * Vector2(wechselrichtung), 0.1)
+	tween.tween_callback(schritt)
+	tween.tween_property(self, "position", position + 18 * Vector2(wechselrichtung), 0.2)
+	tween.tween_callback(schritt)
+	tween.tween_property(self, "position", position + 24 * Vector2(wechselrichtung), 0.1)
 	await tween.finished
-	Spielstand.speichern(global_position)   # ganz im neuen Raum angekommen: speichern
-
+	if %Camera2D.raum_von(get_tree().get_first_node_in_group("boss").global_position) != %Camera2D.raum_von(global_position):
+		Spielstand.speichern(global_position)   # ganz im neuen Raum angekommen: speichern
+	else: 
+		Spielstand.speichern(Spielstand.startpunkt) # im Vorraum speichern
 
 # Die Krone ist da: stehen bleiben, staunen, ab zum Abspann
 func gewinnen() -> void:

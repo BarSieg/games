@@ -5,11 +5,12 @@ extends Monster
 enum Zustand { SEITWAERTS, ZIELEN, ANLAUF, STURM }
 
 const BLASE = preload("res://blase.tscn")
-const MAX_LEBEN = 10
+const MAX_LEBEN = 4
 const SEIT_TEMPO = 50.0
 const STURM_TEMPO = 150.0
 const FAECHER = [-0.35, 0.0, 0.35]   # drei Blasen, leicht gefächert (Winkel im Bogenmaß)
 const SCHONZEIT = 1.0                # so lange nach einem Treffer unverwundbar
+const LEBENSBALKENBREITE = 42.0
 
 @export var schaden := 2   # in halben Herzen
 
@@ -82,6 +83,8 @@ func _physics_process(delta: float) -> void:
 			if get_slide_collision_count() > 0:   # gegen die Wand gerannt
 				global_position += get_wall_normal()
 				wechseln(Zustand.SEITWAERTS)
+	if wuetend():
+		$Bild.modulate = Color(1.0, 0.5, 0.8)
 	move_and_slide()
 
 
@@ -126,12 +129,20 @@ func _on_hurtbox_area_entered(_area: Area2D) -> void:
 	tween.tween_property($Bild, "modulate", Color.WHITE, 0.2)
 	if leben <= 0:
 		sterben()
+	queue_redraw()
+
+
+func _draw() -> void:
+	# Lebensbalken
+	draw_rect(Rect2(Vector2(-LEBENSBALKENBREITE / 2.0,-30), Vector2(LEBENSBALKENBREITE,2)), Color(0.2, 0.2, 0.2))
+	draw_rect(Rect2(Vector2(-LEBENSBALKENBREITE / 2.0,-30), Vector2(leben * LEBENSBALKENBREITE / MAX_LEBEN, 2)), Color.RED)
 
 
 # Erst lange blinken, dann wie jedes Monster verschwinden
 func sterben() -> void:
 	Spielstand.erledigen(self)
 	set_physics_process(false)
+	$Bild.visible = true
 	$CollisionShape2D.set_deferred("disabled", true)
 	$Hurtbox.set_deferred("monitoring", false)
 	var tween := create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)

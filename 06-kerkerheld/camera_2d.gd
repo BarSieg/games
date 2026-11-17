@@ -1,6 +1,7 @@
 extends Camera2D
 
 signal raumwechsel(richtung)
+signal bossraum_betreten
 
 const RAUM_GROESSE = Vector2(256, 176)   # 16 × 11 Kacheln
 const ANZEIGE_HOEHE = 48                 # Platz für die Anzeige oben
@@ -10,6 +11,7 @@ var raum := Vector2i.ZERO   # welchen Raum die Kamera gerade zeigt
 var letzte_raeume := Spielstand.letzte_raeume   # in welchen Räumen die Monster noch tot bleiben
 
 @onready var held: Node2D = get_tree().get_first_node_in_group("held")
+@onready var boss: Node2D = get_tree().get_first_node_in_group("boss")
 
 
 func _ready() -> void:
@@ -51,6 +53,8 @@ func schieben(neu: Vector2i) -> void:
 	get_tree().paused = false
 	raumwechsel.emit(richtung)
 	%Karte.zeigen(raum)
+	if %Camera2D.raum_von(boss.global_position) == raum:
+		bossraum_betreten.emit()
 
 
 # Nur die Monster im aktuellen Raum sind wach, alle anderen schlafen
