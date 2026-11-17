@@ -207,7 +207,7 @@ anchor_mode = 0
 script = ExtResource("2_q5kms")
 
 [node name="Held" parent="." unique_id=1612745786 instance=ExtResource("3_tgur7")]
-position = Vector2(128, 144)
+position = Vector2(129, 147)
 
 [node name="Anzeige" type="CanvasLayer" parent="." unique_id=541112382]
 

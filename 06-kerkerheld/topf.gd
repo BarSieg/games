@@ -23,7 +23,6 @@ func _on_hurtbox_area_entered(_area: Area2D) -> void:
 
 
 # Kurz plattdrücken, dann weg
-# Kurz plattdrücken, dann weg
 func zerbrechen() -> void:
 	ganz = false
 	Engine.time_scale = 0.0

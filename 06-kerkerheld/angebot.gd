@@ -9,7 +9,7 @@ var NPC_Name := "Händler"   # wer an der Theke spricht
 func _ready() -> void:
 	if ware == Gegenstand.Art.HERZCONTAINER:
 		Spielstand.zaehlt_mit(self)
-		einmalig = true # solche angebote sind eben einmalig
+		einmalig = true   # einen Herzcontainer gibt es nur einmal
 	if einmalig and Spielstand.ist_erledigt(self):
 		queue_free()
 		return

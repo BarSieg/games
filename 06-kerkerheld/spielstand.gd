@@ -156,10 +156,10 @@ func hinzufuegen(art: Gegenstand.Art) -> void:
 			rekord_eintragen()
 
 
-# Rekordzeiten werden in millisekunden gespeichert
+# Rekordzeiten werden in Millisekunden gespeichert
 func rekorde_laden() -> Array[int]:
 	var ironman := ConfigFile.new()
-	var beste_zeiten : Array[int] = []
+	var beste_zeiten: Array[int] = []
 	if ironman.load(REKORDE) == OK:
 		# Die Prüfsumme herausnehmen und neu ausrechnen. Passt sie nicht, hat jemand die Datei verändert.
 		var hashwert: String = ironman.get_value("schutz", "pruefsumme", "")
@@ -177,8 +177,8 @@ func rekorde_speichern(beste_zeiten: Array[int]) -> void:
 
 
 func rekord_eintragen() -> void:
-	var beste_zeiten : Array[int] = rekorde_laden()
-	var neuer_rekord =  int(spielzeit * 1000.0) # in Millisekunden
+	var beste_zeiten: Array[int] = rekorde_laden()
+	var neuer_rekord := int(spielzeit * 1000.0)   # in Millisekunden
 	ironman_platzierung = beste_zeiten.bsearch(neuer_rekord)
 	if ironman_platzierung < REKORDE_ANZAHL:
 		beste_zeiten.insert(ironman_platzierung, neuer_rekord)
@@ -196,13 +196,12 @@ func verbrauchen(art: Gegenstand.Art, menge := 1) -> bool:
 	return true
 
 
-# Sekunden als Uhrzeit: 125 wird zu "2:05", 3725 zu "1:02:05", Millisekunden genauigkeit
-func formatiere_spielzeit(spielzeit: float = spielzeit) -> String:
-	var zeit_in_millisekunden := spielzeit * 1000.0
-	var stunden: int = int((zeit_in_millisekunden / 1000.0) / 60.0 / 60.0)
-	var minuten: int = int((zeit_in_millisekunden / 1000.0) / 60.0) % 60
-	var sekunden: int = int(zeit_in_millisekunden / 1000.0) % 60
-	var millisekunden: int = int(zeit_in_millisekunden) % 1000
+# Sekunden als Uhrzeit, auf die Millisekunde: 125 wird zu "02:05.000", 3725 zu "01:02:05.000"
+func formatiere_spielzeit(zeit_in_sekunden: float = spielzeit) -> String:
+	var stunden: int = int(zeit_in_sekunden / 60.0 / 60.0)
+	var minuten: int = int(zeit_in_sekunden / 60.0) % 60
+	var sekunden: int = int(zeit_in_sekunden) % 60
+	var millisekunden: int = int(zeit_in_sekunden * 1000.0) % 1000
 	if stunden > 0:
 		return "%02d:%02d:%02d.%03d" % [stunden, minuten, sekunden, millisekunden]
 	return "%02d:%02d.%03d" % [minuten, sekunden, millisekunden]

@@ -12,6 +12,7 @@ var muenzdroprate := 0.0
 var muenzdropmax := 0      # so viele Münzen fallen höchstens auf einmal
 var start_groesse := Vector2.ONE     # so groß war das Bild beim Start. Der Boss ist größer als die anderen.
 
+
 func _ready() -> void:
 	start_position = global_position
 	start_groesse = $Bild.scale

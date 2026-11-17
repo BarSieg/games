@@ -16,7 +16,7 @@ func _ready() -> void:
 	if not drop and Spielstand.ist_erledigt(self):
 		queue_free()
 	if drop and art == Gegenstand.Art.HERZCONTAINER:
-		art =  Gegenstand.Art.HERZ # es gibt keine solchen drops
+		art = Gegenstand.Art.HERZ   # Herzcontainer fallen nicht einfach so herunter
 
 
 func _physics_process(delta: float) -> void:

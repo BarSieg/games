@@ -15,8 +15,9 @@ Vieles kennst du schon: TileMapLayer, Kollisionsebenen, Tweens, Autoload, HUD, S
 8. Dialoge: Schilder, ein alter Mann, Münzen und ein Händler ✔
 9. Die Welt merkt sich alles: Speichern und Laden ✔
 10. Titelbild und zwei Spielarten: Normal und Iron Man ✔
-11. Der Boss, Spielzeit, Erkundung und ein Abspann ← *du bist hier*
-12. Optionen (z. B. schräg laufen ja/nein), Musik und Web-Export
+11. Der Boss, Spielzeit, Erkundung und ein Abspann ✔
+12. Rätsel und Fallen: Schalter, Gitter, Felsbrocken, Wasserspeier, Klingenfalle ← *du bist hier*
+13. Optionen (z. B. schräg laufen ja/nein), Musik und Web-Export
 
 ---
 
@@ -3441,3 +3442,499 @@ Damit du siehst, dass auch ich nicht alles beim ersten Mal richtig mache:
 5. **Man sieht die Wut (leicht):** Ab der Hälfte ist die Krabbe wütend, aber man sieht es ihr nicht an. Färb sie dann etwas dunkler rot ein, und lass sie beim Zittern stärker wackeln. Aufpassen: `wecken()` setzt `modulate` zurück auf Weiß, und das Blinken bei Treffern auch. Und als Bonus: die Krone im Inventar oben anzeigen, sobald man sie hat. 👑
 
 Fertig? Committen und Bescheid geben.
+
+
+---
+
+## Kapitel 12: Rätsel und Fallen
+
+Der Kerker hat einen Boss, eine Krone und einen Abspann. Aber etwa zehn Räume sind noch fast leer: ein Schild, eine Tür, sonst nur Sand und ein paar Steinchen. Im Original sind genau das die Räume, an die man sich erinnert: ein Block, den man schieben muss, Fallen, die durch den Raum sausen, und Steingesichter, die aus der Wand spucken.
+
+Davon bauen wir in diesem Kapitel vier Bausteine. Mit ihnen kannst du die leeren Räume füllen, ganz wie du willst:
+
+- **Bodenschalter:** gedrückt, solange der Held oder etwas Schweres darauf steht.
+- **Gitter:** geht auf und zu, wenn man es ihm sagt. Zum Beispiel ein Schalter.
+- **Felsbrocken:** Der Held schiebt ihn, immer eine Kachel weit.
+- **Wasserspeier:** ein Gesicht in der Wand, das Blasen nach dem Helden spuckt.
+- **Klingenfalle:** ein Stahlstern, der losschießt, sobald der Held in seiner Reihe steht.
+
+Das sind fünf. Die Klingenfalle gibt es als Zugabe. 😉
+
+Neu sind **Signale, die du im Editor von einem Ding im Dungeon zu einem anderen verbindest**, **`test_move()`**: „Würde ich anstoßen, wenn ich mich so bewege?“, die Physik-Bildnummer **`Engine.get_physics_frames()`** und gemalte Formen mit **`draw_colored_polygon()`** und **`draw_set_transform()`**.
+
+### 12.1 Noch zwei Dinge aus Kapitel 11
+
+Bevor es mit den Rätseln losgeht, noch zwei Reste aus dem letzten Kapitel. Beide wirken sich auf das Verhalten aus.
+
+1. **Der Lebensbalken bleibt kurz.** Wird die Krabbe geheilt, zum Beispiel weil der Held den Raum verlässt und wiederkommt, zeigt der Balken immer noch die alten Treffer. `queue_redraw()` steht nur im Treffer, nicht in `heilen()`. Die sauberste Lösung ist ein Setter, wie beim Leben im Spielstand. Dann kann man es nirgends mehr vergessen:
+
+    ```gdscript
+    var leben := MAX_LEBEN:
+    	set(wert):
+    		leben = wert
+    		queue_redraw()   # Der Balken stimmt immer, egal wer leben ändert
+    ```
+
+    Das `queue_redraw()` in `_on_hurtbox_area_entered` darf dann weg.
+
+    Im Spiel fällt der Fehler kaum auf: Solange die Bosssperre steht, kommst du aus dem Raum nicht heraus, und nach dem Laden ist der Balken wieder voll. Aber sobald irgendwo `leben` geändert wird, ohne dass `queue_redraw()` danebensteht, ist er wieder da. Mit dem Setter kann das nicht mehr passieren.
+
+2. **Die wütende Krabbe blinkt bei Treffern nicht mehr.** `$Bild.modulate = Color(1.0, 0.5, 0.8)` steht in `_physics_process` und läuft damit 60-mal pro Sekunde. Der rote Treffer-Tween setzt `modulate` auf Rot, und ein Bild später ist es schon wieder rosa. Besser: Die Farbe nur dort setzen, wo sie sich ändern kann, also am Ende des Treffer-Tweens. Eine kleine Funktion sagt, welche Farbe gerade richtig ist:
+
+    ```gdscript
+    const WUT = Color(1.0, 0.5, 0.8)
+
+    # Weiß, oder rosa vor Wut
+    func farbe() -> Color:
+    	return WUT if wuetend() else Color.WHITE
+    ```
+
+    Im Treffer dann `tween.tween_property($Bild, "modulate", farbe(), 0.2)` statt `Color.WHITE`, und die zwei Zeilen mit `if wuetend()` in `_physics_process` fallen weg. Beim Wecken setzt `wecken()` sie auf Weiß, und weil `heilen()` danach volle Lebenspunkte gibt, stimmt das auch.
+
+### 12.2 Was kommt wohin, und welcher Raum bekommt was?
+
+| Was | Wo |
+|---|---|
+| Gitter | neue Szene `gitter.tscn` mit `gitter.gd` |
+| Bodenschalter | neue Szene `schalter.tscn` mit `schalter.gd` |
+| Felsbrocken | neue Szene `felsbrocken.tscn` mit `felsbrocken.gd`, ein paar Zeilen in `held.gd` |
+| Wasserspeier | neue Szene `wasserspeier.tscn` mit `wasserspeier.gd`, benutzt die Blase der Krabbe |
+| Klingenfalle | neue Szene `klingenfalle.tscn` mit `klingenfalle.gd` |
+
+Ich habe mir die fast leeren Räume angesehen. Hier sind meine Vorschläge. Die Zahlen sind die Räume, wie `raum_von()` sie nennt. Die linke obere Ecke eines Raums liegt bei `(x * 256, y * 176)`. Du entscheidest, was wohin kommt. Es ist dein Kerker.
+
+| Raum | Jetzt | Idee |
+|---|---|---|
+| (1, -5) | ganz leer, Öffnungen rechts und unten | **Schieberätsel:** Ein Felsbrocken muss auf den Schalter, dann öffnet sich das Gitter rechts. Das bauen wir in 12.10 zusammen. |
+| (3, -5) | ganz leer, Sackgasse links neben dem Bossraum | **Belohnungsraum:** zwei oder drei Wasserspeier oben in der Wand, und eine Truhe, die man sich unter Beschuss holen muss |
+| (3, -4) | eine Tür, eine Truhe, eine Fledermaus | **Klingenfallen in allen vier Ecken**, wie im Original. Wer quer durch den Raum läuft, wird von zwei Seiten gejagt. |
+| (4, -4), (4, -3) | Schild und Tür, dazu deine Schienen | Die Steingesichter, die schon in der Wand sind, werden **echte Wasserspeier** |
+| (3, -2) | zwei Türen, eine Mimik, ein Schild | **Kampfraum:** Gitter gehen hinter dem Helden zu, bis alle Monster besiegt sind (Übung 1) |
+| (-1, -2) | Geist, Mimik, Tür, Schild | **Dunkler Raum:** Man sieht nur, was um den Helden herum ist (Übung 4). Mit einem Geist darin wird das richtig unheimlich. 👻 |
+| (2, -1) | nur die falsche Wand | **Felsbrocken-Irrgarten:** Mehrere Brocken versperren den Weg, und nur die richtige Reihenfolge führt durch |
+| (3, -1), (4, -1) | je ein Schild | **Zwei Schalter für ein Gitter** (Übung 2), oder die **Ratten** aus Übung 3 |
+| (2, 0), (3, 0) | eine Tür, eine Mimik | **Fallengang:** Klingenfallen oben und unten an der Wand, der Held muss in der Mitte durch |
+
+Zehn Räume mit zehn verschiedenen Ideen wären zu viel auf einmal. Fang mit dem Schieberätsel an, dann siehst du, wie die Teile zusammenspielen.
+
+### 12.3 Das Gitter
+
+Das Gitter sieht aus wie ein kleiner Zaun und steht in einer Türöffnung. Geht es auf, versinken die Stäbe im Boden.
+
+Neue Szene:
+
+1. Wurzel **StaticBody2D**, Name `Gitter`. **Collision → Layer** `1` (Welt), **Mask** leer. Es soll nur im Weg stehen und selbst nichts bemerken.
+2. Kind **Node2D**, Name `Bilder`. Darunter zwei **Sprite2D**, beide mit `tilemap_packed.png`, **Hframes** 12, **Vframes** 11:
+   - `Links`: **Position** (-8, 0), **Frame** 76
+   - `Rechts`: **Position** (8, 0), **Frame** 78
+3. Kind **CollisionShape2D** (direkt unter `Gitter`, nicht unter `Bilder`) mit einem Rechteck 32 × 16.
+4. Kind **AudioStreamPlayer**, Name `Ton`, mit `tuer_offen.wav`.
+5. Speichern als `gitter.tscn`, Skript `gitter.gd`:
+
+```gdscript
+extends StaticBody2D
+
+# Ein Gitter in einer Öffnung. Ein Schalter oder etwas anderes sagt ihm, wann es auf- und zugeht.
+
+const ZEIT = 0.3   # so lange dauert Auf- oder Zugehen
+
+@export var offen := false   # so steht es beim Start
+@export var merken := true   # einmal offen, immer offen. Auch nach dem Laden.
+
+var tween: Tween
+
+
+func _ready() -> void:
+	if merken and Spielstand.ist_erledigt(self):
+		offen = true
+	# Gleich richtig hinstellen, ohne Bewegung und ohne Ton
+	$Bilder.scale.y = 0.0 if offen else 1.0
+	$CollisionShape2D.disabled = offen
+
+
+func oeffnen() -> void:
+	if merken:
+		Spielstand.erledigen(self)
+	stellen(true)
+
+
+func schliessen() -> void:
+	if merken and Spielstand.ist_erledigt(self):
+		return   # Gemerkt ist gemerkt
+	stellen(false)
+
+
+# Auf- oder zugehen: Die Stäbe versinken im Boden oder kommen heraus
+func stellen(auf: bool) -> void:
+	if auf == offen:
+		return
+	offen = auf
+	$CollisionShape2D.set_deferred("disabled", offen)
+	$Ton.play()
+	if tween:
+		tween.kill()   # Ein Schalter kann schneller umschalten, als das Gitter fährt
+	tween = create_tween()
+	tween.tween_property($Bilder, "scale:y", 0.0 if offen else 1.0, ZEIT)
+```
+
+- **Warum `Bilder` als eigener Node?** So kann ein einziger Tween beide Hälften gleichzeitig schrumpfen lassen. Die CollisionShape steht bewusst daneben. Die soll nicht mitschrumpfen, sondern ganz aus sein.
+- **`scale:y` auf 0:** Die Stäbe werden flacher und flacher, bis nichts mehr übrig ist. Das sieht aus, als würden sie im Boden versinken. Mit dem Doppelpunkt sprichst du nur einen Teil einer Eigenschaft an. Das kennst du schon von `modulate:a`.
+- **`merken`:** Ein Gitter mit `merken` schreibt sich wie eine Truhe in `erledigt` und ist nach dem Laden gleich offen. Ohne `merken` geht es wieder zu, wenn der Schalter losgelassen wird. Beides ist nützlich, darum ist es eine Einstellung im Inspector.
+- **Senkrechte Öffnungen:** Das Gitter steht quer, passt also in eine Öffnung oben oder unten. Für links und rechts drehst du es im Inspector: **Rotation** 90°. Das Bild dreht sich mit, die Kollisionsform auch.
+- **Wohin genau?** In die Mitte der Öffnung. Eine Öffnung oben im Raum `(x, y)` hat ihre Mitte bei `(x * 256 + 128, y * 176 + 8)`. Eine Öffnung in der rechten Wand liegt bei `(x * 256 + 248, y * 176 + 80)`, eine in der linken bei `(x * 256 + 8, y * 176 + 80)`.
+
+### 12.4 Der Bodenschalter
+
+Ein Schalter ist eine Platte im Boden. Er braucht kein Bild vom Kachelblatt. Wir malen ihn selbst, so wie die Blase.
+
+Neue Szene:
+
+1. Wurzel **Area2D**, Name `Schalter`. **Layer** leer, **Mask** `1` (Welt) und `2` (Held). Felsbrocken liegen auf Ebene 1, das kommt gleich.
+2. **Ordering → Z Index** `-1`. Dann liegt die Platte auf dem Boden, und der Held läuft darüber statt darunter. Der Boden selbst hat -2, die Wände -1. Schau in deinem Dungeon nach, ob das bei dir auch so ist.
+3. Kind **CollisionShape2D** mit einem Rechteck 8 × 8. Kleiner als die Platte: Der Held soll wirklich darauf stehen, nicht nur mit der Fußspitze an den Rand kommen.
+4. Kind **AudioStreamPlayer**, Name `Klick`. Bis du ein eigenes Geräusch hast (Übung 5), nimm `schritt.wav` mit **Pitch Scale** 0,5. Das klingt tief und schwer.
+5. Speichern als `schalter.tscn`, Skript `schalter.gd`:
+
+```gdscript
+extends Area2D
+
+# Ein Bodenschalter. Unten, solange der Held oder etwas Schweres darauf steht.
+
+signal gedrueckt
+signal losgelassen
+
+const GROESSE = 12.0
+const RAND = Color(0.16, 0.12, 0.1)
+const OBEN = Color(0.7, 0.62, 0.5)
+const UNTEN = Color(0.45, 0.4, 0.32)
+const KANTE = Color(0.35, 0.3, 0.24)
+
+var unten := false
+
+
+func _physics_process(_delta: float) -> void:
+	var belastet := get_overlapping_bodies().any(func(ding: Node2D) -> bool: return ding.is_in_group("held") or ding.is_in_group("schwer"))
+	if belastet == unten:
+		return
+	unten = belastet
+	queue_redraw()
+	if unten:
+		$Klick.play()
+		gedrueckt.emit()
+	else:
+		losgelassen.emit()
+
+
+# Eine Platte im Boden. Oben hat sie unten eine dunkle Kante, gedrückt ist sie flach und dunkler.
+func _draw() -> void:
+	var platte := Rect2(-GROESSE / 2, -GROESSE / 2, GROESSE, GROESSE)
+	draw_rect(platte, RAND)
+	if unten:
+		draw_rect(platte.grow(-1), UNTEN)
+	else:
+		draw_rect(platte.grow(-1), OBEN)
+		draw_rect(Rect2(platte.position.x + 1, platte.end.y - 3, GROESSE - 2, 2), KANTE)
+```
+
+- **Zwei Signale, kein Ziel:** Der Schalter weiß nicht, was er schaltet. Er sagt nur „gedrückt“ und „losgelassen“. Wer zuhört, entscheidet, was passiert. Darum kann derselbe Schalter ein Gitter öffnen, eine Truhe erscheinen lassen oder Musik spielen.
+- **`any()`** kennst du als Geschwister von `all()` aus der Belohnungstruhe: Ist **irgendeins** der Dinge auf mir der Held oder schwer?
+- **Warum nicht `body_entered`?** Das kommt einmal beim Betreten. Stehen zwei Dinge auf der Platte und eins geht, kommt `body_exited`, obwohl die Platte noch belastet ist. Jedes Bild nachzuzählen ist einfacher und kann sich nicht verzählen. Die Dornen machen es genauso.
+- **`platte.grow(-1)`:** ein Rechteck, das auf jeder Seite einen Pixel kleiner ist. So bleibt außen ein Rand stehen.
+- **`platte.end`:** die rechte untere Ecke. Die dunkle Kante unten lässt die Platte etwas hervorstehen. Gedrückt fehlt sie, dann ist die Platte flach.
+- **Wohin genau?** Auf die Mitte einer Bodenkachel: `(x * 256 + kx * 16 + 8, y * 176 + ky * 16 + 8)`. Dabei ist `kx` die Kachel von links (1 bis 14) und `ky` die Kachel von oben (1 bis 9).
+
+### 12.5 Schalter und Gitter verbinden
+
+Jetzt kommt etwas, das du noch nicht gemacht hast: zwei Dinge **im Dungeon** mit einem Signal verbinden. Bisher hast du Signale immer innerhalb einer Szene verbunden, zum Beispiel die Hurtbox mit ihrem Monster.
+
+1. Zieh `gitter.tscn` und `schalter.tscn` in den Dungeon.
+2. Klick im Dungeon auf den **Schalter**, dann rechts auf den Reiter **Node** (neben Inspector) → **Signals**.
+3. Doppelklick auf `gedrueckt()`. Im Fenster das **Gitter** auswählen. Bei **Receiver Method** `oeffnen` eintragen → **Connect**.
+4. Dasselbe für `losgelassen()` mit `schliessen`.
+
+Fertig. Im Szenenbaum hat der Schalter jetzt ein kleines Signal-Symbol. Godot hat sich in `dungeon.tscn` gemerkt: „Wenn dieser Schalter `gedrueckt` sagt, ruf bei diesem Gitter `oeffnen()` auf.“ Kein Code, kein `get_node`, kein `%`.
+
+- **Und wenn es die Funktion gar nicht gibt?** Dann legt Godot sie beim Verbinden an. Das ist praktisch bei `_on_..._entered`, hier aber ein Zeichen für einen Tippfehler. Steht nach dem Verbinden eine neue leere Funktion im Gitter, hast du dich vertippt.
+- **Mehrere Zuhörer:** Ein Signal darf mit beliebig vielen Dingen verbunden sein. Ein Schalter kann also zwei Gitter gleichzeitig öffnen.
+
+### 12.6 Der Felsbrocken
+
+Neue Szene:
+
+1. Wurzel **CharacterBody2D**, Name `Felsbrocken`, in die Gruppe `schwer`. **Motion Mode** auf **Floating**.
+2. **Collision → Layer** `1` (Welt): Für alle anderen ist er ein Stück Wand. **Mask** `1` (Welt), `3` (Gegner) und `5` (Gegnersperre). Er darf weder in eine Wand noch in ein Monster rutschen, und auch nicht aus dem Raum hinaus.
+3. Kind **Sprite2D**, Name `Bild`: `tilemap_packed.png`, **Hframes** 12, **Vframes** 11, **Frame** 56.
+4. Kind **CollisionShape2D** mit einem Rechteck 14 × 14. Nicht 16 × 16! Warum, steht unten.
+5. Kind **AudioStreamPlayer**, Name `Schieben`, vorerst mit `ruetteln.wav` und **Pitch Scale** 0,6.
+6. Speichern als `felsbrocken.tscn`, Skript `felsbrocken.gd`:
+
+```gdscript
+extends CharacterBody2D
+
+# Ein Felsbrocken, den der Held schieben kann. Immer genau eine Kachel weit.
+
+const KACHEL = 16
+const SCHUB_ZEIT = 0.4     # so lange muss der Held drücken, bis der Brocken nachgibt
+const RUTSCH_ZEIT = 0.3    # so lange rutscht er eine Kachel weit
+
+var schub_zeit := 0.0
+var schub_richtung := Vector2.ZERO
+var letzter_schub := 0     # in welchem Physik-Bild der Held zuletzt gedrückt hat
+var rutscht := false
+
+@onready var start_position := global_position
+
+
+func _ready() -> void:
+	%Camera2D.raumwechsel.connect(raum_gewechselt)
+
+
+# Der Held läuft dagegen. Das kommt jedes Bild, solange er drückt.
+func schieben(richtung: Vector2, delta: float) -> void:
+	if rutscht:
+		return
+	var bild := Engine.get_physics_frames()
+	# Andere Richtung oder eine Pause dazwischen? Dann fängt das Drücken von vorn an.
+	if richtung != schub_richtung or bild - letzter_schub > 1:
+		schub_zeit = 0.0
+	schub_richtung = richtung
+	letzter_schub = bild
+	schub_zeit += delta
+	# test_move: Würde ich auf dem Weg irgendwo anstoßen?
+	if schub_zeit >= SCHUB_ZEIT and not test_move(global_transform, richtung * KACHEL):
+		rutschen(richtung)
+
+
+func rutschen(richtung: Vector2) -> void:
+	rutscht = true
+	schub_zeit = 0.0
+	$Schieben.play()
+	var tween := create_tween()
+	tween.tween_property(self, "global_position", global_position + richtung * KACHEL, RUTSCH_ZEIT)
+	await tween.finished
+	rutscht = false
+
+
+# Hat der Held meinen Raum verlassen? Dann zurück an den Anfang, damit sich niemand festschieben kann.
+func raum_gewechselt(_richtung: Vector2i) -> void:
+	if %Camera2D.raum != %Camera2D.raum_von(start_position):
+		global_position = start_position
+```
+
+- **Erst drücken, dann rutschen:** Ohne `SCHUB_ZEIT` würde jeder Brocken sofort wegrutschen, sobald man ihn streift. Wer nur vorbeiläuft und an einer Ecke hängen bleibt, hätte das Rätsel kaputt gemacht. Im Original muss man sich auch kurz dagegenstemmen.
+- **`Engine.get_physics_frames()`:** zählt die Physik-Bilder seit dem Start, 60 pro Sekunde. Der Brocken merkt sich, in welchem Bild zuletzt gedrückt wurde. Ist das mehr als ein Bild her, hat der Held zwischendurch losgelassen, und die Zeit fängt von vorn an. So braucht der Brocken kein eigenes `_physics_process`, um das Loslassen zu bemerken.
+- **`test_move(global_transform, richtung * KACHEL)`:** Godot probiert die Bewegung nur aus, ohne den Brocken wirklich zu bewegen. Die Antwort ist `true`, wenn er dabei irgendwo anstoßen würde. Dann bleibt er stehen.
+- **Darum 14 × 14:** Ein Brocken mit 16 × 16 würde nach einer Kachel genau an der Wand anliegen. Godot rechnet mit einem winzigen Sicherheitsabstand, und „genau anliegen“ zählt dann schon als Anstoßen. Mit einem Pixel Luft auf jeder Seite klappt es. Sichtbar ist das nicht, das Bild bleibt 16 × 16.
+- **Warum ein Tween und kein `move_and_slide()`?** Der Brocken soll genau 16 Pixel weit rutschen, nicht 15,7. Der Tween landet genau da. Ob der Weg frei ist, hat `test_move` vorher schon geprüft.
+- **Zurück an den Anfang:** Ein Brocken in einer Ecke ist für immer verloren, und das Rätsel ist nicht mehr lösbar. Darum springt er zurück, sobald der Held den Raum verlässt. Das kennst du vom Original. Und weil der Held den Raum gerade nicht sieht, merkt niemand das Springen.
+
+### 12.7 Der Held schiebt
+
+In `held.gd`, in `laufen()` direkt nach `ecke_umrunden(richtung, delta)`:
+
+```gdscript
+	# Gegen etwas gelaufen, das man schieben kann? Dann drücken.
+	if richtung != Vector2.ZERO:
+		for i in get_slide_collision_count():
+			var ding := get_slide_collision(i).get_collider()
+			if ding.has_method("schieben"):
+				ding.schieben(richtung, delta)
+```
+
+- **`get_slide_collision(i).get_collider()`:** Bei jedem `move_and_slide()` merkt sich Godot, wogegen der Held gestoßen ist. Damit kommst du an das Ding selbst heran.
+- **`has_method("schieben")`:** dieselbe Idee wie bei `benutzen()`. Der Held muss nicht wissen, was ein Felsbrocken ist. Alles, was `schieben()` kann, lässt sich schieben. Eine schiebbare Kiste später braucht hier also keine neue Zeile.
+- **`richtung` statt `velocity`:** Steht der Held still, rutscht er vielleicht noch einen Hauch gegen den Brocken. Das soll nicht zählen. Gedrückt wird nur, solange eine Taste gedrückt ist.
+
+### 12.8 Der Wasserspeier
+
+Du hast schon Steingesichter in die Wände gemalt. Jetzt erwachen sie zum Leben. Frame 19 ist das Gesicht mit geschlossenem Mund, Frame 20 das gleiche mit grünem Sabber. Das passt perfekt zum Spucken.
+
+Neue Szene:
+
+1. Wurzel **Node2D**, Name `Wasserspeier`. Keine Kollision: Er sitzt in der Wand, und die Wand hat schon eine.
+2. Kind **Sprite2D**, Name `Bild`: `tilemap_packed.png`, **Hframes** 12, **Vframes** 11, **Frame** 19.
+3. Speichern als `wasserspeier.tscn`, Skript `wasserspeier.gd`:
+
+```gdscript
+extends Node2D
+
+# Ein steinernes Gesicht in der Wand. Spuckt Blasen nach dem Helden, solange er in seinem Raum ist.
+
+const BLASE = preload("res://blase.tscn")
+const BILD_RUHE = 19
+const BILD_SPUCKEN = 20
+const ABSTAND = 14   # so weit vor dem Gesicht entsteht die Blase, damit sie nicht gleich in der Wand platzt
+
+@export var blick := Vector2.DOWN   # dahin schaut das Gesicht aus der Wand heraus
+@export var pause := 2.0            # so viele Sekunden zwischen zwei Blasen
+@export var versatz := 0.0          # zusätzliche Wartezeit am Anfang, damit nicht alle gleichzeitig spucken
+
+@onready var zeit := pause + versatz   # bis zur nächsten Blase
+@onready var held: Node2D = get_tree().get_first_node_in_group("held")
+
+
+func _physics_process(delta: float) -> void:
+	if %Camera2D.raum != %Camera2D.raum_von(global_position):
+		zeit = pause + versatz   # Kommt der Held herein, hat er erst einmal etwas Zeit
+		return
+	zeit -= delta
+	if zeit <= 0:
+		zeit = pause
+		spucken()
+
+
+func spucken() -> void:
+	$Bild.frame = BILD_SPUCKEN
+	var blase := BLASE.instantiate()
+	blase.position = position + blick * ABSTAND
+	blase.richtung = blase.position.direction_to(held.global_position)
+	get_parent().add_child(blase)
+	await get_tree().create_timer(0.3, false).timeout
+	$Bild.frame = BILD_RUHE
+```
+
+- **Die Blase der Krabbe, noch einmal:** Sie fliegt geradeaus, platzt an Wänden, am Schwert und am Helden. Der Wasserspeier muss nur sagen, wo sie anfängt und wohin sie fliegt. So zahlt sich eine eigene Szene für die Blase aus.
+- **`@onready var zeit := pause + versatz`:** Eine normale Variable oben im Skript bekommt ihren Wert, **bevor** Godot die Zahlen aus dem Inspector einträgt. Sie würde also immer mit 2 rechnen, auch wenn du im Inspector 3 einstellst. Mit `@onready` kommt die Rechnung erst in `_ready()`, und dann stehen die Inspector-Werte schon fest. Dasselbe Problem hatte `start_leben` im Glibber, weißt du noch?
+- **`create_timer(0.3, false)`:** Das zweite `false` heißt: Der Timer läuft während einer Pause nicht weiter. Geht gerade ein Schild auf, sabbert der Wasserspeier eben etwas länger.
+- **Wohin genau?** Genau auf eine Wandkachel, zum Beispiel auf eins deiner gemalten Steingesichter. In der oberen Wand: `(x * 256 + kx * 16 + 8, y * 176 + 8)` mit **Blick** (0, 1). In der linken Wand ist der Blick (1, 0), in der rechten (-1, 0).
+- **Mehrere Wasserspeier in einem Raum:** Gib ihnen verschiedene **Versatz**-Werte, zum Beispiel 0, 0,7 und 1,4. Dann spucken sie nacheinander statt im Chor.
+
+### 12.9 Die Klingenfalle
+
+Die Klingenfalle wartet an ihrem Platz. Steht der Held mit ihr in einer Reihe oder Spalte, saust sie los, prallt an die Wand und kriecht langsam zurück. Man kann sie nicht besiegen, nur austricksen.
+
+Neue Szene:
+
+1. Wurzel **CharacterBody2D**, Name `Klingenfalle`. **Motion Mode** auf **Floating**.
+2. **Collision → Layer** `3` (Gegner), **Mask** `1` (Welt) und `5` (Gegnersperre).
+3. Kind **CollisionShape2D** mit einem Rechteck 12 × 12.
+4. Speichern als `klingenfalle.tscn`, Skript `klingenfalle.gd`:
+
+```gdscript
+extends CharacterBody2D
+
+# Eine Klingenfalle: wartet an ihrem Platz. Steht der Held mit ihr in einer Reihe oder Spalte, saust sie los.
+# Sie liegt auf der Ebene Gegner. Darum merkt die Hurtbox des Helden sie ganz von selbst.
+
+enum Zustand { WARTEN, ANGRIFF, ZURUECK }
+
+const ANGRIFF_TEMPO = 160.0
+const ZURUECK_TEMPO = 40.0
+const BREITE = 7.0      # so nah muss der Held an ihrer Reihe oder Spalte sein
+const STAHL = Color(0.78, 0.78, 0.84)
+const RAND = Color(0.16, 0.12, 0.16)
+
+@export var schaden := 2   # in halben Herzen
+
+var zustand := Zustand.WARTEN
+var richtung := Vector2.ZERO
+var drehung := 0.0   # so weit ist der Stern gerade gedreht
+
+@onready var start_position := global_position
+@onready var held: Node2D = get_tree().get_first_node_in_group("held")
+
+
+func _physics_process(delta: float) -> void:
+	match zustand:
+		Zustand.WARTEN:
+			velocity = Vector2.ZERO
+			if %Camera2D.raum == %Camera2D.raum_von(start_position):
+				zielen()
+		Zustand.ANGRIFF:
+			velocity = richtung * ANGRIFF_TEMPO
+			drehen(20 * delta)
+			if get_slide_collision_count() > 0:   # angestoßen: zurück an den Platz
+				zustand = Zustand.ZURUECK
+		Zustand.ZURUECK:
+			velocity = global_position.direction_to(start_position) * ZURUECK_TEMPO
+			drehen(5 * delta)
+			if global_position.distance_to(start_position) < 1:
+				global_position = start_position
+				zustand = Zustand.WARTEN
+	move_and_slide()
+
+
+# Steht der Held mit mir in einer Reihe oder Spalte? Dann los, auf ihn zu.
+func zielen() -> void:
+	var abstand := held.global_position - global_position
+	if abs(abstand.y) < BREITE:
+		richtung = Vector2(sign(abstand.x), 0)
+	elif abs(abstand.x) < BREITE:
+		richtung = Vector2(0, sign(abstand.y))
+	else:
+		return
+	zustand = Zustand.ANGRIFF
+
+
+func drehen(winkel: float) -> void:
+	drehung += winkel
+	queue_redraw()
+
+
+# Ein Stern aus Stahl mit acht Zacken. draw_set_transform dreht alles, was danach gemalt wird.
+func _draw() -> void:
+	draw_set_transform(Vector2.ZERO, drehung)
+	var zacken := PackedVector2Array()
+	for i in 16:
+		var laenge := 7.0 if i % 2 == 0 else 3.0   # abwechselnd Spitze und Kerbe
+		zacken.append(Vector2.from_angle(i * TAU / 16) * laenge)
+	draw_colored_polygon(zacken, STAHL)
+	zacken.append(zacken[0])   # damit der Rand ringsherum geschlossen ist
+	draw_polyline(zacken, RAND)
+	draw_circle(Vector2.ZERO, 1.5, RAND)
+```
+
+- **Kein Monster, trotzdem gefährlich:** Die Falle ist nicht in der Gruppe `monster`. Die Kamera weckt sie also nicht, und eine Belohnungstruhe wartet nicht auf sie. Das ist richtig so, denn besiegen kann man sie ja nicht. Trotzdem tut sie weh: Die Hurtbox des Helden schaut auf Ebene 3 und findet dort die Falle. `getroffen()` fragt nur nach `schaden` und `global_position`, und beides hat sie.
+- **Eine State Machine mit drei Zuständen**, wie in Kapitel 4. WARTEN schaut, ANGRIFF rast, ZURUECK kriecht.
+- **`sign()`** macht aus jeder Zahl -1, 0 oder 1. Aus dem Abstand zum Helden wird so eine Richtung: links oder rechts, oben oder unten.
+- **Ein Stern als Vieleck:** 16 Punkte im Kreis, abwechselnd weit draußen (7 Pixel, die Spitzen) und weiter innen (3 Pixel, die Kerben). `Vector2.from_angle(w)` ist ein Pfeil der Länge 1 in Richtung `w`. `draw_colored_polygon()` füllt die Form aus, `draw_polyline()` malt den Rand.
+- **`draw_set_transform(Vector2.ZERO, drehung)`:** „Alles, was ich ab jetzt male, ist um `drehung` gedreht.“ So dreht sich nur das Bild. Die Kollisionsform bleibt, wie sie ist. Sie ist ja ein Quadrat, und ein Quadrat, das sich dreht, würde beim Anstoßen merkwürdig hängen bleiben.
+- **Wohin?** In eine Ecke oder an eine Wand, dort wo sie ein Stück freie Bahn hat. Zwei Fallen, die aufeinander zurasen, stoßen übrigens nicht zusammen: Sie haben Ebene 3 nicht in der Mask und fliegen durcheinander hindurch. Das ist Absicht, sonst würden sie sich gegenseitig blockieren.
+
+### 12.10 Ein Rätselraum
+
+Jetzt alles zusammen, im leeren Raum (1, -5). Er hat Öffnungen rechts und unten.
+
+1. **Gitter:** Zieh `gitter.tscn` in die rechte Öffnung, auf (504, -800), **Rotation** 90°.
+2. **Schalter:** auf (344, -824).
+3. **Felsbrocken:** zwei Kacheln darunter, auf (344, -792).
+4. Schalter und Gitter verbinden wie in 12.5: `gedrueckt` → `oeffnen`, `losgelassen` → `schliessen`.
+
+Der Held kommt von unten herein, stellt sich unter den Brocken und drückt zweimal nach oben. Der Brocken rutscht auf den Schalter, es klickt, das Gitter versinkt. Weil `merken` an ist, bleibt es offen, auch wenn der Brocken später weitergeschoben wird.
+
+**Probier es auch einmal ohne Brocken:** Stell dich selbst auf den Schalter. Das Gitter geht auf. Steigst du herunter, geht es wieder zu. Dann musst du dich entscheiden: Soll `merken` aus sein, damit das Rätsel nur mit dem Brocken klappt? Oder ist es dir egal, wie der Spieler es löst? Beides ist in Ordnung. Im Original gibt es beides.
+
+### 12.11 Ausprobieren
+
+- [ ] Gegen den Felsbrocken laufen: Er bewegt sich erst nach einem kurzen Moment, dann genau eine Kachel weit.
+- [ ] Kurz drücken, loslassen, wieder kurz drücken: Er bewegt sich nicht. Das Drücken fängt jedes Mal von vorn an.
+- [ ] Den Brocken gegen die Wand schieben: Er bleibt davor stehen und rutscht nicht hinein.
+- [ ] Brocken auf den Schalter: Klick, das Gitter versinkt, du kommst durch.
+- [ ] Selbst auf den Schalter stellen: Das Gitter geht auf. Mit `merken` aus geht es beim Heruntersteigen wieder zu.
+- [ ] Den Brocken in eine Ecke schieben, Raum verlassen, zurückkommen: Der Brocken steht wieder am Anfang.
+- [ ] Gitter mit `merken` öffnen, sterben oder neu laden: Das Gitter ist sofort offen, ohne Geräusch.
+- [ ] Wasserspeier: Im Raum spuckt er alle zwei Sekunden eine Blase nach dir. Die Blase platzt am Schwert, an der Wand und am Felsbrocken. In einem anderen Raum ist Ruhe.
+- [ ] Klingenfalle: In ihre Reihe treten. Sie saust los, dreht sich schnell, trifft dich, prallt an die Wand und kriecht langsam zurück.
+- [ ] Das Schwert tut der Klingenfalle nichts. Sie lässt sich nicht besiegen.
+- [ ] Die Krabbe: Jeder Treffer macht den Balken kürzer. Wütend blinkt sie bei jedem Treffer rot.
+
+### 12.12 Was beim Bauen schiefging
+
+- **Der Wasserspeier spuckt sofort:** Zuerst stand oben `var zeit := 0.0`. Beim Betreten des Raums war die Zeit also schon abgelaufen, und die erste Blase flog, bevor der Held sich umsehen konnte. Jetzt beginnt `zeit` mit `pause + versatz`, und dafür braucht es `@onready` (12.8).
+- **Eine Zahl, die sich nicht ändern will:** Zum Testen wollte ich die Blasen zählen und habe dem Dungeon eine kleine Funktion mitgegeben: `func(n): blasen += 1`. Der Zähler blieb bei 0, obwohl der Held getroffen wurde. Eine solche Funktion ohne Namen (ein **Lambda**) bekommt eine **Kopie** einfacher Werte wie Zahlen. Sie zählt ihre Kopie hoch, nicht das Original. Mit einem Array oder Dictionary klappt es, weil dann beide dasselbe Ding in der Hand haben. Das ist dieselbe Idee wie bei `assign` und den Dictionaries im Spielstand.
+- **Der Held vor dem Brocken:** Steht der Held direkt unter dem Brocken, verdeckt sein Kopf den Brocken halb. Das ist richtig so. Wer weiter unten steht, ist näher an der Kamera und wird zuletzt gemalt. So sieht es auch bei den Säulen aus.
+
+### Übungsaufgaben zu Kapitel 12
+
+1. **Kampfraum (mittel):** Das Gitter kann mehr als nur Schalter. Gib ihm `@export var kampf := false`. Ein Kampfgitter steht beim Start offen, geht zu, sobald der Held seinen Raum betritt und dort noch Monster leben, und geht auf, wenn alle besiegt sind. Kommt dir das bekannt vor? Deine `Bosssperre` macht genau das. Bau das Gitter so, dass du die Bosssperre durch ein Kampfgitter ersetzen kannst. Denkfragen: Wann genau darf das Gitter zugehen? Was ist, wenn der Held noch mitten in der Öffnung steht? (Tipp: Der Held läuft nach dem Raumwechsel noch 24 Pixel weiter. Wann ist er damit fertig?)
+2. **Zwei Schalter (mittel):** Ein Gitter, das erst aufgeht, wenn **beide** Schalter gedrückt sind. Beide Schalter sind mit `oeffnen` und `schliessen` verbunden. Das Gitter zählt mit: `@export var schalter_noetig := 1` und eine Variable, die bei `oeffnen()` eins hoch und bei `schliessen()` eins runter zählt. Erst wenn sie `schalter_noetig` erreicht, geht es wirklich auf. Ein Rätsel dazu: zwei Schalter, ein Felsbrocken. Wie kommt man durch? (Der Held kann ja auch auf einem stehen.)
+3. **Die Ratte (mittel):** Frame 123 ist eine Ratte. Bau sie als neues Monster mit `extends Monster`. Sie läuft schnell an der Wand entlang und dreht an jeder Ecke ab, immer nach rechts. Den Helden beachtet sie nicht, aber wer ihr im Weg steht, wird gebissen. Tipp: `is_on_wall()` und `get_wall_normal()` hast du bei der Krabbe kennengelernt. Wenn die Wand vor ihr ist, dreht sie sich um 90°: `richtung = richtung.rotated(PI / 2)`. 🐀
+4. **Dunkler Raum (knifflig):** In einem Raum ist es stockdunkel. Man sieht nur einen hellen Kreis um den Helden. Dafür gibt es zwei Nodes:
+    - Ein **CanvasModulate** im Dungeon färbt alles dunkel, zum Beispiel mit der Farbe (0.05, 0.05, 0.1). Die Anzeige oben bleibt hell, weil sie auf einer eigenen **CanvasLayer** liegt.
+    - Ein **PointLight2D** am Helden macht es um ihn herum wieder hell. Als **Texture** nimmst du eine **New GradientTexture2D**, stellst **Fill** auf **Radial**, **Fill From** auf (0.5, 0.5) und **Fill To** auf (1, 0.5). Im **Gradient** darunter tauschst du die beiden Farben, sodass er links weiß und rechts schwarz ist. Dann leuchtet die Mitte, und nach außen wird es dunkel.
+
+    Das CanvasModulate darf nur in diesem einen Raum an sein. Wer schaltet es ein und aus? (Tipp: `raumwechsel` und `visible`.) Bonus: Fackeln an der Wand, die ihr eigenes kleines Licht haben.
+5. **Kratz und Klick (leicht):** Mach mit 🆓 jsfxr ein schweres Schaben für den Felsbrocken und ein dumpfes Klacken für den Schalter. Und für den Wasserspeier ein feuchtes „Ptoo“. Wo muss der `AudioStreamPlayer` für das Spucken hin, damit er nicht abbricht? (Er muss den Wasserspeier nicht überleben, der bleibt ja da. Aber was ist mit einer Blase, die beim Platzen ein Geräusch macht?) 💦
+6. **Nur einmal (leicht):** Im Original lassen sich viele Blöcke nur ein einziges Mal schieben, danach sitzen sie fest. Gib dem Felsbrocken `@export var nur_einmal := false`. Wo musst du ihn festhalten, und wo wieder lösen?
+
+Fertig? Committen und Bescheid geben. Dann kommt Kapitel 13: Optionen, Musik und der Web-Export.

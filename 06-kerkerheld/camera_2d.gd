@@ -53,7 +53,7 @@ func schieben(neu: Vector2i) -> void:
 	get_tree().paused = false
 	raumwechsel.emit(richtung)
 	%Karte.zeigen(raum)
-	if %Camera2D.raum_von(boss.global_position) == raum:
+	if raum_von(boss.global_position) == raum:
 		bossraum_betreten.emit()
 
 

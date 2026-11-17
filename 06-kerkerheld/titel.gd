@@ -47,14 +47,15 @@ func anzeigen() -> void:
 		text += ("> " if i == auswahl else "  ") + eintraege[i] + "\n"
 	$Menue.text = text
 	match eintraege[auswahl]:
-			"Weiter":
-				$Hinweis.text = ERKLAERUNG[eintraege[auswahl]] % [zeit, erkundet]
-			"Neues Spiel":
-				$Hinweis.text = ERKLAERUNG[eintraege[auswahl]]
-			"Iron Man":
-				$Hinweis.text = ERKLAERUNG[eintraege[auswahl]]
-				if ironman_bestzeit:
-					$Hinweis.text += "\nSchnellster eiserner Held: %s" % ironman_bestzeit
+		"Weiter":
+			$Hinweis.text = ERKLAERUNG[eintraege[auswahl]] % [zeit, erkundet]
+		"Neues Spiel":
+			$Hinweis.text = ERKLAERUNG[eintraege[auswahl]]
+		"Iron Man":
+			$Hinweis.text = ERKLAERUNG[eintraege[auswahl]]
+			if ironman_bestzeit:
+				$Hinweis.text += "\nSchnellster eiserner Held: %s" % ironman_bestzeit
+
 
 func starten(was: String) -> void:
 	Spielstand.iron_man = was == "Iron Man"

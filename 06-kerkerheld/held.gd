@@ -207,8 +207,9 @@ func _on_camera_2d_raumwechsel(wechselrichtung: Variant) -> void:
 	await tween.finished
 	if %Camera2D.raum_von(get_tree().get_first_node_in_group("boss").global_position) != %Camera2D.raum_von(global_position):
 		Spielstand.speichern(global_position)   # ganz im neuen Raum angekommen: speichern
-	else: 
-		Spielstand.speichern(Spielstand.startpunkt) # im Vorraum speichern
+	else:
+		Spielstand.speichern(Spielstand.startpunkt)   # vor dem Bossraum: der alte Startpunkt bleibt
+
 
 # Die Krone ist da: stehen bleiben, staunen, ab zum Abspann
 func gewinnen() -> void:

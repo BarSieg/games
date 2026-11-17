@@ -7,7 +7,7 @@ func _ready() -> void:
 	var text := ""
 	if Spielstand.iron_man:
 		text += "Ultimative Herausforderung geschafft!\n" 
-		var platzierung = Spielstand.ironman_platzierung + 1
+		var platzierung := Spielstand.ironman_platzierung + 1
 		if platzierung <= Spielstand.REKORDE_ANZAHL:
 			text += "Platz %d in der Bestenliste!\n" % platzierung
 		else:
@@ -26,7 +26,6 @@ func _ready() -> void:
 		if Spielstand.erkundet() < 100:
 			text += "\n\nDa fehlt noch was ...\nMit \"Weiter\" suchst du es."
 	$Ergebnis.text = text
-
 
 
 func _process(_delta: float) -> void:

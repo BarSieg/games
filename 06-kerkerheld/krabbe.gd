@@ -5,12 +5,13 @@ extends Monster
 enum Zustand { SEITWAERTS, ZIELEN, ANLAUF, STURM }
 
 const BLASE = preload("res://blase.tscn")
-const MAX_LEBEN = 4
+const MAX_LEBEN = 10
 const SEIT_TEMPO = 50.0
 const STURM_TEMPO = 150.0
 const FAECHER = [-0.35, 0.0, 0.35]   # drei Blasen, leicht gefächert (Winkel im Bogenmaß)
 const SCHONZEIT = 1.0                # so lange nach einem Treffer unverwundbar
 const LEBENSBALKENBREITE = 42.0
+const WUT = Color(1.0, 0.5, 0.8)
 
 @export var schaden := 2   # in halben Herzen
 
@@ -54,6 +55,11 @@ func wuetend() -> bool:
 	return leben <= MAX_LEBEN / 2.0
 
 
+# Weiß, oder rosa vor Wut
+func farbe() -> Color:
+	return WUT if wuetend() else Color.WHITE
+
+
 func _physics_process(delta: float) -> void:
 	zustand_zeit -= delta
 	schonzeit -= delta
@@ -83,8 +89,6 @@ func _physics_process(delta: float) -> void:
 			if get_slide_collision_count() > 0:   # gegen die Wand gerannt
 				global_position += get_wall_normal()
 				wechseln(Zustand.SEITWAERTS)
-	if wuetend():
-		$Bild.modulate = Color(1.0, 0.5, 0.8)
 	move_and_slide()
 
 
@@ -126,7 +130,7 @@ func _on_hurtbox_area_entered(_area: Area2D) -> void:
 	Engine.time_scale = 1.0
 	var tween := create_tween()
 	tween.tween_property($Bild, "modulate", Color.RED, 0.05)
-	tween.tween_property($Bild, "modulate", Color.WHITE, 0.2)
+	tween.tween_property($Bild, "modulate", farbe(), 0.2)
 	if leben <= 0:
 		sterben()
 	queue_redraw()
@@ -134,8 +138,8 @@ func _on_hurtbox_area_entered(_area: Area2D) -> void:
 
 func _draw() -> void:
 	# Lebensbalken
-	draw_rect(Rect2(Vector2(-LEBENSBALKENBREITE / 2.0,-30), Vector2(LEBENSBALKENBREITE,2)), Color(0.2, 0.2, 0.2))
-	draw_rect(Rect2(Vector2(-LEBENSBALKENBREITE / 2.0,-30), Vector2(leben * LEBENSBALKENBREITE / MAX_LEBEN, 2)), Color.RED)
+	draw_rect(Rect2(Vector2(-LEBENSBALKENBREITE / 2.0, -30), Vector2(LEBENSBALKENBREITE, 2)), Color(0.2, 0.2, 0.2))
+	draw_rect(Rect2(Vector2(-LEBENSBALKENBREITE / 2.0, -30), Vector2(leben * LEBENSBALKENBREITE / MAX_LEBEN, 2)), Color.RED)
 
 
 # Erst lange blinken, dann wie jedes Monster verschwinden
