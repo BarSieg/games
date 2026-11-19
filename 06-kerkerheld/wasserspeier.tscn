@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://753uu2r6ve0o"]
+
+[ext_resource type="Script" uid="uid://bwe4bt0gljflm" path="res://wasserspeier.gd" id="1_73lkl"]
+[ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="1_xylgi"]
+
+[node name="Wasserspeier" type="Node2D" unique_id=1615609043]
+script = ExtResource("1_73lkl")
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=1419550963]
+texture = ExtResource("1_xylgi")
+hframes = 12
+vframes = 11
+frame = 19

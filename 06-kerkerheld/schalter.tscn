@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://vfwm3mc8lchv"]
+
+[ext_resource type="Script" uid="uid://dmnsd5da5x0xu" path="res://schalter.gd" id="1_fxo7q"]
+[ext_resource type="AudioStream" uid="uid://b3j5sj16rxvbq" path="res://schritt.wav" id="2_iy2dh"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(8, 8)
+
+[node name="Schalter" type="Area2D" unique_id=2016088466]
+z_index = -1
+collision_layer = 0
+collision_mask = 3
+script = ExtResource("1_fxo7q")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=144289318]
+shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Klick" type="AudioStreamPlayer" parent="." unique_id=410915947]
+stream = ExtResource("2_iy2dh")
+pitch_scale = 0.5

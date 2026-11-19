@@ -35,6 +35,11 @@
 [ext_resource type="PackedScene" uid="uid://dy3vdfbr6hgfy" path="res://grabstein.tscn" id="32_gus3p"]
 [ext_resource type="PackedScene" uid="uid://dxc4hvtjfinap" path="res://krabbe.tscn" id="34_720ou"]
 [ext_resource type="PackedScene" uid="uid://cgbg2g3lbotnu" path="res://bosssperre.tscn" id="35_r86jo"]
+[ext_resource type="PackedScene" uid="uid://6ns1c02l8m6p" path="res://gitter.tscn" id="36_o1yoa"]
+[ext_resource type="PackedScene" uid="uid://vfwm3mc8lchv" path="res://schalter.tscn" id="37_3bptn"]
+[ext_resource type="PackedScene" uid="uid://c6324qeuhenk6" path="res://felsbrocken.tscn" id="38_s81fh"]
+[ext_resource type="PackedScene" uid="uid://753uu2r6ve0o" path="res://wasserspeier.tscn" id="39_4w0d0"]
+[ext_resource type="PackedScene" uid="uid://cy6a2c5wjcktn" path="res://klingenfalle.tscn" id="40_0m10i"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ou4rh"]
 texture = ExtResource("1_5grt3")
@@ -207,7 +212,7 @@ anchor_mode = 0
 script = ExtResource("2_q5kms")
 
 [node name="Held" parent="." unique_id=1612745786 instance=ExtResource("3_tgur7")]
-position = Vector2(129, 147)
+position = Vector2(324, -617)
 
 [node name="Anzeige" type="CanvasLayer" parent="." unique_id=541112382]
 
@@ -1041,7 +1046,7 @@ position = Vector2(121, 84)
 position = Vector2(-156, -778)
 
 [node name="Glibber31" parent="." unique_id=608732030 instance=ExtResource("6_uag5o")]
-position = Vector2(363, -618)
+position = Vector2(426, -594)
 
 [node name="Geist9" parent="." unique_id=1916130810 instance=ExtResource("9_tgur7")]
 position = Vector2(117, -642)
@@ -1401,4 +1406,27 @@ seiten = Array[String](["Das ist ein magisches Raum.", "Die Dornen machen keinen
 position = Vector2(536, -376)
 muenzen = 1
 
+[node name="Gitter" parent="." unique_id=1460600099 instance=ExtResource("36_o1yoa")]
+position = Vector2(384, -713)
+merken = false
+hinter_dem_helden = true
+
+[node name="Gitter2" parent="." unique_id=1849576009 instance=ExtResource("36_o1yoa")]
+position = Vector2(503, -800)
+rotation = -1.5707964
+
+[node name="Schalter" parent="." unique_id=2016088466 instance=ExtResource("37_3bptn")]
+position = Vector2(370, -797)
+
+[node name="Felsbrocken" parent="." unique_id=147644408 instance=ExtResource("38_s81fh")]
+position = Vector2(320, -766)
+
+[node name="Wasserspeier" parent="." unique_id=1615609043 instance=ExtResource("39_4w0d0")]
+position = Vector2(344, -696)
+
+[node name="Klingenfalle" parent="." unique_id=731662334 instance=ExtResource("40_0m10i")]
+position = Vector2(438, -833)
+
 [connection signal="raumwechsel" from="Camera2D" to="Held" method="_on_camera_2d_raumwechsel"]
+[connection signal="gedrueckt" from="Schalter" to="Gitter" method="oeffnen"]
+[connection signal="losgelassen" from="Schalter" to="Gitter" method="schliessen"]

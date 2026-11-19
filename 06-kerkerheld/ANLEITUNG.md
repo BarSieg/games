@@ -3524,9 +3524,9 @@ Das Gitter sieht aus wie ein kleiner Zaun und steht in einer Türöffnung. Geht 
 Neue Szene:
 
 1. Wurzel **StaticBody2D**, Name `Gitter`. **Collision → Layer** `1` (Welt), **Mask** leer. Es soll nur im Weg stehen und selbst nichts bemerken.
-2. Kind **Node2D**, Name `Bilder`. Darunter zwei **Sprite2D**, beide mit `tilemap_packed.png`, **Hframes** 12, **Vframes** 11:
-   - `Links`: **Position** (-8, 0), **Frame** 76
-   - `Rechts`: **Position** (8, 0), **Frame** 78
+2. Kind **Node2D**, Name `Bilder`, **Position** (0, 8). Das ist die Unterkante des Gitters. Darunter zwei **Sprite2D**, beide mit `tilemap_packed.png`, **Hframes** 12, **Vframes** 11:
+   - `Links`: **Position** (-8, -8), **Frame** 76
+   - `Rechts`: **Position** (8, -8), **Frame** 78
 3. Kind **CollisionShape2D** (direkt unter `Gitter`, nicht unter `Bilder`) mit einem Rechteck 32 × 16.
 4. Kind **AudioStreamPlayer**, Name `Ton`, mit `tuer_offen.wav`.
 5. Speichern als `gitter.tscn`, Skript `gitter.gd`:
@@ -3540,16 +3540,26 @@ const ZEIT = 0.3   # so lange dauert Auf- oder Zugehen
 
 @export var offen := false   # so steht es beim Start
 @export var merken := true   # einmal offen, immer offen. Auch nach dem Laden.
+@export var hinter_dem_helden := false   # steht offen, bis der Held im Raum ist. Dann geht es zu.
 
 var tween: Tween
 
 
 func _ready() -> void:
+	if hinter_dem_helden:
+		offen = true
+		get_tree().get_first_node_in_group("held").angekommen.connect(held_angekommen)
 	if merken and Spielstand.ist_erledigt(self):
 		offen = true
 	# Gleich richtig hinstellen, ohne Bewegung und ohne Ton
 	$Bilder.scale.y = 0.0 if offen else 1.0
 	$CollisionShape2D.disabled = offen
+
+
+# Der Held ist nach einem Raumwechsel fertig hereingelaufen. In meinen Raum?
+func held_angekommen() -> void:
+	if %Camera2D.raum == %Camera2D.raum_von(global_position):
+		schliessen()
 
 
 func oeffnen() -> void:
@@ -3578,10 +3588,24 @@ func stellen(auf: bool) -> void:
 ```
 
 - **Warum `Bilder` als eigener Node?** So kann ein einziger Tween beide Hälften gleichzeitig schrumpfen lassen. Die CollisionShape steht bewusst daneben. Die soll nicht mitschrumpfen, sondern ganz aus sein.
-- **`scale:y` auf 0:** Die Stäbe werden flacher und flacher, bis nichts mehr übrig ist. Das sieht aus, als würden sie im Boden versinken. Mit dem Doppelpunkt sprichst du nur einen Teil einer Eigenschaft an. Das kennst du schon von `modulate:a`.
+- **`scale:y` auf 0:** Die Stäbe werden flacher und flacher, bis nichts mehr übrig ist. Mit dem Doppelpunkt sprichst du nur einen Teil einer Eigenschaft an. Das kennst du schon von `modulate:a`.
+- **Warum `Bilder` auf (0, 8) und die Sprites auf -8?** Ein Node wächst und schrumpft immer um seinen eigenen Ursprung herum. Stünde `Bilder` in der Mitte, würden die Stäbe von oben und unten zur Mitte hin zusammenschrumpfen. So liegt der Ursprung an der Unterkante, die Stäbe schrumpfen nach unten und versinken im Boden. Die Sprites rücken um 8 nach oben, damit das Gitter trotzdem genau an seinem alten Platz steht. Das ist derselbe Trick wie beim atmenden Helden in Kapitel 2, nur mit einem Node statt mit **Offset**.
+- **`hinter_dem_helden`:** Das Gitter steht offen, bis der Held hereingelaufen ist, und geht dann hinter ihm zu. Ohne diese Einstellung müsste ein Gitter, das den Raum versperren soll, von Anfang an geschlossen sein. Dann sieht man es schon beim Hereinkommen, und der Held läuft trotzdem hindurch. Seine 24 Pixel nach dem Raumwechsel sind ein Tween, und ein Tween setzt `position` einfach, ohne nach Wänden zu fragen. Damit das Gitter weiß, wann er fertig ist, sagt der Held es mit einem neuen Signal (siehe unten). Geht das Gitter zu, steht der Held schon ganz im Raum.
 - **`merken`:** Ein Gitter mit `merken` schreibt sich wie eine Truhe in `erledigt` und ist nach dem Laden gleich offen. Ohne `merken` geht es wieder zu, wenn der Schalter losgelassen wird. Beides ist nützlich, darum ist es eine Einstellung im Inspector.
-- **Senkrechte Öffnungen:** Das Gitter steht quer, passt also in eine Öffnung oben oder unten. Für links und rechts drehst du es im Inspector: **Rotation** 90°. Das Bild dreht sich mit, die Kollisionsform auch.
+- **Senkrechte Öffnungen:** Das Gitter steht quer, passt also in eine Öffnung oben oder unten. Für links und rechts drehst du es im Inspector: **Rotation** 90° oder -90°. Das Bild dreht sich mit, die Kollisionsform auch. Die „Unterkante“ dreht sich aber ebenfalls: Bei 90° versinkt das Gitter nach links, bei -90° nach rechts. Probier aus, was dir besser gefällt.
 - **Wohin genau?** In die Mitte der Öffnung. Eine Öffnung oben im Raum `(x, y)` hat ihre Mitte bei `(x * 256 + 128, y * 176 + 8)`. Eine Öffnung in der rechten Wand liegt bei `(x * 256 + 248, y * 176 + 80)`, eine in der linken bei `(x * 256 + 8, y * 176 + 80)`.
+
+Und das neue Signal im Helden. In `held.gd` ganz oben unter `extends CharacterBody2D`:
+
+```gdscript
+signal angekommen   # nach einem Raumwechsel ganz im neuen Raum angekommen
+```
+
+In `_on_camera_2d_raumwechsel()` direkt nach `await tween.finished`:
+
+```gdscript
+	angekommen.emit()
+```
 
 ### 12.4 Der Bodenschalter
 
@@ -3926,7 +3950,7 @@ Der Held kommt von unten herein, stellt sich unter den Brocken und drückt zweim
 
 ### Übungsaufgaben zu Kapitel 12
 
-1. **Kampfraum (mittel):** Das Gitter kann mehr als nur Schalter. Gib ihm `@export var kampf := false`. Ein Kampfgitter steht beim Start offen, geht zu, sobald der Held seinen Raum betritt und dort noch Monster leben, und geht auf, wenn alle besiegt sind. Kommt dir das bekannt vor? Deine `Bosssperre` macht genau das. Bau das Gitter so, dass du die Bosssperre durch ein Kampfgitter ersetzen kannst. Denkfragen: Wann genau darf das Gitter zugehen? Was ist, wenn der Held noch mitten in der Öffnung steht? (Tipp: Der Held läuft nach dem Raumwechsel noch 24 Pixel weiter. Wann ist er damit fertig?)
+1. **Kampfraum (mittel):** Das Gitter kann mehr als nur Schalter. Gib ihm `@export var kampf := false`. Ein Kampfgitter steht beim Start offen, geht zu, sobald der Held seinen Raum betritt und dort noch Monster leben, und geht auf, wenn alle besiegt sind. Kommt dir das bekannt vor? Deine `Bosssperre` macht genau das. Bau das Gitter so, dass du die Bosssperre durch ein Kampfgitter ersetzen kannst. Denkfragen: Wann genau darf das Gitter zugehen? Was ist, wenn der Held noch mitten in der Öffnung steht? (Tipp: `hinter_dem_helden` aus 12.3 macht schon die Hälfte davon.)
 2. **Zwei Schalter (mittel):** Ein Gitter, das erst aufgeht, wenn **beide** Schalter gedrückt sind. Beide Schalter sind mit `oeffnen` und `schliessen` verbunden. Das Gitter zählt mit: `@export var schalter_noetig := 1` und eine Variable, die bei `oeffnen()` eins hoch und bei `schliessen()` eins runter zählt. Erst wenn sie `schalter_noetig` erreicht, geht es wirklich auf. Ein Rätsel dazu: zwei Schalter, ein Felsbrocken. Wie kommt man durch? (Der Held kann ja auch auf einem stehen.)
 3. **Die Ratte (mittel):** Frame 123 ist eine Ratte. Bau sie als neues Monster mit `extends Monster`. Sie läuft schnell an der Wand entlang und dreht an jeder Ecke ab, immer nach rechts. Den Helden beachtet sie nicht, aber wer ihr im Weg steht, wird gebissen. Tipp: `is_on_wall()` und `get_wall_normal()` hast du bei der Krabbe kennengelernt. Wenn die Wand vor ihr ist, dreht sie sich um 90°: `richtung = richtung.rotated(PI / 2)`. 🐀
 4. **Dunkler Raum (knifflig):** In einem Raum ist es stockdunkel. Man sieht nur einen hellen Kreis um den Helden. Dafür gibt es zwei Nodes:

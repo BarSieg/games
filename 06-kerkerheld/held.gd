@@ -1,5 +1,7 @@
 extends CharacterBody2D
 
+signal angekommen   # nach einem Raumwechsel ganz im neuen Raum angekommen
+
 enum Zustand { LAUFEN, ANGRIFF, GETROFFEN }
 
 const SPEED = 80.0
@@ -168,6 +170,13 @@ func laufen(delta: float) -> void:
 	move_and_slide()
 	ecke_umrunden(richtung, delta)
 
+	# Gegen etwas gelaufen, das man schieben kann? Dann drücken.
+	if richtung != Vector2.ZERO:
+		for i in get_slide_collision_count():
+			var ding := get_slide_collision(i).get_collider()
+			if ding.has_method("schieben"):
+				ding.schieben(richtung, delta)
+
 	if richtung != Vector2.ZERO:
 		steh_zeit = 0.0
 		geduld_zeit = 0.0
@@ -205,6 +214,7 @@ func _on_camera_2d_raumwechsel(wechselrichtung: Variant) -> void:
 	tween.tween_callback(schritt)
 	tween.tween_property(self, "position", position + 24 * Vector2(wechselrichtung), 0.1)
 	await tween.finished
+	angekommen.emit()
 	if %Camera2D.raum_von(get_tree().get_first_node_in_group("boss").global_position) != %Camera2D.raum_von(global_position):
 		Spielstand.speichern(global_position)   # ganz im neuen Raum angekommen: speichern
 	else:

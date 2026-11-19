@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://6ns1c02l8m6p"]
+
+[ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="1_444n3"]
+[ext_resource type="Script" uid="uid://dpuj7jiwn57v8" path="res://gitter.gd" id="1_c7kwl"]
+[ext_resource type="AudioStream" uid="uid://degp48c7d6oet" path="res://tuer_offen.wav" id="2_c7kwl"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(32, 16)
+
+[node name="Gitter" type="StaticBody2D" unique_id=1460600099]
+collision_mask = 0
+script = ExtResource("1_c7kwl")
+
+[node name="Bilder" type="Node2D" parent="." unique_id=94985115]
+position = Vector2(0, 8)
+
+[node name="Links" type="Sprite2D" parent="Bilder" unique_id=718537947]
+position = Vector2(-8, -8)
+texture = ExtResource("1_444n3")
+hframes = 12
+vframes = 11
+frame = 76
+
+[node name="Rechts" type="Sprite2D" parent="Bilder" unique_id=1509997031]
+position = Vector2(8, -8)
+texture = ExtResource("1_444n3")
+hframes = 12
+vframes = 11
+frame = 78
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1931798422]
+position = Vector2(0, 1)
+shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Ton" type="AudioStreamPlayer" parent="." unique_id=97919475]
+stream = ExtResource("2_c7kwl")

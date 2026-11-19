@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://cy6a2c5wjcktn"]
+
+[ext_resource type="Script" uid="uid://wj1oli5gcptl" path="res://klingenfalle.gd" id="1_x228d"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(12, 12)
+
+[node name="Klingenfalle" type="CharacterBody2D" unique_id=731662334]
+collision_layer = 4
+collision_mask = 17
+motion_mode = 1
+script = ExtResource("1_x228d")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1533274947]
+shape = SubResource("RectangleShape2D_s017u")
