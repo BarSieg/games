@@ -212,7 +212,7 @@ anchor_mode = 0
 script = ExtResource("2_q5kms")
 
 [node name="Held" parent="." unique_id=1612745786 instance=ExtResource("3_tgur7")]
-position = Vector2(324, -617)
+position = Vector2(861, 85)
 
 [node name="Anzeige" type="CanvasLayer" parent="." unique_id=541112382]
 
@@ -1272,7 +1272,7 @@ position = Vector2(189, -62)
 seiten = Array[String](["Willkommen im Kerker!", "Bitte nicht die Monster füttern.", "Die Monster füttern sich selbst."])
 
 [node name="Schild20" parent="." unique_id=1336979754 instance=ExtResource("24_tkvb4")]
-position = Vector2(984, -136)
+position = Vector2(938, -50)
 seiten = Array[String](["Hier wohnt niemand, der Geld für eine Tür will."])
 
 [node name="Saeule8" parent="." unique_id=1277274733 instance=ExtResource("4_kun6q")]
@@ -1427,6 +1427,46 @@ position = Vector2(344, -696)
 [node name="Klingenfalle" parent="." unique_id=731662334 instance=ExtResource("40_0m10i")]
 position = Vector2(438, -833)
 
+[node name="Fledermaus30" parent="." unique_id=510258117 instance=ExtResource("7_jqckn")]
+position = Vector2(943, -806)
+
+[node name="Gitter3" parent="." unique_id=1323610909 instance=ExtResource("36_o1yoa")]
+position = Vector2(896, -713)
+kampf = true
+
+[node name="Gitter4" parent="." unique_id=286289240 instance=ExtResource("36_o1yoa")]
+position = Vector2(777, -800)
+rotation = 1.5707964
+kampf = true
+
+[node name="Schalter2" parent="." unique_id=1945593598 instance=ExtResource("37_3bptn")]
+position = Vector2(808, -136)
+
+[node name="Schalter3" parent="." unique_id=92079063 instance=ExtResource("37_3bptn")]
+position = Vector2(984, -136)
+
+[node name="Wasserspeier2" parent="." unique_id=195832155 instance=ExtResource("39_4w0d0")]
+position = Vector2(728, -168)
+
+[node name="Gitter5" parent="." unique_id=1186346079 instance=ExtResource("36_o1yoa")]
+position = Vector2(896, -169)
+schalter_noetig = 2
+
+[node name="Felsbrocken2" parent="." unique_id=1434404044 instance=ExtResource("38_s81fh")]
+position = Vector2(984, -120)
+
+[node name="Gitter6" parent="." unique_id=678973929 instance=ExtResource("36_o1yoa")]
+position = Vector2(896, -185)
+schalter_noetig = 2
+
 [connection signal="raumwechsel" from="Camera2D" to="Held" method="_on_camera_2d_raumwechsel"]
 [connection signal="gedrueckt" from="Schalter" to="Gitter" method="oeffnen"]
 [connection signal="losgelassen" from="Schalter" to="Gitter" method="schliessen"]
+[connection signal="gedrueckt" from="Schalter2" to="Gitter5" method="oeffnen"]
+[connection signal="gedrueckt" from="Schalter2" to="Gitter6" method="oeffnen"]
+[connection signal="losgelassen" from="Schalter2" to="Gitter5" method="schliessen"]
+[connection signal="losgelassen" from="Schalter2" to="Gitter6" method="schliessen"]
+[connection signal="gedrueckt" from="Schalter3" to="Gitter5" method="oeffnen"]
+[connection signal="gedrueckt" from="Schalter3" to="Gitter6" method="oeffnen"]
+[connection signal="losgelassen" from="Schalter3" to="Gitter5" method="schliessen"]
+[connection signal="losgelassen" from="Schalter3" to="Gitter6" method="schliessen"]

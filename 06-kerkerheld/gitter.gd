@@ -7,30 +7,47 @@ const ZEIT = 0.3   # so lange dauert Auf- oder Zugehen
 @export var offen := false   # so steht es beim Start
 @export var merken := true   # einmal offen, immer offen. Auch nach dem Laden.
 @export var hinter_dem_helden := false # schliesst wenn der Held den Raum betritt
+@export var kampf := false #lässte den Helden rein, aber raus nur wenn keine Monster drinnen sind
+@export var schalter_noetig := 1
 
 var tween: Tween
-
+var monster_im_raum := []
+var schalter_aktiv := 0
 
 func _ready() -> void:
 	if merken and Spielstand.ist_erledigt(self):
 		offen = true
-	if hinter_dem_helden:
+	if hinter_dem_helden or kampf:
 		offen = true
 		get_tree().get_first_node_in_group("held").angekommen.connect(held_angekommen)
+	if kampf:
+		var alle_monster := get_tree().get_nodes_in_group("monster")
+		for monster in alle_monster:
+			if %Camera2D.raum_von(monster.position) == %Camera2D.raum_von(self.position):
+				monster_im_raum.append(monster)
 	# Gleich richtig hinstellen, ohne Bewegung und ohne Ton
 	$Bilder.scale.y = 0.0 if offen else 1.0
 	$CollisionShape2D.disabled = offen
 
 
+func _physics_process(delta: float) -> void:
+	if kampf:
+		if monster_im_raum.all(func(monster: Monster) -> bool: return monster.tot):
+			oeffnen()
+
+
 func oeffnen() -> void:
-	if merken:
-		Spielstand.erledigen(self)
-	stellen(true)
+	schalter_aktiv += 1
+	if schalter_aktiv == schalter_noetig:
+		if merken:
+			Spielstand.erledigen(self)
+		stellen(true)
 
 
 func schliessen() -> void:
 	if merken and Spielstand.ist_erledigt(self):
 		return   # Gemerkt ist gemerkt
+	schalter_aktiv = max(schalter_aktiv - 1, 0)
 	stellen(false)
 
 
