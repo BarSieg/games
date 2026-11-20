@@ -1,12 +1,14 @@
 extends Control
 
 const DUNGEON = "res://dungeon.tscn"
+const OPTIONEN = "res://optionen.tscn"
 
-# Was unter dem Menü steht, je nachdem, was gerade ausgewählt ist
+# Was unter dem Menü steht, je nachdem, was gerade ausgewählt ist. Jede Zeile wird einzeln übersetzt.
 const ERKLAERUNG = {
-	"Weiter": "Da weitermachen, wo du zuletzt einen Raum betreten hast.\n Spielzeit: %s   Fortschritt: %d%% ",
-	"Neues Spiel": "Wie im Original: Wer stirbt, steht am Eingang wieder auf. Monster auch.",
-	"Iron Man": "Tot ist tot. Für Monster und für dich.\n Kein Speichern, kein Weiter.",
+	"Weiter": ["Da weitermachen, wo du zuletzt einen Raum betreten hast.", "Spielzeit: %s   Fortschritt: %d%%"],
+	"Neues Spiel": ["Wie im Original: Wer stirbt, steht am Eingang wieder auf. Monster auch."],
+	"Iron Man": ["Tot ist tot. Für Monster und für dich.", "Kein Speichern, kein Weiter."],
+	"Optionen": ["Sprache und wie der Held läuft."],
 }
 
 var eintraege: Array[String] = []
@@ -22,7 +24,7 @@ func _ready() -> void:
 		var stats := Spielstand.load_stats_fuer_titel()
 		zeit = Spielstand.formatiere_spielzeit(stats[0] / 1000.0)
 		erkundet = stats[1]
-	eintraege.append_array(["Neues Spiel", "Iron Man"])
+	eintraege.append_array(["Neues Spiel", "Iron Man", "Optionen"])
 	var ironman := Spielstand.rekorde_laden()
 	if ironman.size() > 0:
 		ironman_bestzeit = Spielstand.formatiere_spielzeit(ironman[0] / 1000.0)
@@ -44,20 +46,23 @@ func _process(_delta: float) -> void:
 func anzeigen() -> void:
 	var text := ""
 	for i in eintraege.size():
-		text += ("> " if i == auswahl else "  ") + eintraege[i] + "\n"
+		text += ("> " if i == auswahl else "  ") + tr(eintraege[i]) + "\n"
 	$Menue.text = text
+	# Jede Zeile der Erklärung einzeln übersetzen, dann zusammenkleben
+	var zeilen: Array = ERKLAERUNG[eintraege[auswahl]].map(func(zeile: String) -> String: return tr(zeile))
 	match eintraege[auswahl]:
 		"Weiter":
-			$Hinweis.text = ERKLAERUNG[eintraege[auswahl]] % [zeit, erkundet]
-		"Neues Spiel":
-			$Hinweis.text = ERKLAERUNG[eintraege[auswahl]]
+			zeilen[1] = zeilen[1] % [zeit, erkundet]
 		"Iron Man":
-			$Hinweis.text = ERKLAERUNG[eintraege[auswahl]]
 			if ironman_bestzeit:
-				$Hinweis.text += "\nSchnellster eiserner Held: %s" % ironman_bestzeit
+				zeilen.append(tr("Schnellster eiserner Held: %s") % ironman_bestzeit)
+	$Hinweis.text = "\n".join(zeilen)
 
 
 func starten(was: String) -> void:
+	if was == "Optionen":
+		get_tree().change_scene_to_file(OPTIONEN)
+		return
 	Spielstand.iron_man = was == "Iron Man"
 	match was:
 		"Weiter":
@@ -70,4 +75,5 @@ func starten(was: String) -> void:
 			Spielstand.neues_spiel()
 		"Iron Man":
 			Spielstand.neues_spiel()   # der normale Spielstand bleibt, wie er ist
+		
 	get_tree().change_scene_to_file(DUNGEON)

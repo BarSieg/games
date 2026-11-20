@@ -2,7 +2,7 @@ extends CharacterBody2D
 
 signal angekommen   # nach einem Raumwechsel ganz im neuen Raum angekommen
 
-enum Zustand { LAUFEN, ANGRIFF, GETROFFEN }
+enum Zustand { LAUFEN, ANGRIFF, GETROFFEN, HEREIN }
 
 const SPEED = 80.0
 const BESCHLEUNIGUNG = 1200.0   # Pixel pro Sekunde², volle Geschwindigkeit nach 1/15 Sekunde
@@ -93,14 +93,16 @@ func _physics_process(delta: float) -> void:
 			rueckstoss_zeit -= delta
 			if rueckstoss_zeit <= 0:
 				zustand = Zustand.LAUFEN
+		Zustand.HEREIN:
+			pass   # Der Tween aus dem Raumwechsel bewegt ihn. Die Tasten haben so lange Pause.
 	angriff_buffer_timer -= delta
 	treffer_pruefen(delta)
 
 
 # Pause: zeigt den Stand und fragt, ob es zurück zum Titelbild geht
 func pause_menue() -> void:
-	var stand := "Erkundet: %d %%   Zeit: %s\n" % [Spielstand.erkundet(), Spielstand.formatiere_spielzeit()]
-	if not await Dialog.frage(stand + "Zurück zum Titelbildschirm?"):
+	var stand := tr("Erkundet: %d %%   Zeit: %s") % [Spielstand.erkundet(), Spielstand.formatiere_spielzeit()]
+	if not await Dialog.frage(stand + "\n" + tr("Zurück zum Titelbildschirm?")):
 		return
 	if Spielstand.iron_man and not await Dialog.frage("Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildschirm?"):
 		return
@@ -167,7 +169,8 @@ func angreifen() -> void:
 
 
 func laufen(delta: float) -> void:
-	var richtung := vier_richtungen(Input.get_vector("links", "rechts", "hoch", "runter"))
+	var eingabe := Input.get_vector("links", "rechts", "hoch", "runter")
+	var richtung := eingabe if Optionen.schraeg else vier_richtungen(eingabe)
 	velocity = velocity.move_toward(richtung * SPEED, BESCHLEUNIGUNG * delta)
 	move_and_slide()
 	ecke_umrunden(richtung, delta)
@@ -177,7 +180,7 @@ func laufen(delta: float) -> void:
 		for i in get_slide_collision_count():
 			var ding := get_slide_collision(i).get_collider()
 			if ding.has_method("schieben"):
-				ding.schieben(richtung, delta)
+				ding.schieben(vier_richtungen(richtung), delta)
 
 	if richtung != Vector2.ZERO:
 		steh_zeit = 0.0
@@ -222,13 +225,13 @@ func schalte_taschenlampe(ein: bool) -> void:
 func _on_camera_2d_raumwechsel(wechselrichtung: Variant) -> void:
 	# Die Dunkelheit schaltet der Held
 	var dunkler_raum := pruefe_dunkelheit()
+	# Hereinlaufen: Der Tween bewegt, die Animation macht die Schritte, die Tasten haben Pause
+	zustand = Zustand.HEREIN
+	$AnimationPlayer.play("laufen")
 	var tween := create_tween()
-	tween.tween_property(self, "position", position + 6 * Vector2(wechselrichtung), 0.1)
-	tween.tween_callback(schritt)
-	tween.tween_property(self, "position", position + 18 * Vector2(wechselrichtung), 0.2)
-	tween.tween_callback(schritt)
-	tween.tween_property(self, "position", position + 24 * Vector2(wechselrichtung), 0.1)
+	tween.tween_property(self, "position", position + 24 * Vector2(wechselrichtung), 0.4)
 	await tween.finished
+	zustand = Zustand.LAUFEN
 	angekommen.emit()
 	schalte_taschenlampe(dunkler_raum)
 	if %Camera2D.raum_von(get_tree().get_first_node_in_group("boss").global_position) != %Camera2D.raum_von(global_position):

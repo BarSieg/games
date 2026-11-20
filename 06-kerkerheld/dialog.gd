@@ -19,10 +19,11 @@ func _ready() -> void:
 
 # Eine oder mehrere Seiten nacheinander zeigen. Solange steht das Spiel still.
 func zeigen(neue_seiten: Array[String], sprecher: String = "") -> void:
-	seiten = neue_seiten.duplicate()
+	# Jede Seite übersetzen. Steht sie nicht in texte.csv, bleibt sie, wie sie ist.
+	seiten.assign(neue_seiten.map(func(seite: String) -> String: return tr(seite)))
 	get_tree().paused = true
 	show()
-	%Sprechername.text = sprecher + ":"
+	%Sprechername.text = tr(sprecher) + ":"
 	$Sprecherrahmen.visible = (sprecher != "")
 	# Der Rahmen wächst und schrumpft mit dem Namen: Textbreite plus 3 Pixel Luft links und rechts
 	var breite: float = %Sprechername.get_minimum_size().x + 6
@@ -65,7 +66,9 @@ func _process(delta: float) -> void:
 	# Blinkender Pfeil: Es geht weiter
 	$Rahmen/Weiter.visible = alles_da() and not (letzte and fragend) and Time.get_ticks_msec() % 600 < 300
 	$Rahmen/Auswahl.visible = alles_da() and letzte and fragend
-	$Rahmen/Auswahl.text = "> Ja     Nein" if antwort else "   Ja  > Nein"
+	var ja := tr("Ja")
+	var nein := tr("Nein")
+	$Rahmen/Auswahl.text = "> %s     %s" % [ja, nein] if antwort else "   %s  > %s" % [ja, nein]
 
 
 func alles_da() -> bool:

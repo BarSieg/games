@@ -6,13 +6,13 @@ extends Control
 func _ready() -> void:
 	var text := ""
 	if Spielstand.iron_man:
-		text += "Ultimative Herausforderung geschafft!\n" 
+		text += tr("Ultimative Herausforderung geschafft!") + "\n"
 		var platzierung := Spielstand.ironman_platzierung + 1
 		if platzierung <= Spielstand.REKORDE_ANZAHL:
-			text += "Platz %d in der Bestenliste!\n" % platzierung
+			text += tr("Platz %d in der Bestenliste!") % platzierung + "\n"
 		else:
-			text += "Aber die anderen waren schneller als du...\n"
-		text += "\nDie Liste der schnellsten Helden:\n"
+			text += tr("Aber die anderen waren schneller als du...") + "\n"
+		text += "\n" + tr("Die Liste der schnellsten Helden:") + "\n"
 		var rekorde := Spielstand.rekorde_laden()
 		var rekorde_sekunden: Array = rekorde.map(func(x): return x / 1000.0)
 		for i in rekorde.size():
@@ -21,10 +21,11 @@ func _ready() -> void:
 			else:
 				text += "%d. %s\n" % [i+1, Spielstand.formatiere_spielzeit(rekorde_sekunden[i])]
 	else:
-		text += "Zeit: %s\nErkundet: %d %%\n" % [Spielstand.formatiere_spielzeit(), Spielstand.erkundet()]
-		text += "Gestorben: %d-mal" % Spielstand.gestorben
+		text += tr("Zeit: %s") % Spielstand.formatiere_spielzeit() + "\n"
+		text += tr("Erkundet: %d %%") % Spielstand.erkundet() + "\n"
+		text += tr("Gestorben: %d-mal") % Spielstand.gestorben
 		if Spielstand.erkundet() < 100:
-			text += "\n\nDa fehlt noch was ...\nMit \"Weiter\" suchst du es."
+			text += "\n\n" + tr("Da fehlt noch was ...") + "\n" + tr("Mit \"Weiter\" suchst du es.")
 	$Ergebnis.text = text
 
 

@@ -25,7 +25,7 @@ func benutzen() -> void:
 	if ware == Gegenstand.Art.HERZ and Spielstand.leben == Spielstand.max_leben:
 		Dialog.zeigen(["Du bist kerngesund. Komm wieder, wenn dich was gebissen hat."], NPC_Name)
 	else:
-		var ja: bool = await Dialog.frage("%s für %d Münzen?" % [Gegenstand.NAMEN[ware], preis], NPC_Name)
+		var ja: bool = await Dialog.frage(tr("%s für %d Münzen?") % [tr(Gegenstand.NAMEN[ware]), preis], NPC_Name)
 		if not ja:
 			Dialog.zeigen(["Gucken kostet nichts. Noch nicht."], NPC_Name)
 		elif not Spielstand.verbrauchen(Gegenstand.Art.MUENZE, preis):

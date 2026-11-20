@@ -1253,11 +1253,11 @@ seiten = Array[String](["Dieses Schild wurde von einem Monster aufgestellt. Gehe
 
 [node name="Schild6" parent="." unique_id=1568853872 instance=ExtResource("24_tkvb4")]
 position = Vector2(-488, -152)
-seiten = Array[String](["Das Schwert kann gebrochen werden, wenn du mit ihm auf Steine schägst..."])
+seiten = Array[String](["Das Schwert kann gebrochen werden, wenn du mit ihm auf Steine schlägst..."])
 
 [node name="Schild7" parent="." unique_id=1273979879 instance=ExtResource("24_tkvb4")]
 position = Vector2(488, -152)
-seiten = Array[String](["Wie man richtig Geister jagt. Ein bildliche Einleitung für Beginner.", "1) Drehe mit dem Rücken zu dem Geist und bück dich ein wenig.", "2) Warte, bis der Geist näher kommt.", "3) Spring in einem Salto über den Geist, jetzt bist di hinter ihm.", "4) Schnapp ihn dir mit den bloßen Händen!", "Oder war das ein anderes Spiel?..."])
+seiten = Array[String](["Wie man richtig Geister jagt. Eine bildliche Einleitung für Beginner.", "1) Dreh dich mit dem Rücken zum Geist und bück dich ein wenig.", "2) Warte, bis der Geist näher kommt.", "3) Spring in einem Salto über den Geist, jetzt bist du hinter ihm.", "4) Schnapp ihn dir mit den bloßen Händen!", "Oder war das ein anderes Spiel?..."])
 
 [node name="Schild8" parent="." unique_id=2132037046 instance=ExtResource("24_tkvb4")]
 position = Vector2(1192, -120)
@@ -1297,7 +1297,7 @@ seiten = Array[String](["Dornen. Nicht drauftreten.", "Ehrlich. Nicht drauftrete
 
 [node name="Schild17" parent="." unique_id=686371600 instance=ExtResource("24_tkvb4")]
 position = Vector2(728, -744)
-seiten = Array[String](["Manche Monster haben mehr Leben als die anderen.", "Aber sie sehen genau so aus..."])
+seiten = Array[String](["Manche Monster haben mehr Leben als die anderen.", "Aber sie sehen genauso aus..."])
 
 [node name="Schild18" parent="." unique_id=1262623246 instance=ExtResource("24_tkvb4")]
 position = Vector2(-40, -616)
@@ -1313,7 +1313,7 @@ seiten = Array[String](["Hier wohnt niemand, der Geld für eine Tür will."])
 
 [node name="Schild21" parent="." unique_id=1845776464 instance=ExtResource("24_tkvb4")]
 position = Vector2(744, -504)
-seiten = Array[String](["Das ist ein magisches Raum.", "Die Dornen machen keinen Schaden.", "Drüberlaufen kannst du trotzdem nicht."])
+seiten = Array[String](["Das ist ein magischer Raum.", "Die Dornen machen keinen Schaden.", "Drüberlaufen kannst du trotzdem nicht."])
 
 [node name="Schild22" parent="." unique_id=1433310076 instance=ExtResource("24_tkvb4")]
 position = Vector2(488, 120)
@@ -1321,7 +1321,7 @@ seiten = Array[String](["Ich kann alles zurückstellen, aber du darfst nicht zus
 
 [node name="Schild23" parent="." unique_id=371569450 instance=ExtResource("24_tkvb4")]
 position = Vector2(280, -856)
-seiten = Array[String](["Da ist ein Schalter in der Mitte des Raums"])
+seiten = Array[String](["Da ist ein Schalter in der Mitte des Raums."])
 
 [node name="Fundstueck" parent="." unique_id=1125213161 instance=ExtResource("25_ojnyd")]
 position = Vector2(-40, 56)
