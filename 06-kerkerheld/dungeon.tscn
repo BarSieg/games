@@ -40,6 +40,7 @@
 [ext_resource type="PackedScene" uid="uid://c6324qeuhenk6" path="res://felsbrocken.tscn" id="38_s81fh"]
 [ext_resource type="PackedScene" uid="uid://753uu2r6ve0o" path="res://wasserspeier.tscn" id="39_4w0d0"]
 [ext_resource type="PackedScene" uid="uid://cy6a2c5wjcktn" path="res://klingenfalle.tscn" id="40_0m10i"]
+[ext_resource type="PackedScene" uid="uid://cn632qqslcbfh" path="res://ratte.tscn" id="41_jx8yd"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ou4rh"]
 texture = ExtResource("1_5grt3")
@@ -1458,6 +1459,9 @@ position = Vector2(984, -120)
 [node name="Gitter6" parent="." unique_id=678973929 instance=ExtResource("36_o1yoa")]
 position = Vector2(896, -185)
 schalter_noetig = 2
+
+[node name="Ratte" parent="." unique_id=2051621397 instance=ExtResource("41_jx8yd")]
+position = Vector2(945, 41)
 
 [connection signal="raumwechsel" from="Camera2D" to="Held" method="_on_camera_2d_raumwechsel"]
 [connection signal="gedrueckt" from="Schalter" to="Gitter" method="oeffnen"]

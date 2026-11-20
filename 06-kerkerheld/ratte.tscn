@@ -1,0 +1,78 @@
+[gd_scene format=3 uid="uid://cn632qqslcbfh"]
+
+[ext_resource type="Script" uid="uid://dgye1hbbipn1" path="res://ratte.gd" id="1_28sq2"]
+[ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="2_ppkyi"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
+size = Vector2(7, 4)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0orc7"]
+size = Vector2(8, 8)
+
+[sub_resource type="Animation" id="Animation_28sq2"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Bild:skew")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="Animation" id="Animation_ppkyi"]
+resource_name = "laufen"
+length = 0.19999999999999998
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Bild:skew")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [0.0, -0.3490658503988659]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_6tg6x"]
+_data = {
+&"RESET": SubResource("Animation_28sq2"),
+&"laufen": SubResource("Animation_ppkyi")
+}
+
+[node name="Ratte" type="CharacterBody2D" unique_id=2051621397 groups=["monster"]]
+collision_layer = 4
+collision_mask = 21
+motion_mode = 1
+script = ExtResource("1_28sq2")
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=944522355]
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("2_ppkyi")
+hframes = 12
+vframes = 11
+frame = 123
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=767133987]
+position = Vector2(-0.5, 1)
+shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Hurtbox" type="Area2D" parent="." unique_id=1927964964]
+collision_layer = 0
+collision_mask = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox" unique_id=445987122]
+shape = SubResource("RectangleShape2D_0orc7")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1392569567]
+libraries/ = SubResource("AnimationLibrary_6tg6x")
+autoplay = &"laufen"
+
+[connection signal="area_entered" from="Hurtbox" to="." method="_on_hurtbox_area_entered"]
