@@ -23,7 +23,12 @@ func _ready() -> void:
 	else:
 		text += tr("Zeit: %s") % Spielstand.formatiere_spielzeit() + "\n"
 		text += tr("Erkundet: %d %%") % Spielstand.erkundet() + "\n"
-		text += tr("Gestorben: %d-mal") % Spielstand.gestorben
+		if Spielstand.gestorben == 0:
+			text += tr("Gestorben: nie!")
+		elif Spielstand.gestorben == 1:
+			text += tr("Gestorben: 1-mal")
+		else:
+			text += tr("Gestorben: %d-mal") % Spielstand.gestorben
 		if Spielstand.erkundet() < 100:
 			text += "\n\n" + tr("Da fehlt noch was ...") + "\n" + tr("Mit \"Weiter\" suchst du es.")
 	$Ergebnis.text = text

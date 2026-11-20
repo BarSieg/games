@@ -32,7 +32,7 @@ func _ready() -> void:
 	$CollisionShape2D.disabled = offen
 
 
-func _physics_process(delta: float) -> void:
+func _physics_process(_delta: float) -> void:
 	if kampf:
 		if monster_im_raum.all(func(monster: Monster) -> bool: return monster.tot):
 			oeffnen()

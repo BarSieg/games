@@ -1,112 +1,119 @@
-keys,de,en
-KARTE,KARTE,MAP
-INVENTAR,INVENTAR,INVENTORY
-LEBEN,LEBEN,LIFE
-KERKERHELD,KERKERHELD,DUNGEON HERO
-DER KERKER IST BEFREIT!,DER KERKER IST BEFREIT!,THE DUNGEON IS FREED!
-OPTIONEN,OPTIONEN,OPTIONS
-Weiter,Weiter,Continue
-Neues Spiel,Neues Spiel,New Game
-Iron Man,Iron Man,Iron Man
-Optionen,Optionen,Options
-"Da weitermachen, wo du zuletzt einen Raum betreten hast.","Da weitermachen, wo du zuletzt einen Raum betreten hast.",Continue where you last entered a room.
-Spielzeit: %s   Fortschritt: %d%%,Spielzeit: %s   Fortschritt: %d%%,Play time: %s   Progress: %d%%
-"Wie im Original: Wer stirbt, steht am Eingang wieder auf. Monster auch.","Wie im Original: Wer stirbt, steht am Eingang wieder auf. Monster auch.",Like the original: Whoever dies gets back up at the entrance. Monsters too.
-Tot ist tot. Für Monster und für dich.,Tot ist tot. Für Monster und für dich.,Dead is dead. For monsters and for you.
-"Kein Speichern, kein Weiter.","Kein Speichern, kein Weiter.","No saving, no continuing."
-Schnellster eiserner Held: %s,Schnellster eiserner Held: %s,Fastest iron hero: %s
-Sprache und wie der Held läuft.,Sprache und wie der Held läuft.,Language and how the hero walks.
-Dein altes Spiel wird gelöscht. Wirklich?,Dein altes Spiel wird gelöscht. Wirklich?,Your old game will be deleted. Really?
-Sprache,Sprache,Language
-Schräg laufen,Schräg laufen,Walk diagonally
-Zurück,Zurück,Back
-an,an,on
-aus,aus,off
-Links und rechts wechseln die Sprache.,Links und rechts wechseln die Sprache.,Left and right switch the language.
-Im Original läuft der Held nur in vier Richtungen. Mit „an“ geht es auch schräg.,Im Original läuft der Held nur in vier Richtungen. Mit „an“ geht es auch schräg.,"In the original, the hero only walks in four directions. Turn this on to walk diagonally too."
-Zurück zum Titelbildschirm.,Zurück zum Titelbildschirm.,Back to the title screen.
-Ja,Ja,Yes
-Nein,Nein,No
-Erkundet: %d %%   Zeit: %s,Erkundet: %d %%   Zeit: %s,Explored: %d %%   Time: %s
-Zurück zum Titelbildschirm?,Zurück zum Titelbildschirm?,Back to the title screen?
-Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildschirm?,Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildschirm?,Iron Man does not save. All progress will be lost. The hero dies. Back to the title screen?
-Tot ist tot.,Tot ist tot.,Dead is dead.
-Hier endet die Geschichte des eisernen Helden.,Hier endet die Geschichte des eisernen Helden.,This is where the story of the iron hero ends.
-Die Kerkerkrone! Der Kerker ist befreit.,Die Kerkerkrone! Der Kerker ist befreit.,The Dungeon Crown! The dungeon is free.
-Ultimative Herausforderung geschafft!,Ultimative Herausforderung geschafft!,Ultimate challenge complete!
-Platz %d in der Bestenliste!,Platz %d in der Bestenliste!,Rank %d on the leaderboard!
-Aber die anderen waren schneller als du...,Aber die anderen waren schneller als du...,But the others were faster than you...
-Die Liste der schnellsten Helden:,Die Liste der schnellsten Helden:,The fastest heroes:
-Zeit: %s,Zeit: %s,Time: %s
-Erkundet: %d %%,Erkundet: %d %%,Explored: %d %%
-Gestorben: %d-mal,Gestorben: %d-mal,Died: %d times
-Da fehlt noch was ...,Da fehlt noch was ...,Something is still missing ...
-"Mit ""Weiter"" suchst du es.","Mit ""Weiter"" suchst du es.","Use ""Continue"" to look for it."
-Händler,Händler,Merchant
-"Du bist kerngesund. Komm wieder, wenn dich was gebissen hat.","Du bist kerngesund. Komm wieder, wenn dich was gebissen hat.",You're fit as a fiddle. Come back when something has bitten you.
-%s für %d Münzen?,%s für %d Münzen?,%s for %d coins?
-Gucken kostet nichts. Noch nicht.,Gucken kostet nichts. Noch nicht.,Looking is free. For now.
-"Das reicht nicht. Komm wieder, wenn du flüssig bist.","Das reicht nicht. Komm wieder, wenn du flüssig bist.",That's not enough. Come back when you're flush.
-Gute Wahl! Umtausch ausgeschlossen.,Gute Wahl! Umtausch ausgeschlossen.,Good choice! No refunds.
-Ein Schlüssel,Ein Schlüssel,A key
-Der Masterschlüssel,Der Masterschlüssel,The master key
-Die Karte,Die Karte,The map
-Der Kompass,Der Kompass,The compass
-Ein Herz,Ein Herz,A heart
-Ein Herzcontainer,Ein Herzcontainer,A heart container
-Eine Münze,Eine Münze,A coin
-Die Kerkerkrone,Die Kerkerkrone,The Dungeon Crown
-Willkommen! Alles muss raus!,Willkommen! Alles muss raus!,Welcome! Everything must go!
-Wirklich alles. Ich zieh um. Der Vermieter ist ein Drache.,Wirklich alles. Ich zieh um. Der Vermieter ist ein Drache.,Really everything. I'm moving. My landlord is a dragon.
-Alter Mann,Alter Mann,Old man
-"Es ist gefährlich, allein zu gehen!","Es ist gefährlich, allein zu gehen!",It's dangerous to go alone!
-Nimm das hier.,Nimm das hier.,Take this.
-Was denn noch? Mehr hab ich nicht.,Was denn noch? Mehr hab ich nicht.,What else? That's all I have.
-Verärgerter Mann,Verärgerter Mann,Angry man
-Du hast meine Tür kaputt gemacht! Das macht 20 Münzen.,Du hast meine Tür kaputt gemacht! Das macht 20 Münzen.,You broke my door! That'll be 20 coins.
-Mach nicht noch mehr Sachen kaputt!,Mach nicht noch mehr Sachen kaputt!,Don't break anything else!
-Grabstein,Grabstein,Gravestone
-Hier ruhen %d Helden. Alle sahen aus wie du...,Hier ruhen %d Helden. Alle sahen aus wie du...,Here lie %d heroes. They all looked like you...
-Lotosstein,Lotosstein,Lotus stone
-Willst du deinen gesamten Fortschritt zurücksetzen und von vorne anfangen?,Willst du deinen gesamten Fortschritt zurücksetzen und von vorne anfangen?,Do you want to reset all your progress and start over?
-Hier könnte Ihre Werbung stehen.,Hier könnte Ihre Werbung stehen.,Your ad could be here.
-"Achtung, Glibber! Bitte nicht füttern.","Achtung, Glibber! Bitte nicht füttern.","Caution, blobs! Please don't feed them."
-Links: Ausgang. Rechts: auch Ausgang. Oben: ebenfalls Ausgang.,Links: Ausgang. Rechts: auch Ausgang. Oben: ebenfalls Ausgang.,Left: exit. Right: also exit. Up: exit as well.
-Schilder dürfen hier lügen.,Schilder dürfen hier lügen.,Signs are allowed to lie here.
-Dieses Schild wurde von einem Monster aufgestellt. Gehen Sie weiter. Hier gibt es nichts zu sehen.,Dieses Schild wurde von einem Monster aufgestellt. Gehen Sie weiter. Hier gibt es nichts zu sehen.,This sign was put up by a monster. Move along. Nothing to see here.
-"Das Schwert kann gebrochen werden, wenn du mit ihm auf Steine schlägst...","Das Schwert kann gebrochen werden, wenn du mit ihm auf Steine schlägst...",The sword may break if you hit rocks with it...
-Wie man richtig Geister jagt. Eine bildliche Einleitung für Beginner.,Wie man richtig Geister jagt. Eine bildliche Einleitung für Beginner.,How to hunt ghosts properly. An illustrated introduction for beginners.
-1) Dreh dich mit dem Rücken zum Geist und bück dich ein wenig.,1) Dreh dich mit dem Rücken zum Geist und bück dich ein wenig.,1) Turn your back to the ghost and bend over a little.
-"2) Warte, bis der Geist näher kommt.","2) Warte, bis der Geist näher kommt.",2) Wait until the ghost comes closer.
-"3) Spring in einem Salto über den Geist, jetzt bist du hinter ihm.","3) Spring in einem Salto über den Geist, jetzt bist du hinter ihm.",3) Do a somersault over the ghost. Now you are behind it.
-4) Schnapp ihn dir mit den bloßen Händen!,4) Schnapp ihn dir mit den bloßen Händen!,4) Grab it with your bare hands!
-Oder war das ein anderes Spiel?...,Oder war das ein anderes Spiel?...,Or was that a different game?...
-Hier gibt es nichts zu sehen.,Hier gibt es nichts zu sehen.,Nothing to see here.
-Magst du keine Glibber?,Magst du keine Glibber?,Don't like blobs?
-Vielleicht kochst du sie falsch?,Vielleicht kochst du sie falsch?,Maybe you're cooking them wrong?
-Töpfe zerschlagen ist Sachbeschädigung.,Töpfe zerschlagen ist Sachbeschädigung.,Smashing pots is vandalism.
-Aber wer soll dich hier verhaften?,Aber wer soll dich hier verhaften?,But who's going to arrest you down here?
-Nicht jede Truhe ist eine Truhe.,Nicht jede Truhe ist eine Truhe.,Not every chest is a chest.
-Manche Truhen sind hungrig.,Manche Truhen sind hungrig.,Some chests are hungry.
-Diese Truhe ist garantiert echt!,Diese Truhe ist garantiert echt!,This chest is guaranteed genuine!
-"Truhen, die nach dem Kampf erscheinen, haben nur Lampenfieber.","Truhen, die nach dem Kampf erscheinen, haben nur Lampenfieber.",Chests that appear after a fight just have stage fright.
-Dieses Schild hat keine Botschaft.,Dieses Schild hat keine Botschaft.,This sign has no message.
-Danke fürs Lesen.,Danke fürs Lesen.,Thanks for reading.
-Letzte Chance zum Umkehren.,Letzte Chance zum Umkehren.,Last chance to turn back.
-Die vorletzte war das letzte Schild.,Die vorletzte war das letzte Schild.,The second-to-last one was the last sign.
-Dornen. Nicht drauftreten.,Dornen. Nicht drauftreten.,Spikes. Don't step on them.
-Ehrlich. Nicht drauftreten.,Ehrlich. Nicht drauftreten.,Seriously. Don't step on them.
-"… Du bist draufgetreten, oder?","… Du bist draufgetreten, oder?","… You stepped on them, didn't you?"
-Manche Monster haben mehr Leben als die anderen.,Manche Monster haben mehr Leben als die anderen.,Some monsters have more health than others.
-Aber sie sehen genauso aus...,Aber sie sehen genauso aus...,But they look exactly the same...
-Fledermäuse sind blind. Sie finden dich trotzdem.,Fledermäuse sind blind. Sie finden dich trotzdem.,Bats are blind. They find you anyway.
-"Wir wissen auch nicht, wie.","Wir wissen auch nicht, wie.",We don't know how either.
-Willkommen im Kerker!,Willkommen im Kerker!,Welcome to the dungeon!
-Bitte nicht die Monster füttern.,Bitte nicht die Monster füttern.,Please don't feed the monsters.
-Die Monster füttern sich selbst.,Die Monster füttern sich selbst.,The monsters feed themselves.
-"Hier wohnt niemand, der Geld für eine Tür will.","Hier wohnt niemand, der Geld für eine Tür will.",Nobody who wants money for a door lives here.
-Das ist ein magischer Raum.,Das ist ein magischer Raum.,This is a magic room.
-Die Dornen machen keinen Schaden.,Die Dornen machen keinen Schaden.,The spikes do no damage.
-Drüberlaufen kannst du trotzdem nicht.,Drüberlaufen kannst du trotzdem nicht.,You still can't walk over them.
-"Ich kann alles zurückstellen, aber du darfst nicht zuschauen.","Ich kann alles zurückstellen, aber du darfst nicht zuschauen.","I can put everything back, but you're not allowed to watch."
-Da ist ein Schalter in der Mitte des Raums.,Da ist ein Schalter in der Mitte des Raums.,There is a switch in the middle of the room.
+keys,de,en,fr
+KARTE,KARTE,MAP,CARTE
+INVENTAR,INVENTAR,INVENTORY,INVENTAIRE
+LEBEN,LEBEN,LIFE,VIE
+KERKERHELD,KERKERHELD,DUNGEON HERO,HÉROS DU DONJON
+DER KERKER IST BEFREIT!,DER KERKER IST BEFREIT!,THE DUNGEON IS FREED!,LE DONJON EST LIBÉRÉ !
+OPTIONEN,OPTIONEN,OPTIONS,OPTIONS
+Weiter,Weiter,Continue,Continuer
+Neues Spiel,Neues Spiel,New Game,Nouvelle partie
+Iron Man,Iron Man,Iron Man,Iron Man
+Optionen,Optionen,Options,Options
+"Da weitermachen, wo du zuletzt einen Raum betreten hast.","Da weitermachen, wo du zuletzt einen Raum betreten hast.",Continue where you last entered a room.,Reprends là où tu t'étais arrêté en entrant dans une pièce.
+Spielzeit: %s   Fortschritt: %d%%,Spielzeit: %s   Fortschritt: %d%%,Play time: %s   Progress: %d%%,Durée de jeu : %s   Progression : %d%%
+"Wie im Original: Wer stirbt, steht am Eingang wieder auf. Monster auch.","Wie im Original: Wer stirbt, steht am Eingang wieder auf. Monster auch.",Like the original: Whoever dies gets back up at the entrance. Monsters too.,"Comme dans la version originale : si tu meurs, tu réapparais à l'entrée. Les monstres aussi."
+Tot ist tot. Für Monster und für dich.,Tot ist tot. Für Monster und für dich.,Dead is dead. For monsters and for you.,Mort signifie mort. Pour les monstres comme pour toi.
+"Kein Speichern, kein Weiter.","Kein Speichern, kein Weiter.","No saving, no continuing.","Pas de sauvegarde, pas de « Continuer »."
+Schnellster eiserner Held: %s,Schnellster eiserner Held: %s,Fastest iron hero: %s,Héros de fer le plus rapide : %s
+Sprache und wie der Held läuft.,Sprache und wie der Held läuft.,Language and how the hero walks.,Langue et direction de déplacement du héros.
+Dein altes Spiel wird gelöscht. Wirklich?,Dein altes Spiel wird gelöscht. Wirklich?,Your old game will be deleted. Really?,Ton ancienne partie sera supprimée. Vraiment ?
+Sprache,Sprache,Language,Langue
+Schräg laufen,Schräg laufen,Walk diagonally,Se déplacer en diagonale
+Zurück,Zurück,Back,Retour
+an,an,on,Activé
+aus,aus,off,Désactivé
+Links und rechts wechseln die Sprache.,Links und rechts wechseln die Sprache.,Left and right switch the language.,Les flèches gauche et droite permettent de changer de langue.
+Im Original läuft der Held nur in vier Richtungen. Mit „an“ geht es auch schräg.,Im Original läuft der Held nur in vier Richtungen. Mit „an“ geht es auch schräg.,"In the original, the hero only walks in four directions. Turn this on to walk diagonally too.","Dans la version originale, le héros ne se déplace que dans quatre directions. Avec « activé », il peut aussi se déplacer en diagonale."
+Zurück zum Titelbildschirm.,Zurück zum Titelbildschirm.,Back to the title screen.,Retour à l'écran titre.
+Ja,Ja,Yes,Oui
+Nein,Nein,No,Non
+Erkundet: %d %%   Zeit: %s,Erkundet: %d %%   Zeit: %s,Explored: %d %%   Time: %s,Exploré : %d %%   Temps : %s
+Zurück zum Titelbildschirm?,Zurück zum Titelbildschirm?,Back to the title screen?,Retour à l'écran titre ?
+Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildschirm?,Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildschirm?,Iron Man does not save. All progress will be lost. The hero dies. Back to the title screen?,Iron Man ne sauvegarde pas l'état de la partie. Toute la progression est perdue. Le héros meurt. Retour à l'écran titre ?
+Tot ist tot.,Tot ist tot.,Dead is dead.,"Mort, c'est mort."
+Hier endet die Geschichte des eisernen Helden.,Hier endet die Geschichte des eisernen Helden.,This is where the story of the iron hero ends.,C’est ici que s’achève l’histoire du héros de fer.
+Die Kerkerkrone! Der Kerker ist befreit.,Die Kerkerkrone! Der Kerker ist befreit.,The Dungeon Crown! The dungeon is free.,La couronne du donjon ! Le donjon est libéré.
+Ultimative Herausforderung geschafft!,Ultimative Herausforderung geschafft!,Ultimate challenge complete!,Défi ultime relevé !
+Platz %d in der Bestenliste!,Platz %d in der Bestenliste!,Rank %d on the leaderboard!,%de place au classement !
+Aber die anderen waren schneller als du...,Aber die anderen waren schneller als du...,But the others were faster than you...,Mais les autres ont été plus rapides que toi…
+Die Liste der schnellsten Helden:,Die Liste der schnellsten Helden:,The fastest heroes:,La liste des héros les plus rapides :
+Zeit: %s,Zeit: %s,Time: %s,Temps : %s
+Erkundet: %d %%,Erkundet: %d %%,Explored: %d %%,Exploré : %d %%
+Gestorben: nie!,Gestorben: nie!,Died: never!,Mort : jamais !
+Gestorben: 1-mal,Gestorben: 1-mal,Died: once,Mort : 1 fois
+Gestorben: %d-mal,Gestorben: %d-mal,Died: %d times,Mort : %d fois
+Da fehlt noch was ...,Da fehlt noch was ...,Something is still missing ...,Il manque encore quelque chose…
+"Mit ""Weiter"" suchst du es.","Mit ""Weiter"" suchst du es.","Use ""Continue"" to look for it.",Clique sur « Continuer » pour le trouver.
+Händler,Händler,Merchant,Marchand
+"Du bist kerngesund. Komm wieder, wenn dich was gebissen hat.","Du bist kerngesund. Komm wieder, wenn dich was gebissen hat.",You're fit as a fiddle. Come back when something has bitten you.,Tu es en pleine forme. Reviens quand quelque chose t’aura mordu.
+%s für %d Münzen?,%s für %d Münzen?,%s for %d coins?,%s pour %d pièces ?
+Gucken kostet nichts. Noch nicht.,Gucken kostet nichts. Noch nicht.,Looking is free. For now.,Regarder ne coûte rien. Pas encore.
+"Das reicht nicht. Komm wieder, wenn du flüssig bist.","Das reicht nicht. Komm wieder, wenn du flüssig bist.",That's not enough. Come back when you're flush.,Ce n’est pas suffisant. Reviens quand tu auras de l’argent.
+Gute Wahl! Umtausch ausgeschlossen.,Gute Wahl! Umtausch ausgeschlossen.,Good choice! No refunds.,Bon choix ! Aucun échange possible.
+Ein Schlüssel,Ein Schlüssel,A key,Une clé
+Der Masterschlüssel,Der Masterschlüssel,The master key,La clé passe-partout
+Die Karte,Die Karte,The map,La carte
+Der Kompass,Der Kompass,The compass,La boussole
+Ein Herz,Ein Herz,A heart,Un cœur
+Ein Herzcontainer,Ein Herzcontainer,A heart container,Un conteneur de cœurs
+Eine Münze,Eine Münze,A coin,Une pièce
+Die Kerkerkrone,Die Kerkerkrone,The Dungeon Crown,La couronne du donjon
+Willkommen! Alles muss raus!,Willkommen! Alles muss raus!,Welcome! Everything must go!,Bienvenue ! Il faut tout vider !
+Wirklich alles. Ich zieh um. Der Vermieter ist ein Drache.,Wirklich alles. Ich zieh um. Der Vermieter ist ein Drache.,Really everything. I'm moving. My landlord is a dragon.,Vraiment tout. Je déménage. Le propriétaire est un vrai tyran.
+Alter Mann,Alter Mann,Old man,Vieil homme
+"Es ist gefährlich, allein zu gehen!","Es ist gefährlich, allein zu gehen!",It's dangerous to go alone!,C'est dangereux d'y aller tout seul !
+Nimm das hier.,Nimm das hier.,Take this.,Prends ça.
+Was denn noch? Mehr hab ich nicht.,Was denn noch? Mehr hab ich nicht.,What else? That's all I have.,Quoi d'autre ? Je n'ai rien d'autre.
+Verärgerter Mann,Verärgerter Mann,Angry man,Homme en colère
+Du hast meine Tür kaputt gemacht! Das macht 20 Münzen.,Du hast meine Tür kaputt gemacht! Das macht 20 Münzen.,You broke my door! That'll be 20 coins.,Tu as cassé ma porte ! Ça te fera 20 pièces.
+Mach nicht noch mehr Sachen kaputt!,Mach nicht noch mehr Sachen kaputt!,Don't break anything else!,Ne casse pas d'autres choses !
+Grabstein,Grabstein,Gravestone,Pierre tombale
+Hier ruhen %d Helden. Alle sahen aus wie du...,Hier ruhen %d Helden. Alle sahen aus wie du...,Here lie %d heroes. They all looked like you...,Ici reposent %d héros. Ils te ressemblaient tous…
+Lotosstein,Lotosstein,Lotus stone,Pierre de Lotus
+Willst du deinen gesamten Fortschritt zurücksetzen und von vorne anfangen?,Willst du deinen gesamten Fortschritt zurücksetzen und von vorne anfangen?,Do you want to reset all your progress and start over?,Veux-tu réinitialiser toute ta progression et recommencer depuis le début ?
+Hier könnte Ihre Werbung stehen.,Hier könnte Ihre Werbung stehen.,Your ad could be here.,Votre publicité pourrait figurer ici.
+"Achtung, Glibber! Bitte nicht füttern.","Achtung, Glibber! Bitte nicht füttern.","Caution, blobs! Please don't feed them.","Attention, la boue gluante ! Ne pas nourrir, s’il vous plaît."
+Links: Ausgang. Rechts: auch Ausgang. Oben: ebenfalls Ausgang.,Links: Ausgang. Rechts: auch Ausgang. Oben: ebenfalls Ausgang.,Left: exit. Right: also exit. Up: exit as well.,À gauche : sortie. À droite : sortie également. En haut : sortie aussi.
+Schilder dürfen hier lügen.,Schilder dürfen hier lügen.,Signs are allowed to lie here.,"Ici, les panneaux ont le droit de mentir."
+Dieses Schild wurde von einem Monster aufgestellt. Gehen Sie weiter. Hier gibt es nichts zu sehen.,Dieses Schild wurde von einem Monster aufgestellt. Gehen Sie weiter. Hier gibt es nichts zu sehen.,This sign was put up by a monster. Move along. Nothing to see here.,Ce panneau a été installé par un monstre. Continuez votre chemin. Il n’y a rien à voir ici.
+"Das Schwert kann gebrochen werden, wenn du mit ihm auf Steine schlägst...","Das Schwert kann gebrochen werden, wenn du mit ihm auf Steine schlägst...",The sword may break if you hit rocks with it...,L’épée peut se casser si tu frappes des pierres avec…
+Wie man richtig Geister jagt. Eine bildliche Einleitung für Beginner.,Wie man richtig Geister jagt. Eine bildliche Einleitung für Beginner.,How to hunt ghosts properly. An illustrated introduction for beginners.,Comment chasser correctement les fantômes. Une introduction illustrée pour les débutants.
+1) Dreh dich mit dem Rücken zum Geist und bück dich ein wenig.,1) Dreh dich mit dem Rücken zum Geist und bück dich ein wenig.,1) Turn your back to the ghost and bend over a little.,1) Tourne-toi dos au fantôme et penche-toi légèrement en avant.
+"2) Warte, bis der Geist näher kommt.","2) Warte, bis der Geist näher kommt.",2) Wait until the ghost comes closer.,2) Attends que le fantôme s'approche.
+"3) Spring in einem Salto über den Geist, jetzt bist du hinter ihm.","3) Spring in einem Salto über den Geist, jetzt bist du hinter ihm.",3) Do a somersault over the ghost. Now you are behind it.,"3) Saute par-dessus le fantôme en faisant un saut périlleux, tu te retrouves alors derrière lui."
+4) Schnapp ihn dir mit den bloßen Händen!,4) Schnapp ihn dir mit den bloßen Händen!,4) Grab it with your bare hands!,4) Attrape-le à mains nues !
+Oder war das ein anderes Spiel?...,Oder war das ein anderes Spiel?...,Or was that a different game?...,Ou était-ce un autre jeu ?...
+Hier gibt es nichts zu sehen.,Hier gibt es nichts zu sehen.,Nothing to see here.,Il n'y a rien à voir ici.
+Magst du keine Glibber?,Magst du keine Glibber?,Don't like blobs?,Tu n'aimes pas les glibbers ?
+Vielleicht kochst du sie falsch?,Vielleicht kochst du sie falsch?,Maybe you're cooking them wrong?,Peut-être que tu ne les cuisines pas comme il faut ?
+Töpfe zerschlagen ist Sachbeschädigung.,Töpfe zerschlagen ist Sachbeschädigung.,Smashing pots is vandalism.,"Casser des casseroles, c'est un délit de dégradation de biens."
+Aber wer soll dich hier verhaften?,Aber wer soll dich hier verhaften?,But who's going to arrest you down here?,Mais qui va t'arrêter ici ?
+Nicht jede Truhe ist eine Truhe.,Nicht jede Truhe ist eine Truhe.,Not every chest is a chest.,Tous les coffres ne sont pas des coffres.
+Manche Truhen sind hungrig.,Manche Truhen sind hungrig.,Some chests are hungry.,Certains coffres ont faim.
+Diese Truhe ist garantiert echt!,Diese Truhe ist garantiert echt!,This chest is guaranteed genuine!,"Ce coffre est authentique, c'est garanti !"
+"Truhen, die nach dem Kampf erscheinen, haben nur Lampenfieber.","Truhen, die nach dem Kampf erscheinen, haben nur Lampenfieber.",Chests that appear after a fight just have stage fright.,Les coffres qui apparaissent après le combat ont juste le trac.
+Dieses Schild hat keine Botschaft.,Dieses Schild hat keine Botschaft.,This sign has no message.,Ce panneau ne contient aucun message.
+Danke fürs Lesen.,Danke fürs Lesen.,Thanks for reading.,Merci de votre lecture.
+Letzte Chance zum Umkehren.,Letzte Chance zum Umkehren.,Last chance to turn back.,Dernière chance de faire demi-tour.
+Die vorletzte war das letzte Schild.,Die vorletzte war das letzte Schild.,The second-to-last one was the last sign.,L'avant-dernier panneau était le dernier.
+Dornen. Nicht drauftreten.,Dornen. Nicht drauftreten.,Spikes. Don't step on them.,Épines. Ne marchez pas dessus.
+Ehrlich. Nicht drauftreten.,Ehrlich. Nicht drauftreten.,Seriously. Don't step on them.,Sérieusement. Ne marchez pas dessus.
+"… Du bist draufgetreten, oder?","… Du bist draufgetreten, oder?","… You stepped on them, didn't you?","… Tu as marché dessus, n'est-ce pas ?"
+Manche Monster haben mehr Leben als die anderen.,Manche Monster haben mehr Leben als die anderen.,Some monsters have more health than others.,Certains monstres ont plus de vies que les autres.
+Aber sie sehen genauso aus...,Aber sie sehen genauso aus...,But they look exactly the same...,Mais ils ont exactement le même air…
+Fledermäuse sind blind. Sie finden dich trotzdem.,Fledermäuse sind blind. Sie finden dich trotzdem.,Bats are blind. They find you anyway.,Les chauves-souris sont aveugles. Elles te trouvent quand même.
+"Wir wissen auch nicht, wie.","Wir wissen auch nicht, wie.",We don't know how either.,Nous ne savons pas non plus comment.
+Willkommen im Kerker!,Willkommen im Kerker!,Welcome to the dungeon!,Bienvenue dans le donjon !
+Bitte nicht die Monster füttern.,Bitte nicht die Monster füttern.,Please don't feed the monsters.,Merci de ne pas nourrir les monstres.
+Die Monster füttern sich selbst.,Die Monster füttern sich selbst.,The monsters feed themselves.,Les monstres se nourrissent tout seuls.
+"Hier wohnt niemand, der Geld für eine Tür will.","Hier wohnt niemand, der Geld für eine Tür will.",Nobody who wants money for a door lives here.,Personne ne vit ici qui demande de l’argent pour une porte.
+Das ist ein magischer Raum.,Das ist ein magischer Raum.,This is a magic room.,C’est une pièce magique.
+Die Dornen machen keinen Schaden.,Die Dornen machen keinen Schaden.,The spikes do no damage.,Les épines ne font pas de mal.
+Drüberlaufen kannst du trotzdem nicht.,Drüberlaufen kannst du trotzdem nicht.,You still can't walk over them.,Mais tu ne peux quand même pas marcher dessus.
+"Ich kann alles zurückstellen, aber du darfst nicht zuschauen.","Ich kann alles zurückstellen, aber du darfst nicht zuschauen.","I can put everything back, but you're not allowed to watch.","Je peux tout réinitialiser, mais tu n’as pas le droit de regarder."
+Da ist ein Schalter in der Mitte des Raums.,Da ist ein Schalter in der Mitte des Raums.,There is a switch in the middle of the room.,Il y a un interrupteur au milieu de la pièce.
+Gespeichert!,Gespeichert!,Saved!,Enregistré !
+Vollbild oder Fenstermodus,Vollbild oder Fenstermodus,Full screen or windowed mode,Plein écran ou mode fenêtre
+"Mehr ist lauter, weniger ist leiser","Mehr ist lauter, weniger ist leiser",More is louder; less is quieter,"Plus, c’est plus fort ; moins, c’est plus faible"
+Vollbild,Vollbild,Full screen,Plein écran
+Lautstärke,Lautstärke,Volume,Volume

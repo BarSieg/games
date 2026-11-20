@@ -80,7 +80,7 @@ pause={
 
 [internationalization]
 
-locale/translations=PackedStringArray("res://texte.de.translation", "res://texte.en.translation")
+locale/translations=PackedStringArray("res://texte.de.translation", "res://texte.en.translation", "res://texte.fr.translation")
 
 [layer_names]
 

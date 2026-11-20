@@ -45,4 +45,6 @@ offset_bottom = 200.0
 theme_override_fonts/normal_font = ExtResource("1_psscn")
 theme_override_font_sizes/normal_font_size = 16
 bbcode_enabled = true
-text = "lorem..."
+text = "lorem... 
+french: éçà, 
+russian: подземелье"

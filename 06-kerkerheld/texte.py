@@ -10,6 +10,16 @@ Bei einem Tippfehler im Spiel taucht beides auf: der falsche Text als „fehlt�
 
 Aufruf im Ordner 06-kerkerheld:
     python texte.py
+
+Für ein Übersetzungsprogramm wie DeepL gibt es noch zwei Befehle:
+
+    python texte.py export de          schreibt alle deutschen Texte nach texte_de.txt, einen pro Zeile
+    python texte.py export de fr       nur die, die auf Französisch noch fehlen (texte_de_fuer_fr.txt)
+    python texte.py import fr datei    schreibt die Zeilen aus der Datei als Spalte "fr" in texte.csv
+
+Beim Import zählt nur die Reihenfolge: Zeile 1 der Datei gehört zu Zeile 1 des Exports.
+Hat die Datei so viele Zeilen, wie in "fr" noch fehlen, werden genau die Lücken gefüllt.
+Hat sie so viele Zeilen, wie es Texte gibt, wird die ganze Spalte ersetzt.
 """
 
 import csv
@@ -61,10 +71,95 @@ def texte_aus_skripten():
     return gefunden
 
 
+def csv_laden():
+    with open(CSV, encoding="utf-8", newline="") as f:
+        return [z for z in csv.reader(f) if z]
+
+
+def csv_speichern(zeilen):
+    # So, wie Godot die Datei selbst schreiben würde: \n am Zeilenende, Anführungszeichen nur wo nötig
+    with open(CSV, "w", encoding="utf-8", newline="") as f:
+        csv.writer(f, lineterminator="\n").writerows(zeilen)
+
+
+def spalte(kopf, sprache):
+    if sprache not in kopf[1:]:
+        sys.exit(f"Sprache „{sprache}“ gibt es in {CSV} nicht. Da sind: {', '.join(kopf[1:])}")
+    return kopf.index(sprache)
+
+
+def platzhalter(text):
+    # %s, %d, %5.1f, %% ... müssen in der Übersetzung genauso vorkommen, sonst stürzt tr() % ... ab
+    return sorted(re.findall(r"%[-+0-9.]*[sdifxXc%]", text))
+
+
+def exportieren(quelle, ziel=None):
+    zeilen = csv_laden()
+    kopf = zeilen[0]
+    q = spalte(kopf, quelle)
+    texte = zeilen[1:]
+    datei = f"texte_{quelle}.txt"
+    if ziel:
+        datei = f"texte_{quelle}_fuer_{ziel}.txt"
+        if ziel in kopf:
+            z = kopf.index(ziel)
+            texte = [t for t in texte if len(t) <= z or not t[z].strip()]
+    if not texte:
+        print(f"Auf „{ziel}“ ist schon alles übersetzt.")
+        return
+    with open(datei, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(t[q] for t in texte) + "\n")
+    print(f"{len(texte)} Texte nach {datei} geschrieben.")
+
+
+def importieren(ziel, datei):
+    zeilen = csv_laden()
+    kopf = zeilen[0]
+    # utf-8-sig: falls ein Programm ein unsichtbares BOM an den Anfang setzt
+    with open(datei, encoding="utf-8-sig") as f:
+        neu = f.read().rstrip("\n").split("\n")
+    neu = [t.strip() for t in neu]
+
+    if ziel not in kopf:
+        kopf.append(ziel)
+    z = kopf.index(ziel)
+    for t in zeilen[1:]:
+        t.extend([""] * (len(kopf) - len(t)))   # neue Spalte: überall erst mal leer
+
+    alle = zeilen[1:]
+    luecken = [t for t in alle if not t[z].strip()]
+    if len(neu) == len(luecken):
+        betroffen = luecken
+    elif len(neu) == len(alle):
+        betroffen = alle
+    else:
+        sys.exit(f"{datei} hat {len(neu)} Zeilen. Erwartet: {len(luecken)} (die Lücken in „{ziel}“) "
+                 f"oder {len(alle)} (alle Texte). Nichts geändert.")
+
+    probleme = 0
+    for t, uebersetzung in zip(betroffen, neu):
+        if platzhalter(t[0]) != platzhalter(uebersetzung):
+            print(f"  Platzhalter passen nicht:\n    {t[0]}\n    {uebersetzung}")
+            probleme += 1
+        t[z] = uebersetzung
+    csv_speichern(zeilen)
+    print(f"{len(betroffen)} Texte in Spalte „{ziel}“ geschrieben.")
+    if probleme:
+        print(f"{probleme} davon bitte in {CSV} von Hand korrigieren.")
+
+
 def main():
     sys.stdout.reconfigure(encoding="utf-8")   # Umlaute auch in der Git-Bash
-    with open(CSV, encoding="utf-8", newline="") as f:
-        zeilen = list(csv.reader(f))
+    sys.stderr.reconfigure(encoding="utf-8")
+    befehl = sys.argv[1:]
+    if befehl[:1] == ["export"] and len(befehl) in (2, 3):
+        return exportieren(*befehl[1:])
+    if befehl[:1] == ["import"] and len(befehl) == 3:
+        return importieren(*befehl[1:])
+    if befehl:
+        sys.exit(__doc__)
+
+    zeilen = csv_laden()
     sprachen = zeilen[0][1:]
     schluessel = {z[0]: z for z in zeilen[1:] if z}
 

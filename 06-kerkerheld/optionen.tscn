@@ -38,10 +38,10 @@ horizontal_alignment = 1
 
 [node name="Menue" type="Label" parent="." unique_id=1199787937]
 layout_mode = 0
-offset_left = 88.0
-offset_top = 100.0
-offset_right = 200.0
-offset_bottom = 150.0
+offset_left = 56.0
+offset_top = 84.0
+offset_right = 185.0
+offset_bottom = 149.0
 label_settings = ExtResource("3_8jndt")
 
 [node name="Hinweis" type="Label" parent="." unique_id=2132352324]
