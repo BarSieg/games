@@ -1,9 +1,0 @@
-[gd_scene format=3 uid="uid://cpgvci3vdgvv3"]
-
-[node name="Dunkelabdeckung" type="CanvasModulate" unique_id=325012027]
-position = Vector2(14, 12)
-color = Color(0.5, 0.5, 0, 1)
-
-[node name="ColorRect" type="ColorRect" parent="." unique_id=108103029]
-offset_right = 40.0
-offset_bottom = 40.0
