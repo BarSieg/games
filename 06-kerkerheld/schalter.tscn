@@ -6,7 +6,7 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
 size = Vector2(8, 8)
 
-[node name="Schalter" type="Area2D" unique_id=2016088466]
+[node name="Schalter" type="Area2D" unique_id=2016088466 groups=["schalter"]]
 z_index = -1
 collision_layer = 0
 collision_mask = 3

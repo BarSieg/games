@@ -26,9 +26,8 @@ KACHEL = 16
 AUSRICHTEN = {
     "saeule.tscn", "topf.tscn", "glibber.tscn", "fledermaus.tscn", "geist.tscn", "ratte.tscn",
     "truhe.tscn", "mimic.tscn", "schild.tscn", "fundstueck.tscn", "figur.tscn", "haendler.tscn",
-    "angebot.tscn", "tuerbesitzer.tscn", "dornen.tscn", "restart.tscn", "grabstein.tscn",
+    "tuerbesitzer.tscn", "dornen.tscn", "restart.tscn", "grabstein.tscn", "falschewand.tscn",
     "schalter.tscn", "felsbrocken.tscn", "wasserspeier.tscn", "klingenfalle.tscn", "fackel.tscn",
-    "falschewand.tscn",
 }
 
 # In diesen Räumen bleibt alles, wie es ist (Raum wie raum_von() ihn nennt)

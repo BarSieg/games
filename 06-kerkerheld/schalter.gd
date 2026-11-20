@@ -11,11 +11,12 @@ const OBEN = Color(0.7, 0.62, 0.5)
 const UNTEN = Color(0.45, 0.4, 0.32)
 const KANTE = Color(0.35, 0.3, 0.24)
 
+@export var nur_schwer := false   # Nur ein Felsbrocken drückt mich. Der Held ist zu leicht.
 var unten := false
 
 
 func _physics_process(_delta: float) -> void:
-	var belastet := get_overlapping_bodies().any(func(ding: Node2D) -> bool: return ding.is_in_group("held") or ding.is_in_group("schwer"))
+	var belastet := get_overlapping_bodies().any(func(ding: Node2D) -> bool: return ding.is_in_group("schwer") or (ding.is_in_group("held") and not nur_schwer))
 	if belastet == unten:
 		return
 	unten = belastet

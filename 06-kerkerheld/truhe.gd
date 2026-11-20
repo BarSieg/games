@@ -15,7 +15,7 @@ var versteckt := false
 func _ready() -> void:
 	if inhalt in GROSS:
 		$Bild.scale = Vector2(1.4, 1.4)
-	if inhalt == Gegenstand.Art.HERZCONTAINER:
+	if inhalt in [Gegenstand.Art.HERZCONTAINER, Gegenstand.Art.KRONE]:
 		Spielstand.zaehlt_mit(self)
 	if Spielstand.ist_erledigt(self):
 		offen = true

@@ -50,6 +50,16 @@ func rutschen(richtung: Vector2) -> void:
 
 # Hat der Held meinen Raum verlassen? Dann zurück an den Anfang, damit sich niemand festschieben kann.
 func raum_gewechselt(_richtung: Vector2i) -> void:
-	if %Camera2D.raum != %Camera2D.raum_von(start_position):
+	if %Camera2D.raum != %Camera2D.raum_von(start_position) and not auf_schalter():
 		global_position = start_position
-		geschoben = false 
+		geschoben = false
+
+
+
+
+# Liege ich gerade auf einem Schalter?
+func auf_schalter() -> bool:
+	for schalter in get_tree().get_nodes_in_group("schalter"):
+		if schalter.global_position.distance_to(global_position) < KACHEL / 2.0:
+			return true
+	return false
