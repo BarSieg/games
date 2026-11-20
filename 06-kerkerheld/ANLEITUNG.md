@@ -16,8 +16,9 @@ Vieles kennst du schon: TileMapLayer, Kollisionsebenen, Tweens, Autoload, HUD, S
 9. Die Welt merkt sich alles: Speichern und Laden ✔
 10. Titelbild und zwei Spielarten: Normal und Iron Man ✔
 11. Der Boss, Spielzeit, Erkundung und ein Abspann ✔
-12. Rätsel und Fallen: Schalter, Gitter, Felsbrocken, Wasserspeier, Klingenfalle ← *du bist hier*
-13. Optionen (z. B. schräg laufen ja/nein), Musik und Web-Export
+12. Rätsel und Fallen: Schalter, Gitter, Felsbrocken, Wasserspeier, Klingenfalle ✔
+13. Optionen und eine zweite Sprache: schräg laufen, Deutsch und Englisch ← *du bist hier*
+14. Musik und Web-Export
 
 ---
 
@@ -3961,4 +3962,462 @@ Der Held kommt von unten herein, stellt sich unter den Brocken und drückt zweim
 5. **Kratz und Klick (leicht):** Mach mit 🆓 jsfxr ein schweres Schaben für den Felsbrocken und ein dumpfes Klacken für den Schalter. Und für den Wasserspeier ein feuchtes „Ptoo“. Wo muss der `AudioStreamPlayer` für das Spucken hin, damit er nicht abbricht? (Er muss den Wasserspeier nicht überleben, der bleibt ja da. Aber was ist mit einer Blase, die beim Platzen ein Geräusch macht?) 💦
 6. **Nur einmal (leicht):** Im Original lassen sich viele Blöcke nur ein einziges Mal schieben, danach sitzen sie fest. Gib dem Felsbrocken `@export var nur_einmal := false`. Wo musst du ihn festhalten, und wo wieder lösen?
 
-Fertig? Committen und Bescheid geben. Dann kommt Kapitel 13: Optionen, Musik und der Web-Export.
+Fertig? Committen und Bescheid geben. Dann kommt Kapitel 13: Optionen und eine zweite Sprache.
+
+
+---
+
+## Kapitel 13: Optionen und eine zweite Sprache
+
+Der Kerker ist voll. Jetzt bekommt das Spiel zwei Dinge, die jedes richtige Spiel hat: einen **Optionen-Bildschirm** und eine **zweite Sprache**. Für deinen DOOM-Klon wirst du beides wieder brauchen, und in Godot ist es erstaunlich bequem.
+
+Die Optionen bekommen zwei Einstellungen:
+- **Sprache:** Deutsch oder English.
+- **Schräg laufen:** wie im Original nur in vier Richtungen, oder in acht.
+
+Dazu kommt deine Beobachtung mit den doppelten Schritten beim Raumwechsel.
+
+Neu sind **`tr()`**, der **TranslationServer**, eine Übersetzungstabelle als **CSV-Datei** und ein **zweiter Autoload** für Einstellungen, die zu keinem Spielstand gehören.
+
+### 13.1 Was kommt wohin?
+
+| Was | Wo |
+|---|---|
+| Schritte beim Hereinlaufen | `held.gd` |
+| Alle Texte auf Deutsch und Englisch | `texte.csv` (liegt schon im Projekt), Projekteinstellungen |
+| Übersetzen | `dialog.gd`, `titel.gd`, `abschluss.gd`, `angebot.gd`, `grabstein.gd`, `held.gd` |
+| Einstellungen merken | neuer Autoload `optionen.gd` |
+| Optionen-Bildschirm | neue Szene `optionen.tscn` mit `optionen_menue.gd`, ein Eintrag im Titelbild |
+| Schräg laufen | `held.gd` |
+| Prüfen, ob alles übersetzt ist | `texte.py` (liegt schon im Projekt) |
+
+### 13.2 Der Held läuft herein
+
+Beim Raumwechsel läuft der Held mit einem Tween 24 Pixel weiter, und der Tween ruft zweimal `schritt()` auf. Gleichzeitig läuft aber auch `_physics_process()` weiter. Hältst du eine Richtung gedrückt, spielt `laufen()` die Animation `laufen`, und die hat ihre eigenen zwei Schritte. Macht vier Schritte für zwei Füße.
+
+Nimmst du die Schritte aus dem Tween heraus, läuft der Held ohne gedrückte Taste lautlos herein. Das Problem ist also nicht der Tween, sondern dass **zwei Dinge gleichzeitig** den Helden steuern: der Tween und die Tasten.
+
+Die Lösung kennst du aus Kapitel 4: ein eigener Zustand. Solange der Held hereinläuft, ist er im Zustand `HEREIN`. Dann haben die Tasten Pause, der Tween bewegt ihn, und die Animation `laufen` macht die Schritte, genau wie beim normalen Laufen. Egal, ob eine Taste gedrückt ist oder nicht.
+
+In `held.gd`:
+
+```gdscript
+enum Zustand { LAUFEN, ANGRIFF, GETROFFEN, HEREIN }
+```
+
+Im `match` in `_physics_process()` ein vierter Fall:
+
+```gdscript
+		Zustand.HEREIN:
+			pass   # Der Tween aus dem Raumwechsel bewegt ihn. Die Tasten haben so lange Pause.
+```
+
+Und in `_on_camera_2d_raumwechsel()` wird der Tween kürzer. Die alten sechs Tween-Zeilen bis einschließlich `await tween.finished` ersetzt du durch:
+
+```gdscript
+	# Hereinlaufen: Der Tween bewegt, die Animation macht die Schritte, die Tasten haben Pause
+	zustand = Zustand.HEREIN
+	$AnimationPlayer.play("laufen")
+	var tween := create_tween()
+	tween.tween_property(self, "position", position + 24 * Vector2(wechselrichtung), 0.4)
+	await tween.finished
+	zustand = Zustand.LAUFEN
+```
+
+- **Ein Tween statt drei:** Die drei Abschnitte (6, 18 und 24 Pixel) waren nur nötig, um dazwischen die Schritte einzuhängen. Das macht jetzt die Animation. 0,4 Sekunden sind genau ein Durchlauf von `laufen`, also genau zwei Schritte.
+- **`pass`:** „Hier passiert nichts.“ GDScript verlangt in jedem Fall mindestens eine Zeile, und `pass` ist die Zeile, die nichts tut.
+- **Getroffen werden kann er trotzdem:** `treffer_pruefen()` steht unter dem `match` und läuft in jedem Zustand. Wer beim Hereinlaufen in eine Klingenfalle tappt, hat Pech.
+
+Ich habe es ausprobiert: Mit und ohne gedrückte Taste sind es jetzt genau zwei Schritte.
+
+### 13.3 Wie Godot übersetzt
+
+Die Idee ist einfach. Es gibt eine Tabelle: links der deutsche Text, rechts daneben derselbe Text auf Englisch. Will das Spiel etwas anzeigen, fragt es: „Was steht in der Tabelle neben diesem Text, in der Sprache, die gerade eingestellt ist?“
+
+Die Tabelle ist eine **CSV-Datei**. Das ist eine Textdatei, in der die Spalten durch Kommas getrennt sind. Du kannst sie mit jedem Texteditor öffnen, oder mit 🆓 LibreOffice Calc als richtige Tabelle. So fängt `texte.csv` an:
+
+```
+keys,de,en
+KARTE,KARTE,MAP
+INVENTAR,INVENTAR,INVENTORY
+Weiter,Weiter,Continue
+"Da weitermachen, wo du zuletzt einen Raum betreten hast.","Da weitermachen, wo du zuletzt einen Raum betreten hast.",Continue where you last entered a room.
+```
+
+- **Die erste Zeile** sagt Godot, welche Spalte was ist: `keys` sind die Schlüssel, danach kommt eine Spalte pro Sprache.
+- **Der Schlüssel ist der deutsche Text selbst.** Das hat einen großen Vorteil: Im Code und im Inspector steht weiter normales Deutsch. Ein Schild mit „Willkommen im Kerker!“ bleibt ein Schild mit „Willkommen im Kerker!“. Und fehlt ein Text in der Tabelle, zeigt Godot einfach den Schlüssel, also Deutsch. Nichts geht kaputt, es ist nur noch nicht übersetzt.
+- **Der Nachteil:** Änderst du einen deutschen Text, passt er nicht mehr zu seinem Schlüssel. Dafür gibt es `texte.py` (13.12).
+- **Anführungszeichen:** Hat ein Text ein Komma, steht er in `"..."`, sonst hielte Godot das Komma für eine neue Spalte. Ein Anführungszeichen im Text wird zu zwei: `""`.
+
+Und so kommt der Text ins Spiel:
+
+- **Labels übersetzen sich selbst.** Steht in einem Label „KARTE“, und „KARTE“ ist ein Schlüssel, zeigt das Label auf Englisch „MAP“. Dafür musst du nichts tun. Das gilt für alle Controls, auch für Text, den der Code hineinschreibt.
+- **Im Code gibt es `tr()`.** `tr("Willkommen im Kerker!")` liefert den Text in der eingestellten Sprache. Steht er nicht in der Tabelle, kommt er unverändert zurück.
+- **Die Sprache stellt der TranslationServer ein:** `TranslationServer.set_locale("en")`. Ein Autoload, den Godot schon mitbringt. „Locale“ heißt so viel wie Sprache und Gegend: `de` ist Deutsch, `en` Englisch.
+
+### 13.4 Die Tabelle einbinden
+
+`texte.csv` liegt schon in deinem Projektordner. Ich habe alle Texte des Spiels gesammelt und übersetzt, 111 Stück, auch die für dieses Kapitel. Godot hat sie beim Öffnen des Projekts schon importiert. Daneben liegen jetzt `texte.de.translation` und `texte.en.translation`. Das sind die Übersetzungen, so wie Godot sie zum Spielen braucht.
+
+1. **Project → Project Settings → Localization → Translations.**
+2. **Add…** → `texte.de.translation` und `texte.en.translation` auswählen.
+
+Das ist alles. Ab jetzt kennt das Spiel beide Sprachen.
+
+**Zum Ausprobieren**, bevor es die Optionen gibt: Unter **Localization → Locale → Test** (vielleicht musst du oben rechts **Advanced Settings** einschalten) `en` eintragen und F5. Oben in der Anzeige steht jetzt MAP, INVENTORY und LIFE. Danach das Feld wieder leeren!
+
+### 13.5 Sieben Tippfehler
+
+Beim Übersetzen habe ich sieben Schildtexte gefunden, die nicht ganz stimmen. In `texte.csv` stehen sie schon richtig. Damit sie zum Schlüssel passen, korrigierst du sie im Inspector an den Schildern:
+
+| Steht da | Richtig |
+|---|---|
+| … auf Steine **schägst**... | … auf Steine **schlägst**... |
+| **Ein** bildliche Einleitung für Beginner. | **Eine** bildliche Einleitung für Beginner. |
+| 1) **Drehe mit dem Rücken zu dem Geist** und bück dich ein wenig. | 1) **Dreh dich mit dem Rücken zum Geist** und bück dich ein wenig. |
+| … jetzt bist **di** hinter ihm. | … jetzt bist **du** hinter ihm. |
+| Aber sie sehen **genau so** aus... | Aber sie sehen **genauso** aus... |
+| Das ist ein **magisches** Raum. | Das ist ein **magischer** Raum. |
+| Da ist ein Schalter in der Mitte des Raums | … in der Mitte des Raums**.** |
+
+Welches Schild welches ist, sagt dir `texte.py` (13.12). Solange ein Text noch falsch ist, zeigt das Spiel ihn auf Englisch einfach auf Deutsch an.
+
+### 13.6 Der Dialog übersetzt
+
+Fast alle Texte im Spiel gehen durch eine einzige Stelle: `Dialog.zeigen()`. Schilder, der alte Mann, der Händler, der Lotosstein, die Pausenfrage. Wenn der Dialog selbst übersetzt, ist das meiste mit drei Zeilen erledigt.
+
+In `dialog.gd`, in `zeigen()`, statt `seiten = neue_seiten.duplicate()`:
+
+```gdscript
+	# Jede Seite übersetzen. Steht sie nicht in texte.csv, bleibt sie, wie sie ist.
+	seiten.assign(neue_seiten.map(func(seite: String) -> String: return tr(seite)))
+```
+
+Ein paar Zeilen darunter wird auch der Name übersetzt:
+
+```gdscript
+	%Sprechername.text = tr(sprecher) + ":"
+```
+
+Und in `_process()` das Ja und Nein, statt der Zeile mit `"> Ja     Nein"`:
+
+```gdscript
+	var ja := tr("Ja")
+	var nein := tr("Nein")
+	$Rahmen/Auswahl.text = "> %s     %s" % [ja, nein] if antwort else "   %s  > %s" % [ja, nein]
+```
+
+- **`map()`** macht aus einem Array ein neues, in dem jedes Element durch die kleine Funktion gelaufen ist. Aus `["Willkommen im Kerker!", "Bitte nicht die Monster füttern."]` wird `["Welcome to the dungeon!", "Please don't feed the monsters."]`.
+- **Warum `assign` und nicht `=`?** `map()` gibt ein ganz normales Array zurück. `seiten` ist aber ein `Array[String]`, und ein normales Array darf man ihm nicht einfach zuweisen. `assign` kopiert den Inhalt hinüber und prüft dabei, dass es wirklich Texte sind.
+- **Warum nicht selbst Labels übersetzen lassen?** Das Label würde übersetzen, ja. Aber die Schreibmaschine zählt Buchstaben (`visible_characters`), und das soll sie an dem Text tun, der wirklich zu sehen ist.
+
+### 13.7 Platzhalter: erst übersetzen, dann füllen
+
+Ein paar Texte haben eine Lücke, in die eine Zahl kommt: „Hier ruhen %d Helden.“ Füllst du die Lücke zuerst, steht da „Hier ruhen 7 Helden.“, und das steht nicht in der Tabelle. Also immer **erst `tr()`, dann `%`**:
+
+```gdscript
+tr("Hier ruhen %d Helden. Alle sahen aus wie du...") % 7    # richtig: "Here lie 7 heroes. ..."
+tr("Hier ruhen %d Helden. Alle sahen aus wie du..." % 7)    # falsch: findet nichts
+```
+
+Der Dialog übersetzt danach zwar noch einmal, aber „Here lie 7 heroes.“ ist kein Schlüssel, also bleibt es, wie es ist.
+
+**`grabstein.gd`:**
+
+```gdscript
+		Dialog.zeigen([tr(seite) % Spielstand.gestorben], "Grabstein")
+```
+
+**`angebot.gd`:** Hier sind es zwei Lücken, und eine davon ist selbst ein Text.
+
+```gdscript
+		var ja: bool = await Dialog.frage(tr("%s für %d Münzen?") % [tr(Gegenstand.NAMEN[ware]), preis], NPC_Name)
+```
+
+**`held.gd`, in `pause_menue()`:** Der Stand und die Frage sind zwei Texte, die erst nach dem Übersetzen zusammenkommen.
+
+```gdscript
+	var stand := tr("Erkundet: %d %%   Zeit: %s") % [Spielstand.erkundet(), Spielstand.formatiere_spielzeit()]
+	if not await Dialog.frage(stand + "\n" + tr("Zurück zum Titelbildschirm?")):
+```
+
+**`abschluss.gd`:** Dasselbe, nur öfter. Jede Zeile einzeln übersetzen, die Zeilenumbrüche kommen außen dazu. In der Tabelle steht dann kein einziges `\n`, und das macht das Leben leichter.
+
+```gdscript
+		text += tr("Ultimative Herausforderung geschafft!") + "\n"
+		...
+			text += tr("Platz %d in der Bestenliste!") % platzierung + "\n"
+		else:
+			text += tr("Aber die anderen waren schneller als du...") + "\n"
+		text += "\n" + tr("Die Liste der schnellsten Helden:") + "\n"
+		...
+	else:
+		text += tr("Zeit: %s") % Spielstand.formatiere_spielzeit() + "\n"
+		text += tr("Erkundet: %d %%") % Spielstand.erkundet() + "\n"
+		text += tr("Gestorben: %d-mal") % Spielstand.gestorben
+		if Spielstand.erkundet() < 100:
+			text += "\n\n" + tr("Da fehlt noch was ...") + "\n" + tr("Mit \"Weiter\" suchst du es.")
+```
+
+- **`%` zuerst, dann `+`:** In `tr("Zeit: %s") % zeit + "\n"` rechnet GDScript erst `%` und dann `+`, wie Punkt vor Strich. Es kommt also das Richtige heraus.
+- **Und die anderen Dialoge?** Der Lotosstein, die Sterbe-Sätze, die Krone, die Iron-Man-Frage: Die geben ihren deutschen Text ohne Lücke an den Dialog weiter, und der übersetzt. Da musst du nichts ändern.
+
+### 13.8 Das Titelbild
+
+Im Titelbild sind die Einträge („Weiter“, „Neues Spiel“, …) zugleich die Namen, mit denen `starten()` entscheidet, was passiert. Die sollen deutsch bleiben, nur die **Anzeige** wird übersetzt. Dazu kommt der neue Eintrag „Optionen“.
+
+In `titel.gd` oben:
+
+```gdscript
+const OPTIONEN = "res://optionen.tscn"
+
+# Was unter dem Menü steht, je nachdem, was gerade ausgewählt ist. Jede Zeile wird einzeln übersetzt.
+const ERKLAERUNG = {
+	"Weiter": ["Da weitermachen, wo du zuletzt einen Raum betreten hast.", "Spielzeit: %s   Fortschritt: %d%%"],
+	"Neues Spiel": ["Wie im Original: Wer stirbt, steht am Eingang wieder auf. Monster auch."],
+	"Iron Man": ["Tot ist tot. Für Monster und für dich.", "Kein Speichern, kein Weiter."],
+	"Optionen": ["Sprache und wie der Held läuft."],
+}
+```
+
+In `_ready()`:
+
+```gdscript
+	eintraege.append_array(["Neues Spiel", "Iron Man", "Optionen"])
+```
+
+`anzeigen()` wird kürzer, weil alle Erklärungen gleich behandelt werden:
+
+```gdscript
+func anzeigen() -> void:
+	var text := ""
+	for i in eintraege.size():
+		text += ("> " if i == auswahl else "  ") + tr(eintraege[i]) + "\n"
+	$Menue.text = text
+	# Jede Zeile der Erklärung einzeln übersetzen, dann zusammenkleben
+	var zeilen: Array = ERKLAERUNG[eintraege[auswahl]].map(func(zeile: String) -> String: return tr(zeile))
+	match eintraege[auswahl]:
+		"Weiter":
+			zeilen[1] = zeilen[1] % [zeit, erkundet]
+		"Iron Man":
+			if ironman_bestzeit:
+				zeilen.append(tr("Schnellster eiserner Held: %s") % ironman_bestzeit)
+	$Hinweis.text = "\n".join(zeilen)
+```
+
+Und ganz oben in `starten()`:
+
+```gdscript
+	if was == "Optionen":
+		get_tree().change_scene_to_file(OPTIONEN)
+		return
+```
+
+- **`"\n".join(zeilen)`:** klebt alle Zeilen zusammen, mit einem Zeilenumbruch dazwischen. Das ist das Gegenstück zu `split()`.
+- **Die Leerzeichen am Zeilenanfang** aus deinen alten Erklärungen sind weg. Sie standen da, damit die zweite Zeile mittig aussieht, aber das Label zentriert sowieso jede Zeile für sich.
+
+### 13.9 Die Optionen merken sich
+
+Die Einstellungen gehören zu keinem Spielstand. Wer auf Englisch spielt, will auch nach „Neues Spiel“ noch Englisch, und im Iron-Man-Spiel auch. Darum bekommen sie einen eigenen Autoload mit einer eigenen Datei. Eine Prüfsumme braucht die nicht: Wer seine Sprache in der Datei umstellt, betrügt niemanden.
+
+Neues Skript `optionen.gd` (ohne Szene):
+
+```gdscript
+extends Node
+
+# Einstellungen, die zu keinem Spielstand gehören. Sie gelten für jedes Spiel, auch für Iron Man.
+
+const DATEI = "user://optionen.cfg"
+const SPRACHEN = ["de", "en"]
+const SPRACHNAMEN = {"de": "Deutsch", "en": "English"}   # jede Sprache in ihrer eigenen Sprache
+
+var sprache := "de"
+var schraeg := false   # in acht Richtungen laufen statt in vier
+
+
+func _ready() -> void:
+	laden()
+
+
+func laden() -> void:
+	var datei := ConfigFile.new()
+	datei.load(DATEI)   # Gibt es die Datei noch nicht, liefert get_value einfach die Ersatzwerte
+	# Beim allerersten Start: die Sprache des Computers, wenn wir sie haben. Sonst Englisch.
+	var vorschlag := OS.get_locale_language() if OS.get_locale_language() in SPRACHEN else "en"
+	sprache = datei.get_value("optionen", "sprache", vorschlag)
+	schraeg = datei.get_value("optionen", "schraeg", false)
+	TranslationServer.set_locale(sprache)
+
+
+func speichern() -> void:
+	var datei := ConfigFile.new()
+	datei.set_value("optionen", "sprache", sprache)
+	datei.set_value("optionen", "schraeg", schraeg)
+	datei.save(DATEI)
+	TranslationServer.set_locale(sprache)
+```
+
+**Project Settings → Globals → Autoload:** `optionen.gd` mit dem Namen `Optionen` hinzufügen.
+
+- **`OS.get_locale_language()`:** die Sprache, auf die der Computer eingestellt ist, zum Beispiel `de`. Ein Spieler aus Frankreich bekommt `fr`, das haben wir nicht, also Englisch. Danach entscheidet die Datei.
+- **„Deutsch“ und „English“ werden nie übersetzt.** Wer aus Versehen auf eine Sprache umgestellt hat, die er nicht lesen kann, muss seine eigene Sprache trotzdem wiederfinden.
+- **Warum `datei.load()` ohne `if`?** Klappt das Laden nicht, ist die ConfigFile einfach leer, und jedes `get_value` gibt seinen Ersatzwert zurück. Genau das wollen wir beim ersten Start.
+
+### 13.10 Der Optionen-Bildschirm
+
+Neue Szene, aufgebaut wie das Titelbild. Am schnellsten: `titel.tscn` im Dateisystem rechtsklicken → **Duplicate…** → `optionen.tscn`. Dann:
+
+1. Wurzel umbenennen in `Optionen`. Das Skript abnehmen (Rechtsklick → **Detach Script**).
+2. `Spielname` umbenennen in `Ueberschrift`, Text „OPTIONEN“. Den übersetzt das Label selbst.
+3. `Menue`: **Offset Left** 56, **Offset Right** 240. „> Walk diagonally: off“ ist etwas breiter als „> Neues Spiel“.
+4. `Hinweis` bleibt, wie er ist.
+5. Neues Skript an die Wurzel, `optionen_menue.gd`:
+
+```gdscript
+extends Control
+
+# Der Optionen-Bildschirm. Hoch und runter wählt, links und rechts ändert.
+
+const TITEL = "res://titel.tscn"
+const EINTRAEGE = ["Sprache", "Schräg laufen", "Zurück"]
+const ERKLAERUNG = {
+	"Sprache": "Links und rechts wechseln die Sprache.",
+	"Schräg laufen": "Im Original läuft der Held nur in vier Richtungen. Mit „an“ geht es auch schräg.",
+	"Zurück": "Zurück zum Titelbildschirm.",
+}
+
+var auswahl := 0
+
+
+func _ready() -> void:
+	anzeigen()
+
+
+func _process(_delta: float) -> void:
+	if Input.is_action_just_pressed("hoch"):
+		auswahl = posmod(auswahl - 1, EINTRAEGE.size())
+	elif Input.is_action_just_pressed("runter"):
+		auswahl = posmod(auswahl + 1, EINTRAEGE.size())
+	elif Input.is_action_just_pressed("links"):
+		aendern(-1)
+	elif Input.is_action_just_pressed("rechts") or Input.is_action_just_pressed("angriff"):
+		aendern(1)
+	else:
+		return   # nichts gedrückt, nichts neu zu malen
+	anzeigen()
+
+
+# Die ausgewählte Einstellung eins weiter (oder eins zurück) schalten
+func aendern(schritt: int) -> void:
+	match EINTRAEGE[auswahl]:
+		"Sprache":
+			var nummer := Optionen.SPRACHEN.find(Optionen.sprache)
+			Optionen.sprache = Optionen.SPRACHEN[posmod(nummer + schritt, Optionen.SPRACHEN.size())]
+		"Schräg laufen":
+			Optionen.schraeg = not Optionen.schraeg
+		"Zurück":
+			if Input.is_action_just_pressed("angriff"):
+				get_tree().change_scene_to_file(TITEL)
+			return
+	Optionen.speichern()
+
+
+func anzeigen() -> void:
+	var werte := {
+		"Sprache": Optionen.SPRACHNAMEN[Optionen.sprache],
+		"Schräg laufen": tr("an") if Optionen.schraeg else tr("aus"),
+	}
+	var text := ""
+	for i in EINTRAEGE.size():
+		var eintrag: String = EINTRAEGE[i]
+		text += ("> " if i == auswahl else "  ") + tr(eintrag)
+		if eintrag in werte:
+			text += ": " + werte[eintrag]
+		text += "\n"
+	$Menue.text = text
+	$Hinweis.text = tr(ERKLAERUNG[EINTRAEGE[auswahl]])
+```
+
+- **Die Sprache wechselt sofort.** `Optionen.speichern()` stellt den TranslationServer um, und `anzeigen()` danach malt alles in der neuen Sprache. Die Überschrift merkt den Wechsel von selbst: Labels hören auf den TranslationServer.
+- **`posmod(nummer + schritt, ...)`:** von der letzten Sprache wieder zur ersten, und mit links von der ersten zur letzten. Das kennst du vom Titelmenü. Kommt eine dritte Sprache dazu, musst du hier nichts ändern.
+- **`else: return`:** Nur wenn wirklich etwas gedrückt wurde, wird neu gemalt. Das spart nichts, was man merkt, aber es zeigt, wie man so etwas macht.
+
+### 13.11 Schräg laufen
+
+In `held.gd`, in `laufen()`, statt der ersten Zeile:
+
+```gdscript
+	var eingabe := Input.get_vector("links", "rechts", "hoch", "runter")
+	var richtung := eingabe if Optionen.schraeg else vier_richtungen(eingabe)
+```
+
+Und beim Schieben, damit kein Felsbrocken schräg rutscht:
+
+```gdscript
+				ding.schieben(vier_richtungen(richtung), delta)   # Felsbrocken rutschen nie schräg
+```
+
+- **Warum geht das so leicht?** `get_vector()` liefert schon eine fertige Richtung, auch schräg, und schräg nicht schneller als gerade. Das war die allererste Übung in Kapitel 1. Bisher hat `vier_richtungen()` daraus eine der vier gemacht. Jetzt nur noch, wenn die Option aus ist.
+- **Was ist mit dem Blick und dem Schwert?** `blick = vier_richtungen(richtung)` steht schon in `laufen()`. Der Held läuft also schräg, schaut und sticht aber weiter in eine der vier Richtungen. Wie bei vielen Zelda-Spielen, die schräg laufen können.
+- **Und die Ecken-Hilfe?** `ecke_umrunden()` hilft nur, wenn man fast gerade läuft. Schräg macht sie nichts, und das ist richtig so: Wer schräg läuft, rutscht sowieso an der Kante entlang.
+
+### 13.12 Was fehlt noch?
+
+Wenn du ab jetzt ein Schild aufstellst oder einen Text änderst, muss er auch in `texte.csv`. Damit du nichts vergisst, liegt `texte.py` im Projektordner:
+
+```bash
+python texte.py
+```
+
+Es sucht alle Texte im Spiel zusammen (Schilder, Namen, Labels und alles in `tr()`) und sagt dir:
+- **Fehlt in texte.csv:** Dieser Text steht im Spiel, aber nicht in der Tabelle. Mit Datei, damit du ihn findest.
+- **Kommt im Spiel nicht vor:** Dieser Text steht in der Tabelle, aber nirgends im Spiel.
+- **Noch nicht übersetzt:** In einer Spalte fehlt etwas.
+
+Bei einem Tippfehler taucht beides auf: der falsche Text als „fehlt“, der richtige als „kommt nicht vor“. Probier es gleich aus, bevor du die sieben Schilder aus 13.5 korrigierst. Bevor du dieses Kapitel gebaut hast, stehen außerdem die neuen Texte wie „Optionen“ unter „kommt nicht vor“. Die verschwinden, sobald es sie im Spiel gibt.
+
+Neue Zeilen trägst du in `texte.csv` von Hand ein, mit einem Texteditor oder 🆓 LibreOffice Calc. In LibreOffice beim Speichern **Text CSV** wählen, **UTF-8** als Zeichensatz und Komma als Trenner, sonst gehen die Umlaute kaputt. Den englischen Text kannst du mir auch einfach schicken.
+
+### 13.13 Ausprobieren
+
+- [ ] Raumwechsel ohne gedrückte Taste: zwei Schritte. Mit gedrückter Taste: auch nur zwei.
+- [ ] Während der Held hereinläuft, tut die Angriffstaste nichts.
+- [ ] Titelbild: Unter „Iron Man“ steht „Optionen“, darunter die Erklärung.
+- [ ] Optionen: Rechts bei „Sprache“, alles wird Englisch, auch die Überschrift. Noch einmal rechts, zurück zu Deutsch.
+- [ ] Englisch einstellen, Spiel beenden, neu starten: Es ist immer noch Englisch.
+- [ ] Im Spiel auf Englisch: MAP, INVENTORY, LIFE. Ein Schild auf Englisch, „Yes“ und „No“ in der Pausenfrage.
+- [ ] Beim Händler: „A heart for 10 coins?“ Und der Name über der Box: „Merchant“.
+- [ ] Ein Schild mit einem der sieben Tippfehler zeigt auf Englisch Deutsch. Nach dem Korrigieren: Englisch.
+- [ ] Schräg laufen an: Der Held läuft schräg, das Schwert sticht trotzdem gerade. Ein Felsbrocken rutscht nur gerade.
+- [ ] Abspann auf Englisch.
+- [ ] `python texte.py` meldet keine fehlenden Texte mehr.
+
+### 13.14 Was beim Bauen schiefging
+
+- **Zeilenumbrüche in der Tabelle:** Zuerst wollte ich Texte wie `"Zeit: %s\nErkundet: %d %%\n"` als Ganzes übersetzen. Dann steckt der Zeilenumbruch im Schlüssel, und in einer CSV-Datei ist ein Zeilenumbruch mitten in einem Text eine Qual. Jede Zeile einzeln übersetzen und außen zusammenkleben ist viel einfacher (13.7).
+- **Der Test, der nicht drücken wollte:** Zum Ausprobieren habe ich die Tasten per Code gedrückt, mit `Input.action_press("rechts")`. Laufen ging, aber im Optionen-Bildschirm passierte nichts. Laufen fragt `get_vector()`, also „ist die Taste gerade unten?“. Der Optionen-Bildschirm fragt `is_action_just_pressed()`, also „wurde sie **in diesem Bild** gedrückt?“. Und das Drücken per Code passierte in einem anderen Bild als die Frage. Mit `Input.parse_input_event()` geht der Druck den Weg einer echten Taste, und dann klappt es. Für dich als Spieler spielt das keine Rolle, aber wenn du einmal Tests schreibst, weißt du jetzt Bescheid.
+
+### 13.15 Noch etwas aus Kapitel 12
+
+Das wirkt sich im Moment nicht aus, aber vielleicht später:
+
+**Das Kampfgitter zählt weiter.** In `_physics_process()` ruft das Kampfgitter `oeffnen()` auf, und zwar in jedem Bild, sobald alle Monster tot sind. Jedes Mal zählt `schalter_aktiv` eins hoch: 1, 2, 3, … Bei 1 geht das Gitter auf, danach ist es egal. Solange `merken` an ist (bei all deinen Kampfgittern), merkt man nichts, denn ein gemerktes Gitter geht nie wieder zu. Schaltest du aber einmal `merken` aus, kommt der Zähler nie wieder genau auf 1, und das Gitter bleibt beim nächsten Besuch für immer zu. Ein Kampfgitter ist kein Schalter, also soll es nicht mitzählen:
+
+```gdscript
+func _physics_process(_delta: float) -> void:
+	if kampf and not offen and monster_im_raum.all(func(monster: Monster) -> bool: return monster.tot):
+		if merken:
+			Spielstand.erledigen(self)
+		stellen(true)
+```
+
+### Übungsaufgaben zu Kapitel 13
+
+1. **Gespeichert! (leicht):** Das „Gespeichert“ aus Kapitel 9 ist ein Bild (`speichern.png`), und Bilder übersetzt keine Tabelle. Mach daraus ein Label mit dem Text „Gespeichert“ und trag „Saved“ in `texte.csv` ein. Muss sich am Tween etwas ändern?
+2. **Lautstärke (mittel):** Eine dritte Option: Lautstärke von 0 bis 10, mit links und rechts. Godot hat dafür den **Audio-Bus** „Master“: `AudioServer.set_bus_volume_db(0, linear_to_db(lautstaerke / 10.0))`. Warum `linear_to_db`? (Tipp: Lautstärke in Dezibel ist eine seltsame Skala. 0 dB ist volle Lautstärke, und bei -6 dB ist es ungefähr halb so laut.) Vergiss nicht, sie in `optionen.cfg` zu speichern und beim Start einzustellen. 🔊
+3. **Vollbild (leicht):** Noch eine Option: Vollbild an oder aus. `DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)` und zurück mit `WINDOW_MODE_WINDOWED`.
+4. **Einmal, zweimal (mittel):** Auf Englisch steht im Abspann „Died: 1 times“. Das ist falsch, es heißt „Died: once“. Im Deutschen geht es zufällig gut, weil „1-mal“ stimmt. Wie bekommst du die Einzahl richtig hin? Tipp: zwei Schlüssel, zum Beispiel „Gestorben: einmal“ und „Gestorben: %d-mal“, und der Code entscheidet, welcher es wird. Und was ist mit 0? „Kein einziges Mal gestorben!“ wäre doch schön. Für DOOM merk dir: Andere Sprachen haben mehr als zwei Formen. Im Russischen ist 2 anders als 5.
+5. **Eine dritte Sprache (mittel):** Füg in `texte.csv` eine Spalte für eine weitere Sprache hinzu, zum Beispiel `fr` für Französisch. Eine Maschinenübersetzung reicht zum Ausprobieren völlig, zum Beispiel mit 🆓 DeepL. In `optionen.gd` kommt sie zu `SPRACHEN` und `SPRACHNAMEN`, und vergiss nicht, die neue `.translation`-Datei in den Projekteinstellungen hinzuzufügen. Dann schau genau hin: Kann die Kenney-Schrift „é“, „ç“ und „à“? Was würde mit Russisch oder Japanisch passieren? Für deinen DOOM-Klon ist das eine wichtige Frage: Die Schrift muss alle Sprachen können, die du anbieten willst. 🌍
+6. **Optionen im Spiel (knifflig):** Bisher kommt man an die Optionen nur über das Titelbild. In der Pausenfrage wäre es praktisch, gleich die Sprache umzustellen, ohne das Spiel zu verlassen. Ein Szenenwechsel geht nicht, dann wäre der Dungeon weg. Wie kannst du den Optionen-Bildschirm stattdessen über das Spiel legen? (Tipp: `instantiate()` und eine `CanvasLayer`, so wie der Dialog. Und was muss dabei mit `get_tree().paused` passieren?)
+
+Fertig? Committen und Bescheid geben. Dann kommt Kapitel 14: Musik und der Web-Export.

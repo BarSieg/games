@@ -6,13 +6,14 @@ const ZEIT = 0.3   # so lange dauert Auf- oder Zugehen
 
 @export var offen := false   # so steht es beim Start
 @export var merken := true   # einmal offen, immer offen. Auch nach dem Laden.
-@export var hinter_dem_helden := false # schliesst wenn der Held den Raum betritt
-@export var kampf := false #lässte den Helden rein, aber raus nur wenn keine Monster drinnen sind
-@export var schalter_noetig := 1
+@export var hinter_dem_helden := false   # steht offen, bis der Held im Raum ist. Dann geht es zu.
+@export var kampf := false   # lässt den Helden herein, aber erst wieder hinaus, wenn alle Monster im Raum besiegt sind
+@export var schalter_noetig := 1   # so viele Schalter müssen gleichzeitig gedrückt sein
 
 var tween: Tween
 var monster_im_raum := []
-var schalter_aktiv := 0
+var schalter_aktiv := 0   # so viele sind es gerade
+
 
 func _ready() -> void:
 	if merken and Spielstand.ist_erledigt(self):
@@ -21,6 +22,7 @@ func _ready() -> void:
 		offen = true
 		get_tree().get_first_node_in_group("held").angekommen.connect(held_angekommen)
 	if kampf:
+		merken = true # Kampfgitter muss gemerkt werden
 		var alle_monster := get_tree().get_nodes_in_group("monster")
 		for monster in alle_monster:
 			if %Camera2D.raum_von(monster.position) == %Camera2D.raum_von(self.position):

@@ -1,9 +1,10 @@
 extends Monster
 
-const SPEED = 130.0 
+const SPEED = 130.0
 
 var schaden := 1   # in halben Herzen
-@export var richtung = Vector2(1.0, 0.0)
+@export var richtung := Vector2(1.0, 0.0)
+
 
 func _ready() -> void:
 	super()

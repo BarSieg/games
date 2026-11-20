@@ -2,11 +2,11 @@ extends CharacterBody2D
 
 # Ein Felsbrocken, den der Held schieben kann. Immer genau eine Kachel weit.
 
-@export var nur_einmal := false # lässt sich nur ein mal schieben
-
 const KACHEL = 16
 const SCHUB_ZEIT = 0.4     # so lange muss der Held drücken, bis der Brocken nachgibt
 const RUTSCH_ZEIT = 0.3    # so lange rutscht er eine Kachel weit
+
+@export var nur_einmal := false   # lässt sich nur ein einziges Mal schieben
 
 var schub_zeit := 0.0
 var schub_richtung := Vector2.ZERO
@@ -53,8 +53,6 @@ func raum_gewechselt(_richtung: Vector2i) -> void:
 	if %Camera2D.raum != %Camera2D.raum_von(start_position) and not auf_schalter():
 		global_position = start_position
 		geschoben = false
-
-
 
 
 # Liege ich gerade auf einem Schalter?
