@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://by337odfrhfir" path="res://felsbrocken.gd" id="1_ihbpp"]
 [ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="1_rcsi3"]
-[ext_resource type="AudioStream" uid="uid://kb54tnu5qxm1" path="res://ruetteln.wav" id="2_ihbpp"]
+[ext_resource type="AudioStream" uid="uid://br520vbm8khh5" path="res://brocken.wav" id="3_ihbpp"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
 size = Vector2(14, 14)
@@ -22,5 +22,5 @@ frame = 74
 shape = SubResource("RectangleShape2D_s017u")
 
 [node name="Schieben" type="AudioStreamPlayer" parent="." unique_id=1253985290]
-stream = ExtResource("2_ihbpp")
-pitch_scale = 0.6
+stream = ExtResource("3_ihbpp")
+volume_db = -5.0

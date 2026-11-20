@@ -1462,6 +1462,7 @@ schalter_noetig = 2
 
 [node name="Felsbrocken2" parent="." unique_id=1434404044 instance=ExtResource("38_s81fh")]
 position = Vector2(984, -120)
+nur_einmal = true
 
 [node name="Gitter6" parent="." unique_id=678973929 instance=ExtResource("36_o1yoa")]
 position = Vector2(896, -185)

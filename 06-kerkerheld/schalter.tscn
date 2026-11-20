@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://vfwm3mc8lchv"]
 
 [ext_resource type="Script" uid="uid://dmnsd5da5x0xu" path="res://schalter.gd" id="1_fxo7q"]
-[ext_resource type="AudioStream" uid="uid://b3j5sj16rxvbq" path="res://schritt.wav" id="2_iy2dh"]
+[ext_resource type="AudioStream" uid="uid://v51bhcca2cal" path="res://schalter.wav" id="2_fxo7q"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
 size = Vector2(8, 8)
@@ -16,5 +16,5 @@ script = ExtResource("1_fxo7q")
 shape = SubResource("RectangleShape2D_s017u")
 
 [node name="Klick" type="AudioStreamPlayer" parent="." unique_id=410915947]
-stream = ExtResource("2_iy2dh")
-pitch_scale = 0.5
+stream = ExtResource("2_fxo7q")
+volume_db = -5.0
