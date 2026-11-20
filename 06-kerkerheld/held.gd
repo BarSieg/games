@@ -15,6 +15,7 @@ const RUECKSTOSS = 160.0          # so schnell fliegt der Held nach einem Treffe
 const RUECKSTOSS_ZEIT = 0.2       # so lange fliegt er
 const SCHONZEIT = 1.0             # so lange kann ihm danach nichts passieren
 const IRONMAN_FRAME = 97
+const OPTIONEN = preload("res://optionen.tscn")
 
 var blick := Vector2.DOWN   # wohin der Held schaut, nur vier Richtungen
 var steh_zeit := 0.0
@@ -102,11 +103,22 @@ func _physics_process(delta: float) -> void:
 # Pause: zeigt den Stand und fragt, ob es zurück zum Titelbild geht
 func pause_menue() -> void:
 	var stand := tr("Erkundet: %d %%   Zeit: %s") % [Spielstand.erkundet(), Spielstand.formatiere_spielzeit()]
-	if not await Dialog.frage(stand + "\n" + tr("Zurück zum Titelbildschirm?")):
-		return
-	if Spielstand.iron_man and not await Dialog.frage("Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildschirm?"):
-		return
-	get_tree().change_scene_to_file("res://titel.tscn")
+	match await Dialog.auswahlfrage(stand, [tr("Weiter"), tr("Optionen"), tr("Zum Titelbildschirm")]):
+		0: # weiter
+			pass
+		1: # optionen
+			var opt := OPTIONEN.instantiate()
+			opt.im_spiel = true
+			opt.process_mode = Node.PROCESS_MODE_ALWAYS   # läuft auch, wenn alles andere pausiert
+			get_tree().paused = true
+			get_tree().current_scene.get_node("%Anzeige").add_child(opt)
+			await opt.tree_exited   # bis das Menü sich selbst wegräumt
+			await get_tree().process_frame   # den Tastendruck vom Menü nicht an den Helden weitergeben
+			get_tree().paused = false
+		2: 
+			if Spielstand.iron_man and not await Dialog.frage("Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildschirm?"):
+				return
+			get_tree().change_scene_to_file("res://titel.tscn")
 
 
 # Jedes Bild: Berührt der Held gerade ein Monster?

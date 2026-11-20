@@ -36,7 +36,7 @@ NICHT_UEBERSETZEN = {
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.",
     "Glibber essen keine Kekse",                    # das Salz für die Prüfsumme
     "Spielstand wurde verändert. Selber schuld!",   # sieht nur, wer Godot offen hat
-    "Deutsch", "English",                            # Sprachnamen bleiben immer gleich
+    "Deutsch", "English", "Français",                # Sprachnamen bleiben immer gleich
 }
 
 

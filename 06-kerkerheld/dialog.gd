@@ -8,6 +8,9 @@ var seiten: Array[String] = []   # was noch kommt
 var buchstaben := 0.0            # wie viele Buchstaben schon zu sehen sind, mit Komma
 var fragend := false             # wartet die letzte Seite auf Ja oder Nein?
 var antwort := true
+var auswahlfragend := false             # wartet die letzte Seite auf eine Auswahl?
+var auswahlantwort := 0
+var auswahloptionen : Array[String] = []
 var buchstaben_anzeige := 0.0     # bis hierhin wurde schon geplappert
 
 @onready var text: Label = $Rahmen/Text
@@ -40,6 +43,15 @@ func frage(seite: String, sprecher: String = "") -> bool:
 	await zeigen([seite], sprecher)
 	fragend = false
 	return antwort
+	
+# Eine Frage stellen. Die Antwort ist eine der vorgeschlagenen Optionen.
+func auswahlfrage(seite: String, antworten: Array[String], sprecher: String = "") -> int:
+	auswahloptionen.assign(antworten.map(func(option: String) -> String: return tr(option)))
+	auswahlfragend = true
+	auswahlantwort = 0
+	await zeigen([seite], sprecher)
+	auswahlfragend = false
+	return auswahlantwort
 
 
 func umblaettern() -> void:
@@ -64,11 +76,19 @@ func _process(delta: float) -> void:
 	text.visible_characters = int(buchstaben)
 	var letzte := seiten.is_empty()
 	# Blinkender Pfeil: Es geht weiter
-	$Rahmen/Weiter.visible = alles_da() and not (letzte and fragend) and Time.get_ticks_msec() % 600 < 300
+	$Rahmen/Weiter.visible = alles_da() and not (letzte and (fragend or auswahlfragend)) and Time.get_ticks_msec() % 600 < 300
 	$Rahmen/Auswahl.visible = alles_da() and letzte and fragend
 	var ja := tr("Ja")
 	var nein := tr("Nein")
 	$Rahmen/Auswahl.text = "> %s     %s" % [ja, nein] if antwort else "   %s  > %s" % [ja, nein]
+	$Rahmen/Mehrfachauswahl.visible = alles_da() and letzte and auswahlfragend
+	$Rahmen/Mehrfachauswahl.text = ""
+	for t in auswahloptionen.size():
+		if auswahlantwort == t:
+			$Rahmen/Mehrfachauswahl.text += "> "
+		else:
+			$Rahmen/Mehrfachauswahl.text += "   "
+		$Rahmen/Mehrfachauswahl.text += auswahloptionen[t] + "\n"
 
 
 func alles_da() -> bool:
@@ -80,6 +100,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if $Rahmen/Auswahl.visible and (event.is_action_pressed("links") or event.is_action_pressed("rechts")):
 		antwort = not antwort
+	if $Rahmen/Mehrfachauswahl.visible and event.is_action_pressed("runter"):
+		auswahlantwort = posmod(auswahlantwort + 1, auswahloptionen.size())
+	if $Rahmen/Mehrfachauswahl.visible and event.is_action_pressed("hoch"):
+		auswahlantwort = posmod(auswahlantwort - 1, auswahloptionen.size())
 	elif event.is_action_pressed("angriff"):
 		if not alles_da():
 			buchstaben = text.get_total_character_count()   # Ungeduldig? Dann alles auf einmal.
