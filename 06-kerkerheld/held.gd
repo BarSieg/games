@@ -29,6 +29,8 @@ func _ready() -> void:
 	if Spielstand.iron_man:
 		$Bild.frame = IRONMAN_FRAME
 	Spielstand.gewonnen.connect(gewinnen)
+	var dunkler_raum = pruefe_dunkeleheit()
+	schalte_taschnlampe(dunkler_raum)
 
 
 # Nach dem Laden dort anfangen, wo zuletzt gespeichert wurde.
@@ -206,7 +208,20 @@ func benutzen() -> bool:
 	return false
 
 
+func pruefe_dunkeleheit() -> bool:
+	var ist_dunkel := get_tree().get_nodes_in_group("dunkel").any(func(dunkelmarker: Marker2D) -> bool: return %Camera2D.raum_von(dunkelmarker.global_position) == %Camera2D.raum_von(global_position))
+	%Dunkelheit.visible = ist_dunkel
+	return ist_dunkel
+
+
+func schalte_taschnlampe(ein : bool) -> void:
+	await get_tree().create_timer(0.5).timeout
+	$Taschenlampe.visible = ein
+
+
 func _on_camera_2d_raumwechsel(wechselrichtung: Variant) -> void:
+	# Dunkelheit wird von Helden gesteuert
+	var dunkler_raum = pruefe_dunkeleheit()
 	var tween := create_tween()
 	tween.tween_property(self, "position", position + 6 * Vector2(wechselrichtung), 0.1)
 	tween.tween_callback(schritt)
@@ -215,6 +230,7 @@ func _on_camera_2d_raumwechsel(wechselrichtung: Variant) -> void:
 	tween.tween_property(self, "position", position + 24 * Vector2(wechselrichtung), 0.1)
 	await tween.finished
 	angekommen.emit()
+	schalte_taschnlampe(dunkler_raum)
 	if %Camera2D.raum_von(get_tree().get_first_node_in_group("boss").global_position) != %Camera2D.raum_von(global_position):
 		Spielstand.speichern(global_position)   # ganz im neuen Raum angekommen: speichern
 	else:

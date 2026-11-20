@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://dd0kw0x8iyayq"]
+
+[ext_resource type="Texture2D" uid="uid://b4t6nkt7xo4ik" path="res://tilemap_packed.png" id="1_rj1rg"]
+
+[sub_resource type="Gradient" id="Gradient_rj1rg"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_s017u"]
+gradient = SubResource("Gradient_rj1rg")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[node name="Fackel" type="Node2D" unique_id=1295009170]
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=341954296]
+texture = ExtResource("1_rj1rg")
+hframes = 12
+vframes = 11
+frame = 125
+
+[node name="Licht" type="PointLight2D" parent="." unique_id=591880893]
+position = Vector2(-9.536743e-07, -2.4999986)
+scale = Vector2(0.90625, 0.70312506)
+texture = SubResource("GradientTexture2D_s017u")

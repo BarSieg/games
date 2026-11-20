@@ -41,6 +41,8 @@
 [ext_resource type="PackedScene" uid="uid://753uu2r6ve0o" path="res://wasserspeier.tscn" id="39_4w0d0"]
 [ext_resource type="PackedScene" uid="uid://cy6a2c5wjcktn" path="res://klingenfalle.tscn" id="40_0m10i"]
 [ext_resource type="PackedScene" uid="uid://cn632qqslcbfh" path="res://ratte.tscn" id="41_jx8yd"]
+[ext_resource type="PackedScene" uid="uid://cts48uyk25kok" path="res://dunkelheit.tscn" id="42_0n2xt"]
+[ext_resource type="PackedScene" uid="uid://dd0kw0x8iyayq" path="res://fackel.tscn" id="43_3w15k"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ou4rh"]
 texture = ExtResource("1_5grt3")
@@ -214,6 +216,11 @@ script = ExtResource("2_q5kms")
 
 [node name="Held" parent="." unique_id=1612745786 instance=ExtResource("3_tgur7")]
 position = Vector2(861, 85)
+
+[node name="Dunkelheit" type="CanvasModulate" parent="." unique_id=73190413]
+unique_name_in_owner = true
+visible = false
+color = Color(0.03876, 0.03876, 0.03876, 1)
 
 [node name="Anzeige" type="CanvasLayer" parent="." unique_id=541112382]
 
@@ -1462,6 +1469,27 @@ schalter_noetig = 2
 
 [node name="Ratte" parent="." unique_id=2051621397 instance=ExtResource("41_jx8yd")]
 position = Vector2(945, 41)
+
+[node name="Dunkelheitmarker" parent="." unique_id=459648328 instance=ExtResource("42_0n2xt")]
+position = Vector2(662, 101)
+
+[node name="Fackel" parent="." unique_id=1295009170 instance=ExtResource("43_3w15k")]
+position = Vector2(668, 8)
+
+[node name="Fackel2" parent="." unique_id=807882560 instance=ExtResource("43_3w15k")]
+position = Vector2(612, 8)
+
+[node name="Fackel3" parent="." unique_id=174153746 instance=ExtResource("43_3w15k")]
+position = Vector2(760, 52)
+
+[node name="Fackel4" parent="." unique_id=2146889564 instance=ExtResource("43_3w15k")]
+position = Vector2(760, 106)
+
+[node name="Geist15" parent="." unique_id=835045093 instance=ExtResource("9_tgur7")]
+position = Vector2(540, 150)
+
+[node name="Geist16" parent="." unique_id=209003961 instance=ExtResource("9_tgur7")]
+position = Vector2(727, 23)
 
 [connection signal="raumwechsel" from="Camera2D" to="Held" method="_on_camera_2d_raumwechsel"]
 [connection signal="gedrueckt" from="Schalter" to="Gitter" method="oeffnen"]

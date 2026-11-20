@@ -415,6 +415,15 @@ _data = {
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_uaosu"]
 size = Vector2(10, 12)
 
+[sub_resource type="Gradient" id="Gradient_g67po"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_s017u"]
+gradient = SubResource("Gradient_g67po")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
 [node name="Held" type="CharacterBody2D" unique_id=1612745786 groups=["held"]]
 collision_layer = 2
 motion_mode = 1
@@ -489,3 +498,7 @@ volume_db = -5.0
 
 [node name="Tuer" type="AudioStreamPlayer" parent="." unique_id=746616337]
 stream = ExtResource("7_g67po")
+
+[node name="Taschenlampe" type="PointLight2D" parent="." unique_id=424088128]
+visible = false
+texture = SubResource("GradientTexture2D_s017u")

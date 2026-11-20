@@ -1,0 +1,3 @@
+[gd_scene format=3 uid="uid://cts48uyk25kok"]
+
+[node name="Dunkelheitmarker" type="Marker2D" unique_id=459648328 groups=["dunkel"]]
