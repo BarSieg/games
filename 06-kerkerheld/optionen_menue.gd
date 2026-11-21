@@ -3,16 +3,17 @@ extends Control
 # Der Optionen-Bildschirm. Hoch und runter wählt, links und rechts ändert.
 
 const TITEL = "res://titel.tscn"
-const EINTRAEGE = ["Sprache", "Schräg laufen", "Vollbild", "Lautstärke", "Zurück"]
+const EINTRAEGE = ["Sprache", "Schräg laufen", "Vollbild", "Lautstärke", "Musik", "Zurück"]
 const ERKLAERUNG = {
 	"Sprache": "Links und rechts wechseln die Sprache.",
 	"Schräg laufen": "Im Original läuft der Held nur in vier Richtungen. Mit „an“ geht es auch schräg.",
 	"Vollbild": "Vollbild oder Fenstermodus",
 	"Lautstärke": "Mehr ist lauter, weniger ist leiser",
+	"Musik": "Nur die Musik. Die Geräusche bleiben, wie sie sind.",
 	"Zurück": "Zurück zum Titelbildschirm.",
 }
 
-var eintraege := EINTRAEGE
+var eintraege := EINTRAEGE.duplicate()
 var erklaerung := ERKLAERUNG.duplicate()
 var auswahl := 0
 var im_spiel := false
@@ -20,8 +21,10 @@ var im_spiel := false
 
 func _ready() -> void:
 	if im_spiel:
-		eintraege = EINTRAEGE.filter(func(e: String) -> bool: return e != "Schräg laufen")
+		eintraege = eintraege.filter(func(e: String) -> bool: return e != "Schräg laufen")
 		erklaerung["Zurück"] = "Zurück zum Spiel."
+	if OS.has_feature("web"):
+		eintraege = eintraege.filter(func(e: String) -> bool: return e != "Vollbild")   # im Browser gibt es dafür F11
 	anzeigen()
 
 
@@ -51,8 +54,11 @@ func aendern(schritt: int) -> void:
 			Optionen.vollbild = not Optionen.vollbild
 			Optionen.vollbild_anwenden()
 		"Lautstärke":
-			Optionen.lautstaerke = clamp(Optionen.lautstaerke + schritt, 0, 10)
-			AudioServer.set_bus_volume_db(0, linear_to_db(Optionen.lautstaerke / 10.0))
+			Optionen.lautstaerke = clampi(Optionen.lautstaerke + schritt, 0, 10)
+			Optionen.lautstaerke_anwenden()
+		"Musik":
+			Optionen.musik = clampi(Optionen.musik + schritt, 0, 10)
+			Optionen.lautstaerke_anwenden()
 		"Zurück":
 			if Input.is_action_just_pressed("angriff"):
 				if im_spiel:
@@ -69,6 +75,7 @@ func anzeigen() -> void:
 		"Schräg laufen": tr("an") if Optionen.schraeg else tr("aus"),
 		"Vollbild": tr("an") if Optionen.vollbild else tr("aus"),
 		"Lautstärke": str(Optionen.lautstaerke),
+		"Musik": str(Optionen.musik),
 	}
 	var text := ""
 	for i in eintraege.size():

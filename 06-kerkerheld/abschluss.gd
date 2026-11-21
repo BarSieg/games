@@ -4,6 +4,7 @@ extends Control
 
 
 func _ready() -> void:
+	Musik.spielen(Musik.TITEL)
 	var text := ""
 	if Spielstand.iron_man:
 		text += tr("Ultimative Herausforderung geschafft!") + "\n"

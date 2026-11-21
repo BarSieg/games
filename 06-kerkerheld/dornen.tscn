@@ -4,7 +4,10 @@
 [ext_resource type="Script" uid="uid://dg8pv03njriqm" path="res://dornen.gd" id="1_l4y4y"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_s017u"]
-size = Vector2(12, 11.5)
+size = Vector2(12, 10)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0orc7"]
+size = Vector2(12, 10)
 
 [node name="Dornen" type="Area2D" unique_id=1419659414]
 collision_layer = 5
@@ -20,3 +23,11 @@ frame = 41
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1281753054]
 position = Vector2(0, 1.25)
 shape = SubResource("RectangleShape2D_s017u")
+
+[node name="Sperre" type="StaticBody2D" parent="." unique_id=301912594]
+collision_layer = 16
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sperre" unique_id=1860414925]
+position = Vector2(0, 1)
+shape = SubResource("RectangleShape2D_0orc7")

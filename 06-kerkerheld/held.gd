@@ -115,7 +115,7 @@ func pause_menue() -> void:
 			await opt.tree_exited   # bis das Menü sich selbst wegräumt
 			await get_tree().process_frame   # den Tastendruck vom Menü nicht an den Helden weitergeben
 			get_tree().paused = false
-		2: 
+		2: # zum Titelbildschirm
 			if Spielstand.iron_man and not await Dialog.frage("Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildschirm?"):
 				return
 			get_tree().change_scene_to_file("res://titel.tscn")
@@ -224,7 +224,7 @@ func benutzen() -> bool:
 
 
 func pruefe_dunkelheit() -> bool:
-	var ist_dunkel := get_tree().get_nodes_in_group("dunkel").any(func(dunkelmarker: Marker2D) -> bool: return %Camera2D.raum_von(dunkelmarker.global_position) == %Camera2D.raum_von(global_position))
+	var ist_dunkel: bool = %Camera2D.ist_dunkel(%Camera2D.raum_von(global_position))
 	%Dunkelheit.visible = ist_dunkel
 	return ist_dunkel
 

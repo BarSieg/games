@@ -1,8 +1,17 @@
 [gd_scene format=3 uid="uid://c2jgxcigrwuri"]
 
 [ext_resource type="Script" uid="uid://xfqvh4ne57kw" path="res://titel.gd" id="1_js7em"]
+[ext_resource type="Shader" uid="uid://b2aeclon1n51w" path="res://verlauf.gdshader" id="2_0u8ot"]
+[ext_resource type="Texture2D" uid="uid://c22bslsot8atb" path="res://titel_schwert.png" id="2_rs8b8"]
 [ext_resource type="FontFile" uid="uid://dlkjlgec87e21" path="res://Kenney/Kenney Pixel.ttf" id="2_uykxl"]
 [ext_resource type="LabelSettings" uid="uid://cggyy4uae7ijw" path="res://schrift_settings.tres" id="3_0u8ot"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_js7em"]
+shader = ExtResource("2_0u8ot")
+shader_parameter/oben = Color(0.33538887, 0.89979166, 0.29951698, 1)
+shader_parameter/unten = Color(0.07321928, 0.3168206, 0.041327447, 1)
+shader_parameter/von = 10.0
+shader_parameter/bis = 26.0
 
 [sub_resource type="LabelSettings" id="LabelSettings_0orc7"]
 font = ExtResource("2_uykxl")
@@ -27,7 +36,12 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 1)
 
+[node name="Schwert" type="Sprite2D" parent="." unique_id=2086587339]
+position = Vector2(128.45595, 52.999992)
+texture = ExtResource("2_rs8b8")
+
 [node name="Spielname" type="Label" parent="." unique_id=506695315]
+material = SubResource("ShaderMaterial_js7em")
 layout_mode = 0
 offset_top = 40.0
 offset_right = 256.0

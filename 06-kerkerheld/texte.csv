@@ -15,7 +15,7 @@ Spielzeit: %s   Fortschritt: %d%%,Spielzeit: %s   Fortschritt: %d%%,Play time: %
 Tot ist tot. Für Monster und für dich.,Tot ist tot. Für Monster und für dich.,Dead is dead. For monsters and for you.,Mort signifie mort. Pour les monstres comme pour toi.
 "Kein Speichern, kein Weiter.","Kein Speichern, kein Weiter.","No saving, no continuing.","Pas de sauvegarde, pas de « Continuer »."
 Schnellster eiserner Held: %s,Schnellster eiserner Held: %s,Fastest iron hero: %s,Héros de fer le plus rapide : %s
-Sprache und wie der Held läuft.,Sprache und wie der Held läuft.,Language and how the hero walks.,Langue et direction de déplacement du héros.
+"Sprache, Lautstärke und wie der Held läuft.","Sprache, Lautstärke und wie der Held läuft.","Language, volume and how the hero walks.","Langue, volume et déplacement du héros."
 Dein altes Spiel wird gelöscht. Wirklich?,Dein altes Spiel wird gelöscht. Wirklich?,Your old game will be deleted. Really?,Ton ancienne partie sera supprimée. Vraiment ?
 Sprache,Sprache,Language,Langue
 Schräg laufen,Schräg laufen,Walk diagonally,Se déplacer en diagonale
@@ -118,3 +118,5 @@ Vollbild oder Fenstermodus,Vollbild oder Fenstermodus,Full screen or windowed mo
 "Mehr ist lauter, weniger ist leiser","Mehr ist lauter, weniger ist leiser",More is louder; less is quieter,"Plus, c’est plus fort ; moins, c’est plus faible"
 Vollbild,Vollbild,Full screen,Plein écran
 Lautstärke,Lautstärke,Volume,Volume
+Musik,Musik,Music,Musique
+"Nur die Musik. Die Geräusche bleiben, wie sie sind.","Nur die Musik. Die Geräusche bleiben, wie sie sind.",Only the music. Sound effects stay as they are.,Seulement la musique. Les bruitages restent tels quels.

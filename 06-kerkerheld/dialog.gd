@@ -8,10 +8,10 @@ var seiten: Array[String] = []   # was noch kommt
 var buchstaben := 0.0            # wie viele Buchstaben schon zu sehen sind, mit Komma
 var fragend := false             # wartet die letzte Seite auf Ja oder Nein?
 var antwort := true
-var auswahlfragend := false             # wartet die letzte Seite auf eine Auswahl?
-var auswahlantwort := 0
-var auswahloptionen : Array[String] = []
-var buchstaben_anzeige := 0.0     # bis hierhin wurde schon geplappert
+var auswahlfragend := false      # wartet die letzte Seite auf eine Auswahl aus einer Liste?
+var auswahlantwort := 0          # die wievielte Antwort gerade markiert ist
+var auswahloptionen: Array[String] = []
+var buchstaben_anzeige := 0.0    # bis hierhin wurde schon geplappert
 
 @onready var text: Label = $Rahmen/Text
 
@@ -43,8 +43,9 @@ func frage(seite: String, sprecher: String = "") -> bool:
 	await zeigen([seite], sprecher)
 	fragend = false
 	return antwort
-	
-# Eine Frage stellen. Die Antwort ist eine der vorgeschlagenen Optionen.
+
+
+# Eine Frage mit mehreren Antworten untereinander. Zurück kommt die Nummer der gewählten Antwort.
 func auswahlfrage(seite: String, antworten: Array[String], sprecher: String = "") -> int:
 	auswahloptionen.assign(antworten.map(func(option: String) -> String: return tr(option)))
 	auswahlfragend = true
@@ -65,6 +66,14 @@ func _process(delta: float) -> void:
 	var chat_teil := ""
 	if not visible:
 		return
+	# Input statt _unhandled_input: Der Stick schickt bei jedem Zittern ein neues Ereignis,
+	# just_pressed meldet sich dagegen nur einmal pro Druck
+	if $Rahmen/Auswahl.visible and (Input.is_action_just_pressed("links") or Input.is_action_just_pressed("rechts")):
+		antwort = not antwort
+	elif $Rahmen/Mehrfachauswahl.visible and Input.is_action_just_pressed("runter"):
+		auswahlantwort = posmod(auswahlantwort + 1, auswahloptionen.size())
+	elif $Rahmen/Mehrfachauswahl.visible and Input.is_action_just_pressed("hoch"):
+		auswahlantwort = posmod(auswahlantwort - 1, auswahloptionen.size())
 	if not alles_da():
 		buchstaben += TEMPO * delta
 	if buchstaben > buchstaben_anzeige:
@@ -96,15 +105,7 @@ func alles_da() -> bool:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not visible:
-		return
-	if $Rahmen/Auswahl.visible and (event.is_action_pressed("links") or event.is_action_pressed("rechts")):
-		antwort = not antwort
-	if $Rahmen/Mehrfachauswahl.visible and event.is_action_pressed("runter"):
-		auswahlantwort = posmod(auswahlantwort + 1, auswahloptionen.size())
-	if $Rahmen/Mehrfachauswahl.visible and event.is_action_pressed("hoch"):
-		auswahlantwort = posmod(auswahlantwort - 1, auswahloptionen.size())
-	elif event.is_action_pressed("angriff"):
+	if visible and event.is_action_pressed("angriff"):
 		if not alles_da():
 			buchstaben = text.get_total_character_count()   # Ungeduldig? Dann alles auf einmal.
 		elif not seiten.is_empty():

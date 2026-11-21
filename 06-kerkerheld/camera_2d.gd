@@ -20,6 +20,17 @@ func _ready() -> void:
 	position = kamera_position(raum)
 	monster_wecken.call_deferred(true)
 	%Karte.zeigen(raum)
+	musik_waehlen.call_deferred()   # erst wenn alle Monster wissen, ob sie tot sind
+
+
+# Im Bossraum läuft die Bossmusik, solange dort noch etwas lebt. Sonst die Kerkermusik.
+func musik_waehlen() -> void:
+	var lebt_noch := get_tree().get_nodes_in_group("monster").any(
+			func(monster: Monster) -> bool: return raum_von(monster.start_position) == raum and not monster.tot)
+	if raum_von(boss.global_position) == raum and lebt_noch:
+		Musik.spielen(Musik.BOSS)
+	else:
+		Musik.spielen(Musik.KERKER)
 
 
 func _process(_delta: float) -> void:
@@ -38,11 +49,21 @@ func kamera_position(r: Vector2i) -> Vector2:
 	return Vector2(r) * RAUM_GROESSE - Vector2(0, ANZEIGE_HOEHE)
 
 
+# Ist dieser Raum dunkel? Das steht an den Dunkelheitmarkern.
+func ist_dunkel(r: Vector2i) -> bool:
+	return get_tree().get_nodes_in_group("dunkel").any(
+			func(marker: Marker2D) -> bool: return raum_von(marker.global_position) == r)
+
+
 # Zum neuen Raum schieben. Solange steht das ganze Spiel still.
 func schieben(neu: Vector2i) -> void:
 	var richtung := neu - raum
 	raum = neu
 	get_tree().paused = true
+	# Dunkel gewinnt: Sonst sieht man beim Hineinschieben, was im dunklen Raum lauert.
+	# Hell wird es erst wieder, wenn der Held angekommen ist (pruefe_dunkelheit im Held).
+	if ist_dunkel(neu):
+		%Dunkelheit.visible = true
 	var tween := create_tween()
 	tween.tween_property(self, "position", kamera_position(neu), SCHIEBE_ZEIT)
 	await tween.finished
@@ -53,6 +74,7 @@ func schieben(neu: Vector2i) -> void:
 	get_tree().paused = false
 	raumwechsel.emit(richtung)
 	%Karte.zeigen(raum)
+	musik_waehlen()
 	if raum_von(boss.global_position) == raum:
 		bossraum_betreten.emit()
 

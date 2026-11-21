@@ -8,7 +8,7 @@ const ERKLAERUNG = {
 	"Weiter": ["Da weitermachen, wo du zuletzt einen Raum betreten hast.", "Spielzeit: %s   Fortschritt: %d%%"],
 	"Neues Spiel": ["Wie im Original: Wer stirbt, steht am Eingang wieder auf. Monster auch."],
 	"Iron Man": ["Tot ist tot. Für Monster und für dich.", "Kein Speichern, kein Weiter."],
-	"Optionen": ["Sprache und wie der Held läuft."],
+	"Optionen": ["Sprache, Lautstärke und wie der Held läuft."],
 }
 
 var eintraege: Array[String] = []
@@ -19,6 +19,7 @@ var ironman_bestzeit := ""
 
 
 func _ready() -> void:
+	Musik.spielen(Musik.TITEL)
 	if Spielstand.spielstand_datei_vorhanden():
 		eintraege.append("Weiter")
 		var stats := Spielstand.load_stats_fuer_titel()

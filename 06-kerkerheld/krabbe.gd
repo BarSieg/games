@@ -145,6 +145,7 @@ func _draw() -> void:
 # Erst lange blinken, dann wie jedes Monster verschwinden
 func sterben() -> void:
 	Spielstand.erledigen(self)
+	Musik.stoppen()   # Stille. Die Fanfare kommt gleich aus der Truhe.
 	set_physics_process(false)
 	$Bild.visible = true
 	$CollisionShape2D.set_deferred("disabled", true)

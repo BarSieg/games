@@ -17,8 +17,8 @@ Vieles kennst du schon: TileMapLayer, Kollisionsebenen, Tweens, Autoload, HUD, S
 10. Titelbild und zwei Spielarten: Normal und Iron Man ✔
 11. Der Boss, Spielzeit, Erkundung und ein Abspann ✔
 12. Rätsel und Fallen: Schalter, Gitter, Felsbrocken, Wasserspeier, Klingenfalle ✔
-13. Optionen und eine zweite Sprache: schräg laufen, Deutsch und Englisch ← *du bist hier*
-14. Musik und Web-Export
+13. Optionen und eine zweite Sprache: schräg laufen, Deutsch und Englisch ✔
+14. Musik und Web-Export ← *du bist hier*
 
 ---
 
@@ -4421,3 +4421,357 @@ func _physics_process(_delta: float) -> void:
 6. **Optionen im Spiel (knifflig):** Bisher kommt man an die Optionen nur über das Titelbild. In der Pausenfrage wäre es praktisch, gleich die Sprache umzustellen, ohne das Spiel zu verlassen. Ein Szenenwechsel geht nicht, dann wäre der Dungeon weg. Wie kannst du den Optionen-Bildschirm stattdessen über das Spiel legen? (Tipp: `instantiate()` und eine `CanvasLayer`, so wie der Dialog. Und was muss dabei mit `get_tree().paused` passieren?)
 
 Fertig? Committen und Bescheid geben. Dann kommt Kapitel 14: Musik und der Web-Export.
+
+
+## Kapitel 14: Musik und Web-Export
+
+Das letzte Kapitel. Bisher piept, klirrt und quiekt es im Kerker, aber Musik gibt es keine. Das ändert sich jetzt: Das Titelbild, der Kerker und der Boss bekommen jeder ein eigenes Stück, und beim Wechsel blendet das eine aus und das andere ein. In den Optionen kannst du die Musik leiser stellen, ohne dass die Geräusche leiser werden.
+
+Danach kommt der Kerkerheld auf die Startseite, als Web-Spiel. Den Export kennst du schon von Flatterfisch und Hüpfheld. Diesmal gibt es aber ein paar Dinge, die es dort nicht gab: einen Spielstand, Musik und einen Vollbildmodus. Im Browser geht das alles etwas anders.
+
+Neu sind **Audio-Busse**, ein **Autoload, der selbst ein AudioStreamPlayer ist**, **Schleifen in WAV-Dateien** und **`OS.has_feature()`**.
+
+### 14.1 Was kommt wohin?
+
+| Was | Wo |
+|---|---|
+| Drei Musikstücke | `musik.py` (liegt schon im Projekt) erzeugt `musik_titel.wav`, `musik_kerker.wav`, `musik_boss.wav` |
+| Ein eigener Lautstärkeregler für die Musik | Audio-Bus `Musik` (unten im Editor) |
+| Musik abspielen, ein- und ausblenden | neuer Autoload `musik.gd` |
+| Welche Musik wann | `titel.gd`, `abschluss.gd`, `camera_2d.gd`, `krabbe.gd` |
+| Option „Musik“, Lautstärke beim Start | `optionen.gd`, `optionen_menue.gd`, `titel.gd` |
+| Kein Vollbild im Browser | `optionen.gd`, `optionen_menue.gd` |
+| Web-Export | `web/`, Startseite `index.html` im Ordner `games` |
+
+### 14.2 Ein Skript komponiert
+
+Für die Fanfare aus der Truhe gibt es schon `fanfare.py`. Das neue `musik.py` macht dasselbe für drei ganze Stücke. Im Ordner `06-kerkerheld`:
+
+```bash
+python musik.py
+```
+
+```
+musik_titel.wav: 8 Takte, 21.8 s, 939 KB
+musik_kerker.wav: 8 Takte, 20.0 s, 861 KB
+musik_boss.wav: 8 Takte, 12.6 s, 544 KB
+```
+
+**Mach das als Erstes, noch vor allem anderen in diesem Kapitel.** Warum, steht in 14.10.
+
+Die Stücke klingen wie auf einer alten Spielkonsole. Die hatten nur ein paar einfache Klangerzeuger, und genau die baut das Skript nach:
+- **Melodie:** eine Rechteckwelle. Sie springt nur zwischen ganz oben und ganz unten hin und her. Das klingt hart und ein bisschen quäkig, genau richtig für eine Melodie.
+- **Begleitung:** auch eine Rechteckwelle, aber dünner. Sie ist nur ein Viertel der Zeit oben und klingt dadurch heller und leiser.
+- **Bass:** eine Dreieckwelle, weich und tief.
+- **Trommel:** Rauschen. Kurz ist es ein Hi-Hat, etwas länger eine Snare, und der Kick ist ein Ton, der ganz schnell tiefer wird.
+
+Die Noten stehen oben im Skript. So fängt der Kerker an:
+
+```python
+"melodie": "_:2 A4:2 D5:3 E5:1 | F5:4 E5:2 D5:2 | ...",
+```
+
+- **`A4:2`:** der Ton A in der vierten Oktave (das ist der Stimmton, 440 Hz), zwei Achtel lang. Ein Takt hat 8 Achtel.
+- **`_:2`:** zwei Achtel Pause.
+- **`|`:** ein Taktstrich. Er ist nur für dich da, damit du die Takte zählen kannst. Das Skript prüft trotzdem, ob jeder Takt genau 8 Achtel hat, und sagt dir sonst, welcher nicht stimmt.
+
+**Und wie wiederholt sich das?** Ein Musikstück im Spiel soll endlos laufen, ohne Knacks an der Nahtstelle. Dafür braucht es zwei Dinge:
+1. **Das Ende muss zum Anfang passen.** Ein Ton, der kurz vor Schluss angeschlagen wird, klingt eigentlich über das Ende hinaus. Das Skript rechnet diesen Rest einfach vorne wieder dazu. Wenn das Stück von vorn anfängt, klingt der letzte Ton also noch nach, genau wie er soll.
+2. **Godot muss wissen, dass es wiederholen soll.** Eine WAV-Datei kann neben den Tönen noch andere Abschnitte enthalten. `musik.py` schreibt einen Abschnitt namens `smpl` hinein: „Schleife vom ersten bis zum letzten Sample“. Godot liest ihn beim Import. Schau nach: `musik_kerker.wav` im FileSystem anklicken, dann oben links den Tab **Import**. Bei **Loop Mode** steht `Detect From WAV`. Mehr musst du nicht tun.
+
+Willst du später Musik aus einem anderen Programm benutzen, die keinen `smpl`-Abschnitt hat, stellst du dort **Loop Mode** auf `Forward` und klickst auf **Reimport**. Das kommt in Übung 3.
+
+**Sind 2,3 MB Musik nicht zu viel fürs Web?** Im selben Import-Tab steht bei **Compress → Mode** `QOA`. Godot packt die Töne beim Import auf ungefähr ein Fünftel zusammen. Im fertigen Web-Export ist das ganze Spiel mit Musik gut 2 MB groß.
+
+### 14.3 Ein eigener Bus für die Musik
+
+Jeder Ton in Godot läuft durch einen **Audio-Bus**. Das ist wie ein Regler an einem Mischpult. Bisher gibt es nur einen, `Master`, und durch den läuft alles. Deine Lautstärke-Option aus Kapitel 13 dreht an diesem Regler.
+
+Für die Musik kommt ein zweiter Regler dazu. Er läuft in den Master hinein. Dreht man ihn herunter, wird nur die Musik leiser. Dreht man den Master herunter, wird alles leiser, die Musik auch.
+
+1. Unten im Editor auf **Audio** klicken (neben Output, Debugger, Animation …).
+2. **Add Bus**. Rechts neben `Master` erscheint `New Bus`.
+3. Doppelklick auf den Namen → **`Musik`**.
+4. Ganz unten am neuen Bus steht, wohin er geht: `Master`. So soll es sein.
+
+Godot speichert das von selbst in `default_bus_layout.tres` im Projektordner.
+
+### 14.4 Der Musik-Autoload
+
+Die Musik soll über Szenenwechsel hinweg weiterlaufen. Vom Titelbild in die Optionen und zurück soll sie nicht jedes Mal von vorn anfangen. Ein `AudioStreamPlayer` in `titel.tscn` würde beim Szenenwechsel mit der Szene verschwinden. Ein Autoload bleibt.
+
+Neues Skript **`musik.gd`**. Ganz oben steht diesmal nicht `extends Node`, sondern `extends AudioStreamPlayer`:
+
+```gdscript
+extends AudioStreamPlayer
+
+# Die Hintergrundmusik. Ein Autoload, darum spielt sie über jeden Szenenwechsel hinweg weiter.
+
+const TITEL = preload("res://musik_titel.wav")
+const KERKER = preload("res://musik_kerker.wav")
+const BOSS = preload("res://musik_boss.wav")
+const BLENDE = 0.6     # so lange dauert das Aus- und Einblenden, in Sekunden
+const LEISE = -40.0    # in dB: so gut wie nichts mehr zu hören
+
+var blende: Tween
+
+
+func _ready() -> void:
+	bus = &"Musik"
+	# Dialoge und Raumwechsel pausieren das Spiel. Die Musik soll trotzdem weiterspielen.
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
+
+# Ein Stück spielen. Läuft es schon, passiert nichts. Sonst wird das alte aus- und das neue eingeblendet.
+func spielen(stueck: AudioStream) -> void:
+	if stream == stueck and playing:
+		return
+	if blende:
+		blende.kill()
+	blende = create_tween()
+	if playing:
+		blende.tween_property(self, "volume_db", LEISE, BLENDE)
+	else:
+		volume_db = LEISE
+	blende.tween_callback(wechseln.bind(stueck))
+	blende.tween_property(self, "volume_db", 0.0, BLENDE)
+
+
+func wechseln(stueck: AudioStream) -> void:
+	stream = stueck
+	play()
+
+
+# Ausblenden und Ruhe
+func stoppen() -> void:
+	if blende:
+		blende.kill()
+	blende = create_tween()
+	blende.tween_property(self, "volume_db", LEISE, BLENDE)
+	blende.tween_callback(stop)
+```
+
+Eintragen: *Project Settings → Globals → Autoload*, Pfad `res://musik.gd`, Name **`Musik`**, **Add**. Er kommt unter `Optionen`.
+
+- **`extends AudioStreamPlayer`:** Bisher waren deine Autoloads einfache `Node`s mit Variablen und Funktionen. Ein Autoload kann aber jeder Knotentyp sein. Dieser hier *ist* ein AudioStreamPlayer, deshalb gibt es `stream`, `play()`, `playing` und `volume_db` einfach so, ohne `$`.
+- **`PROCESS_MODE_ALWAYS`:** Ohne diese Zeile hört die Musik bei jedem Dialog und bei jedem Raumwechsel auf. Ein pausierter AudioStreamPlayer pausiert nämlich auch seinen Ton. Das ist bei Geräuschen richtig: Ein Wasserspeier soll nicht weiterspucken, während ein Schild redet. Bei der Musik wäre es furchtbar.
+- **`bus = &"Musik"`:** Das `&` vor dem Text macht daraus einen **StringName**. Das ist ein Text, den Godot nur einmal speichert und danach blitzschnell vergleicht. Bus-Namen, Aktionen und Gruppen sind in Godot StringNames. Ein normaler Text geht meistens auch, Godot wandelt ihn um.
+- **Erst aus, dann ein:** Der Tween dreht die Lautstärke herunter, wechselt dann das Stück und dreht sie wieder hoch. `tween_callback()` kennst du von den Tweens bei Hüpfheld: An dieser Stelle im Ablauf wird eine Funktion aufgerufen.
+- **`wechseln.bind(stueck)`:** `tween_callback()` will eine Funktion, die es später aufruft, und zwar ohne Argumente. `bind()` klebt das Argument schon jetzt an die Funktion. Später wird dann `wechseln(stueck)` aufgerufen.
+- **`blende.kill()`:** Kommt ein neuer Wunsch, während noch geblendet wird, wird der alte Tween abgebrochen. Sonst würden zwei Tweens gleichzeitig an `volume_db` drehen.
+- **Warum nicht einfach `volume_db` für die Option?** Mit `volume_db` blendet `musik.gd` ein und aus. Die Lautstärke aus den Optionen regelt der Bus. So kommen die beiden sich nicht in die Quere.
+
+### 14.5 Wer bestellt welche Musik?
+
+Jede Szene sagt dem Autoload, was sie hören will. Läuft das Stück schon, passiert nichts. Darum kann man `spielen()` ruhig öfter aufrufen.
+
+**Titelbild:** In `titel.gd` als erste Zeile in `_ready()`:
+
+```gdscript
+	Musik.spielen(Musik.TITEL)
+```
+
+**Abspann:** In `abschluss.gd` dieselbe Zeile als erste in `_ready()`.
+
+**Kerker und Boss:** Welcher Raum gerade zu sehen ist, weiß die Kamera. Also entscheidet sie. In `camera_2d.gd` eine neue Funktion:
+
+```gdscript
+# Im Bossraum läuft die Bossmusik, solange dort noch etwas lebt. Sonst die Kerkermusik.
+func musik_waehlen() -> void:
+	var lebt_noch := get_tree().get_nodes_in_group("monster").any(
+			func(monster: Monster) -> bool: return raum_von(monster.start_position) == raum and not monster.tot)
+	if raum_von(boss.global_position) == raum and lebt_noch:
+		Musik.spielen(Musik.BOSS)
+	else:
+		Musik.spielen(Musik.KERKER)
+```
+
+Aufgerufen wird sie an zwei Stellen. Am Ende von `_ready()`:
+
+```gdscript
+	musik_waehlen.call_deferred()   # erst wenn alle Monster wissen, ob sie tot sind
+```
+
+Und in `schieben()`, gleich unter `%Karte.zeigen(raum)`:
+
+```gdscript
+	musik_waehlen()
+```
+
+- **`boss` ist der Raum, nicht die Krabbe:** In der Gruppe `boss` steckt der Marker2D aus `bossraum.tscn`. Er sagt, *wo* der Bossraum ist, aber nicht, ob die Krabbe noch lebt. Das fragt `any()` alle Monster: Lebt in diesem Raum noch eines?
+- **`any()`** ist der kleine Bruder von `all()` aus Kapitel 11: „Stimmt das für mindestens eines?“
+- **Die lange Zeile umbrechen:** Ist eine Zeile zu lang, darf sie nach einer offenen Klammer in der nächsten Zeile weitergehen. Zwei Tabs Einrückung zeigen: Das gehört noch zur Zeile darüber.
+- **Wieso funktioniert das auch nach dem Sieg?** Die Krabbe bleibt nach ihrem Tod für immer `tot`, auch im normalen Spiel (Kapitel 11). Betrittst du den Bossraum danach noch einmal, lebt dort nichts mehr, und es läuft die Kerkermusik.
+- **`call_deferred()` in `_ready()`:** Beim Start sind noch nicht alle Monster fertig. Steht die Krabbe im Szenenbaum weiter unten als die Kamera, hat sie ihr `_ready()` noch nicht gehabt und weiß noch gar nicht, dass sie schon besiegt ist. `call_deferred()` wartet, bis alle fertig sind. Genauso wird `monster_wecken` direkt darüber schon aufgerufen.
+- **Warum nicht die Bosssperre?** Die wüsste auch, wann der Bosskampf losgeht. Aber du hast sie in Kapitel 12 durch ein Kampfgitter ersetzt. `bosssperre.gd` und `bosssperre.tscn` benutzt nichts mehr, die kannst du löschen (14.8). Die Kamera dagegen gibt es sicher.
+
+**Der Boss stirbt:** Stille. Die Fanfare aus der Truhe soll gleich danach ganz für sich allein klingen. In `krabbe.gd`, in `sterben()`, gleich nach `Spielstand.erledigen(self)`:
+
+```gdscript
+	Musik.stoppen()   # Stille. Die Fanfare kommt gleich aus der Truhe.
+```
+
+### 14.6 Die Lautstärke für die Musik
+
+Bei der Durchsicht ist mir aufgefallen: Die Lautstärke aus Kapitel 13 wird gespeichert und geladen, aber beim Start nicht eingestellt. Stell sie auf 3, starte das Spiel neu: In den Optionen steht 3, aber es ist laut wie 10. Erst wenn du einmal links oder rechts drückst, stimmt es wieder. Beim Vollbild hattest du dasselbe schon mit `vollbild_anwenden()` gelöst. Bei der Lautstärke machst du es genauso, und die Musik kommt gleich mit dazu.
+
+In `optionen.gd`:
+
+```gdscript
+var lautstaerke := 10   # 0 bis 10: alles zusammen
+var musik := 10         # 0 bis 10: nur die Musik
+```
+
+Eine neue Funktion, über `laden()`:
+
+```gdscript
+# Bus 0 heißt immer Master, da läuft alles durch. Die Musik hat ihren eigenen Bus.
+# linear_to_db: Lautstärke hört man nicht gleichmäßig. 5 von 10 klingt so wirklich wie „halb so laut“.
+func lautstaerke_anwenden() -> void:
+	AudioServer.set_bus_volume_db(0, linear_to_db(lautstaerke / 10.0))
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Musik"), linear_to_db(musik / 10.0))
+```
+
+In `laden()` unter der Zeile mit `lautstaerke` eine Zeile für `musik`, und ganz am Ende unter `vollbild_anwenden()` der Aufruf:
+
+```gdscript
+	musik = datei.get_value("optionen", "musik", 10)
+	...
+	lautstaerke_anwenden()
+```
+
+In `speichern()` unter der Zeile mit `lautstaerke`:
+
+```gdscript
+	datei.set_value("optionen", "musik", musik)
+```
+
+- **`get_bus_index("Musik")`:** Busse haben eine Nummer, `Master` ist immer 0. Die Musik ist bei dir 1, aber wer weiß, ob du später noch einen Bus davorschiebst. Mit dem Namen bist du sicher.
+
+In `optionen_menue.gd` kommt „Musik“ unter „Lautstärke“ in `EINTRAEGE`, und in `ERKLAERUNG`:
+
+```gdscript
+	"Musik": "Nur die Musik. Die Geräusche bleiben, wie sie sind.",
+```
+
+In `aendern()` ersetzt du den Fall `"Lautstärke"` und hängst `"Musik"` dahinter:
+
+```gdscript
+		"Lautstärke":
+			Optionen.lautstaerke = clampi(Optionen.lautstaerke + schritt, 0, 10)
+			Optionen.lautstaerke_anwenden()
+		"Musik":
+			Optionen.musik = clampi(Optionen.musik + schritt, 0, 10)
+			Optionen.lautstaerke_anwenden()
+```
+
+Und in `anzeigen()` bei den `werte`:
+
+```gdscript
+		"Musik": str(Optionen.musik),
+```
+
+- **`clampi` statt `clamp`:** `clamp()` nimmt alles Mögliche und gibt einen `Variant` zurück. `clampi()` ist nur für ganze Zahlen (`i` wie *integer*) und gibt auch eine zurück. Dann weiß Godot schon beim Schreiben, was herauskommt.
+
+Zuletzt stimmt im Titelbild die Erklärung zu „Optionen“ nicht mehr. In `titel.gd`:
+
+```gdscript
+	"Optionen": ["Sprache, Lautstärke und wie der Held läuft."],
+```
+
+Die drei neuen Texte stehen schon in `texte.csv`, auf Englisch und Französisch. Bis du sie eingebaut hast, meldet `python texte.py` sie als „kommt im Spiel nicht vor“.
+
+### 14.7 Kein Vollbild im Browser
+
+Ein Browser lässt eine Seite nur dann ins Vollbild, wenn das **direkt** auf einen Klick oder Tastendruck passiert. So kann keine Webseite einfach von selbst den ganzen Bildschirm übernehmen. Godot liest die Tasten aber erst einen Moment später, in `_process()`. Für den Browser ist das schon „von selbst“. In meinem Test ist der Kerkerheld im Browser deshalb nie ins Vollbild gegangen, und beim Start, ganz ohne Tastendruck, geht es sowieso nicht.
+
+Den Eintrag „Vollbild“ gibt es im Browser darum gar nicht erst. Dort hat jeder sowieso **F11**. Woher weiß das Spiel, ob es im Browser läuft?
+
+In `optionen_menue.gd`, in `_ready()`, unter dem `if im_spiel:`-Block:
+
+```gdscript
+	if OS.has_feature("web"):
+		eintraege = eintraege.filter(func(e: String) -> bool: return e != "Vollbild")   # im Browser gibt es dafür F11
+```
+
+Und in `optionen.gd` als erste Zeilen in `vollbild_anwenden()`:
+
+```gdscript
+	if OS.has_feature("web"):
+		return
+```
+
+- **`OS.has_feature()`** fragt: „Auf was für einem Gerät laufe ich?“ Ein paar Antworten: `"web"`, `"windows"`, `"mobile"`, `"editor"`. Für DOOM wirst du das wieder brauchen, zum Beispiel für Grafikeinstellungen, die es nur auf dem PC gibt.
+- **Warum auch in `vollbild_anwenden()`?** `laden()` ruft es beim Start auf. Stünde in der Datei `vollbild = true`, würde das Spiel im Browser ohne Tastendruck nach dem Vollbild fragen. Der Eintrag ist im Browser zwar weg, aber so kann es gar nicht erst passieren.
+
+### 14.8 Ab ins Web
+
+Den Export kennst du von Hüpfheld (Kapitel 8.5). Kurz:
+
+1. In `06-kerkerheld` einen Ordner **`web`** mit einer leeren **`.gdignore`** darin.
+2. *Project → Export → Add… → Web*: **Export Path** `web/index.html`, **Thread Support** aus.
+3. **Export Project**, ohne **Export With Debug**.
+4. Im Ordner `games`:
+
+```bash
+python -m http.server 8000
+```
+
+Dann `http://localhost:8000/06-kerkerheld/web/` öffnen.
+
+Neu beim Kerkerheld:
+- **Erst ein Tastendruck, dann Ton.** Browser spielen auf einer Seite keinen Ton ab, bevor man dort etwas angeklickt oder gedrückt hat. Sonst würden einen Webseiten ständig ungefragt anbrüllen. Godot wartet deshalb, und die Titelmusik setzt mit dem ersten Tastendruck ein. Das ist kein Fehler.
+- **Der Spielstand wohnt im Browser.** Im Browser gibt es keinen Ordner `AppData`. `user://` landet im Speicher des Browsers, und zwar getrennt für jede Adresse. Was du auf `localhost` spielst, kennt die Startseite im Internet nicht, und umgekehrt. Ein privates Fenster vergisst alles, sobald es zu ist. Das gilt auch für die Bestenliste und die Optionen. Für deine Prüfsumme ändert sich nichts.
+- **Die Größe:** `index.wasm` ist wie immer die ganze Engine, knapp 40 MB. Dein Spiel selbst, `index.pck`, ist mit allen Bildern, Tönen und der Musik gut 2 MB groß.
+- **Die Lizenzen:** Godot (MIT) und die Kenney-Grafiken stehen schon in deiner `README.md`. Die Musik hat dein Skript gemacht, die gehört dir. Nur die Kenney-Schrift fehlt noch, die ist auch CC0.
+
+**Auf die Startseite:** In `games/index.html` steht der Kerkerheld schon in der Liste, nur noch ohne Ordner. Aus `folder: null` wird:
+
+```js
+  { num: '06', name: 'Kerkerheld', folder: '06-kerkerheld/web', color: '#2ecc71', highscoreKey: null,
+```
+
+Und das „In Arbeit:“ in der Beschreibung darunter darf jetzt weg. Schreib hin, was den Kerkerheld ausmacht. In der Spieltabelle in `games/README.md` gehört er natürlich auch dazu.
+
+Vorher aufräumen: Der Export nimmt **alles** mit, was Godot im Projekt kennt, auch Szenen, die nichts mehr benutzt. Lösch also `bosssperre.tscn` und `bosssperre.gd`. Die `.py`-Dateien, `texte.csv` und die Anleitung kommen übrigens nicht mit: Godot exportiert nur, was es selbst importiert hat. Aus `texte.csv` kommen nur die fertigen `.translation`-Dateien mit.
+
+### 14.9 Ausprobieren
+
+- [ ] Titelbild: Musik. In die Optionen und zurück: Sie läuft einfach weiter und fängt nicht von vorn an.
+- [ ] Neues Spiel: Die Titelmusik blendet aus, die Kerkermusik ein.
+- [ ] Ein Schild lesen: Die Musik spielt weiter, während das Spiel steht.
+- [ ] Raumwechsel: Die Musik läuft ohne Unterbrechung weiter.
+- [ ] Hör 20 Sekunden im selben Raum zu: Die Kerkermusik fängt ohne Knacks und ohne Pause von vorn an.
+- [ ] In den Bossraum: Bossmusik. Die Krabbe besiegen: Stille, dann die Fanfare aus der Truhe.
+- [ ] Nach dem Sieg noch einmal in den Bossraum: Kerkermusik.
+- [ ] Im Bossraum sterben: Am Eingang läuft wieder die Kerkermusik.
+- [ ] Abspann: Titelmusik.
+- [ ] Optionen: Musik auf 0. Die Musik ist weg, das Schwert zischt weiter. Lautstärke auf 0: alles still.
+- [ ] Musik auf 3, Spiel beenden, neu starten: Die Musik ist gleich leise, ohne dass du etwas drücken musst.
+- [ ] Im Browser: Musik nach dem ersten Tastendruck. Kein „Vollbild“ in den Optionen.
+- [ ] Im Browser einen Raum weit laufen, die Seite neu laden: „Weiter“ ist da.
+- [ ] Die Startseite zeigt den Kerkerheld, und ein Klick startet ihn.
+
+### 14.10 Was beim Bauen schiefging
+
+- **Musik, die es noch nicht gab:** Zuerst habe ich `musik.gd` geschrieben und danach erst `musik.py` laufen lassen. Godot hat sofort gemeckert: `Preload file "res://musik_titel.wav" has no resource loaders`. `preload()` lädt schon beim Lesen des Skripts, und eine Datei, die es nicht gibt, kann es nicht laden. Das Schlimme daran: Ein Autoload mit einem Fehler wird einfach nicht angelegt, und dann gibt es danach in jedem Skript Fehler bei `Musik.spielen()`. Deshalb steht in 14.2: erst die Musik, dann der Rest.
+- **Der Boss, der keiner war:** Meine erste `musik_waehlen()` hat gefragt, ob `boss` erledigt ist. Ergebnis: Bossmusik auch nach dem Sieg, für immer. `boss` ist ja der Marker2D des Raums, und ein Marker wird nie erledigt. Danach wollte ich die Bossmusik von der Bosssperre einschalten lassen, und es kam gar keine. Die Bosssperre steht nämlich in keiner Szene mehr. Am Ende hat die Kamera die Monster gefragt, und das geht immer.
+- **Vollbild im Browser:** Das habe ich in meinem Browser nicht zum Laufen bekommen, siehe 14.7. Probier ruhig aus, ob es in deinem geht: Lass die beiden `OS.has_feature`-Zeilen einmal weg, exportiere neu und schalte Vollbild ein. Wenn es klappt, sag Bescheid.
+
+### 14.11 Noch etwas aus Kapitel 13
+
+**Die Schrift steckt jetzt in `schrift_settings.tres`.** Die Datei war ein paar hundert Bytes groß und ist jetzt fast 1 MB groß. Darin steckt eine komplette Kopie von `Kenney Pixel.ttf`, dazu ein Bild von jedem Buchstaben, den das Spiel schon einmal gebraucht hat. So etwas passiert, wenn man bei **Font** auf **Make Unique** klickt, wahrscheinlich bei der Übung mit „Gespeichert“. Im Spiel sieht man davon nichts. Aber jede kleine Änderung an den Label Settings schreibt dann wieder fast 1 MB in Git, und wenn du die Schrift einmal austauschst, bekommt die Kopie das nicht mit.
+
+So machst du es rückgängig: `schrift_settings.tres` anklicken, im Inspector bei **Font** auf den Pfeil → **Load** → `Kenney/Kenney Pixel.ttf`. Danach ist die Datei wieder winzig.
+
+### Übungsaufgaben zu Kapitel 14
+
+1. **Gedämpft in der Pause (mittel):** Wenn das Pausenmenü offen ist, klingt die Musik wie aus dem Nebenraum. Ein Bus kann **Effekte** haben. Klick in der Audio-Leiste beim Bus `Musik` auf **Add Effect → LowPassFilter**. Der lässt nur die tiefen Töne durch. Schalte ihn im Bus aus und im Pausenmenü per Code ein und wieder aus: `AudioServer.set_bus_effect_enabled(bus, 0, true)`. Die `0` heißt: der erste Effekt in diesem Bus. Was passiert, wenn du im Bus mit **Cutoff Hz** spielst? 🔊
+2. **Deine eigene Melodie (leicht):** Schreib in `musik.py` die Melodie vom Kerker um und lass das Skript noch einmal laufen. Godot importiert die neue Datei von selbst. Wenn dir ein Takt nicht gefällt, ändere nur diesen einen. Bonus: Mach den Kerker 16 Takte lang, die zweiten 8 mit einer anderen Melodie über demselben Bass. Was musst du am Bass und an der Trommel ändern?
+3. **Musik mit BeepBox (mittel):** 🆓 **BeepBox** (beepbox.co) ist ein kostenloses Musikprogramm im Browser, ganz ohne Anmeldung. Man klickt Noten in ein Raster, wie bei einer Spieluhr. Bau dir damit ein eigenes Stück, zum Beispiel für den Kerker. Exportiere es mit *File → Export* als `.wav`, leg es ins Projekt und stell im Import-Tab **Loop Mode** auf `Forward` → **Reimport**. Warum musst du das hier von Hand machen und bei `musik.py` nicht? Und hörst du an der Nahtstelle einen Knacks? (Tipp: Schau, ob BeepBox beim Export die Ausklingzeit am Ende mitnimmt.)
+4. **Ein Raum mit eigener Musik (mittel):** Der Überraschungsraum (1, -1) bekommt ein eigenes Stück. Schreib in `musik.py` ein viertes Stück, zum Beispiel etwas Fröhliches in Dur, und lass `musik_waehlen()` es in diesem Raum spielen. Wie schreibst du das so, dass ein fünfter Raum mit eigener Musik nur noch eine einzige Zeile kostet? (Tipp: ein Dictionary von Raum zu Stück.)
+5. **Weiter, wo es war (knifflig):** Gehst du vom Kerker in den Bossraum und wieder zurück, fängt die Kerkermusik von vorn an. Schöner wäre es, wenn sie dort weitermacht, wo sie aufgehört hat. `get_playback_position()` sagt dir, wo ein Stück gerade ist, und `play(sekunde)` fängt an einer bestimmten Stelle an. Merk dir in `musik.gd` für jedes Stück, wo es war, zum Beispiel in einem Dictionary. Wann musst du die Stelle speichern? Vor oder nach dem Ausblenden?
+6. **Herzklopfen (mittel):** Bei wenig Leben piept der Warnton aus Kapitel 6. Lass dazu die Musik etwas schneller laufen: `Musik.pitch_scale = 1.1`. Klingt das gut? Was passiert mit der Tonhöhe? Godot hat auch einen Effekt namens **PitchShift**. Kannst du damit die Musik schneller machen, ohne dass sie höher klingt? 🎵
+7. **Für alle (leicht, freiwillig):** Lad den Kerkerheld auf 🆓 **itch.io** hoch. Dafür brauchst du ein Konto, das legst du selbst an. Pack den Inhalt von `web/` in eine ZIP-Datei, lade sie hoch und kreuz **This file will be played in the browser** an. Bei **SharedArrayBuffer support** machst du kein Kreuz, weil du ohne Threads exportiert hast. Und jetzt schick den Link jemandem, der gern Zelda spielt. 🎮
+
+**Der Kerkerheld ist fertig!** 🏰 Vierzehn Kapitel, ein ganzer Dungeon mit Boss, Rätseln, Speichern, zwei Spielarten, drei Sprachen und Musik. Committen und Bescheid geben. Laut Roadmap ist das nächste Projekt **07 · Vampire Survivors (light)**: Hunderte Gegner auf einmal, und du lernst, wie man ein Spiel schnell hält, wenn sehr viel gleichzeitig passiert. Genau das braucht DOOM später auch.

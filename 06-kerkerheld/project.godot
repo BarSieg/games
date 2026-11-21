@@ -13,13 +13,20 @@ config_version=5
 config/name="Kerkerheld"
 run/main_scene="uid://c2jgxcigrwuri"
 config/features=PackedStringArray("4.7", "GL Compatibility")
+boot_splash/bg_color=Color(0.1481939, 0.8755158, 0.15175688, 1)
+boot_splash/image="uid://c22bslsot8atb"
 config/icon="res://icon.svg"
+
+[audio]
+
+buses/default_bus_layout="uid://vh2tmtmhwqv"
 
 [autoload]
 
 Spielstand="*uid://bx1sg1inu8xe8"
 Dialog="*uid://brf82eyod5ei5"
 Optionen="*uid://dwwcb2234w154"
+Musik="*uid://b35c1iwdmvjd1"
 
 [display]
 
