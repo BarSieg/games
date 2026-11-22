@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://drc8wjs0mbt43"]
+
+[ext_resource type="Script" uid="uid://c1xvj17nx46o2" path="res://held.gd" id="1_7usdt"]
+[ext_resource type="Texture2D" uid="uid://bnbym1pdxbtwp" path="res://kenney/tiny_dungeon/tilemap_packed.png" id="2_xw2dj"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_s017u"]
+radius = 5.0
+
+[node name="Held" type="CharacterBody2D" unique_id=2076376353]
+collision_mask = 0
+motion_mode = 1
+script = ExtResource("1_7usdt")
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=1341013985]
+texture = ExtResource("2_xw2dj")
+hframes = 12
+vframes = 11
+frame = 100
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1401314534]
+position = Vector2(0, 3)
+shape = SubResource("CircleShape2D_s017u")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=15103216]

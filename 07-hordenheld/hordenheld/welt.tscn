@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://c0otbldfkav1j"]
+
+[ext_resource type="Script" uid="uid://kp0ycry58oag" path="res://boden.gd" id="1_2weay"]
+[ext_resource type="Texture2D" uid="uid://bmmj62uic71c2" path="res://kenney/tiny_town/tilemap_packed.png" id="2_3bccv"]
+[ext_resource type="PackedScene" uid="uid://drc8wjs0mbt43" path="res://held.tscn" id="3_4agmm"]
+
+[node name="Welt" type="Node2D" unique_id=1926768728]
+
+[node name="Boden" type="Sprite2D" parent="." unique_id=1052935733]
+z_index = -10
+script = ExtResource("1_2weay")
+kachelblatt = ExtResource("2_3bccv")
+kachel = Vector2i(1, 0)
+
+[node name="Held" parent="." unique_id=2076376353 instance=ExtResource("3_4agmm")]
+position = Vector2(-2, 1)
