@@ -18,7 +18,7 @@ Alle Spiele laufen direkt im Browser, ohne Installation. Die ersten vier (00 bis
 | 05 | [Hüpfheld](05-huepfheld/web/) | Jump’n’Run: Laufen, springen, Gegner plattmachen | Bewegliche Gegner, Kamera, Tween Animation |
 | 06 | [Kerkerheld](06-kerkerheld/web/) | Ein Dungeon von oben, mit Rätseln, Händler und Boss | State Machines, Dialoge, Speichern und Laden, Übersetzen, Musik |
 
-**In Arbeit:** 07 · Hordenheld. Überleben gegen Hunderte Gegner auf einmal, im Stil von Vampire Survivors. Dabei geht es um Performance: wie ein Spiel flüssig bleibt, wenn sehr viel gleichzeitig passiert.
+**In Arbeit:** 07 · [Hordenheld](07-hordenheld/). Überleben gegen Hunderte Gegner auf einmal, im Stil von Vampire Survivors. Dabei geht es um Performance: wie ein Spiel flüssig bleibt, wenn sehr viel gleichzeitig passiert.
 
 Jeder Ordner hat eine eigene `README.md` mit Steuerung, Lernnotizen und Übungsaufgaben.
 

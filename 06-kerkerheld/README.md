@@ -14,6 +14,7 @@ Im Browser setzt die Musik erst mit dem ersten Tastendruck ein, so wollen es die
 **Steuerung:**
 - **Tastatur:** Pfeiltasten oder WASD: Laufen · Leertaste/J: Angriff, Sprechen, Öffnen · Esc: Pause
 - **Xbox-Controller:** Stick oder D-Pad: Laufen · A: Angriff, Sprechen, Öffnen · Start: Pause
+- **Handy und Tablet (im Browser):** Steuerkreuz: Laufen · A: Angriff, Sprechen, Öffnen · Start: Pause
 
 **Sprachen:** Deutsch, Englisch und Französisch, umschaltbar in den Optionen.
 
