@@ -1,8 +1,8 @@
 extends Sprite2D
 
-# Der Boden: ein Bild, das eine Kachel immer wieder wiederholt.
-# Es ist so groß wie der Bildschirm plus eine Kachel an jedem Rand und springt mit der Kamera mit,
-# immer um eine ganze Kachel. Weil alle Kacheln gleich aussehen, merkt man das Springen nicht.
+# Der Boden: ein Bild, das ein Muster aus 2×2 Kacheln immer wieder wiederholt.
+# Es ist so groß wie der Bildschirm plus ein Muster und springt mit der Kamera mit,
+# immer um ein ganzes Muster. Weil alle Muster gleich aussehen, merkt man das Springen nicht.
 
 const KACHEL = 16
 
@@ -32,5 +32,5 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	# Die linke obere Ecke vom Bildschirm, in der Welt
 	var ecke := get_viewport().get_camera_2d().get_screen_center_position() - get_viewport_rect().size / 2
-	# Auf ganze Kacheln abrunden, und eine Kachel Vorsprung, damit am Rand nie etwas fehlt
-	global_position = (ecke / (2 * KACHEL)).floor() * (2 * KACHEL) 
+	# Auf ganze Muster abrunden: Der Boden fängt immer links oberhalb vom Bildschirm an
+	global_position = (ecke / (2 * KACHEL)).floor() * (2 * KACHEL)

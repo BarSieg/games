@@ -10,8 +10,8 @@ Gespielt wird mit dem Controller. Die Tastatur geht natürlich auch.
 
 **Geplante Kapitel:**
 1. Projekt, Held und eine Wiese ohne Ende ✔
-2. Gegner kommen von überall ← *du bist hier*
-3. Die Waffe schießt von selbst
+2. Gegner kommen von überall ✔
+3. Die Waffe schießt von selbst ← *du bist hier*
 4. Edelsteine, Erfahrung und Level-Up
 5. Upgrades als Daten: mehrere Waffen mit Stufen
 6. Hunderte Gegner: Der Profiler zeigt, was bremst
@@ -420,5 +420,165 @@ Fertig? Committen und Bescheid geben.
 
 1. **Ohne Drängeln (leicht):** Stell bei `gegner.tscn` die **Mask** ganz aus und lass 30 Sekunden laufen, ohne dich zu bewegen. Wie viele Spinnen siehst du am Ende, und wie viele zeigt der Zähler? Wie schnell stirbt der Held jetzt? Stell die Mask danach wieder auf `2`. 🥞
 2. **Fledermäuse (mittel):** Mach einen zweiten Gegner, der schneller ist. Rechtsklick auf `gegner.tscn` → **New Inherited Scene**: Die neue Szene erbt alles und ändert nur, was du änderst. **Frame** `120`, **Tempo** `50`, speichern als `fledermaus.tscn`. Dann soll der Spawner zufällig wählen: Aus `gegner_szene` wird `@export var gegner_szenen: Array[PackedScene]`, und `pick_random()` sucht eine aus. Was passiert, wenn du die Fledermaus zweimal ins Array einträgst? 🦇
-3. **Rechteck statt Kreis (mittel):** Der Kreis hat einen Haken: Der Bildschirm ist breit, aber nicht hoch. Ein Gegner, der rechts entsteht, ist nach 48 Pixeln im Bild. Einer, der oben entsteht, braucht dafür 132 Pixel. Lass die Gegner stattdessen auf einem Rechteck knapp um den Bildschirm entstehen. Würfle erst, an welcher Seite. Und warum sollten oben und unten seltener drankommen als links und rechts? (Tipp: Wie lang sind die Seiten?)
+3. **Rechteck statt Kreis (mittel):** Der Kreis hat einen Haken: Der Bildschirm ist breit, aber nicht hoch. Ein Gegner, der rechts entsteht, ist nach 48 Pixeln im Bild. Einer, der oben entsteht, braucht dafür 132 Pixel. Lass die Gegner stattdessen auf einem Rechteck knapp um den Bildschirm entstehen. Würfle erst, an welcher Seite. Und warum sollten oben und unten öfter drankommen als links und rechts? (Tipp: Wie lang sind die Seiten?)
 4. **Nachzügler (mittel):** Wer lange in eine Richtung läuft, zieht eine Schleppe aus Spinnen hinter sich her, die nie aufholt. Lass einen Gegner, der weiter als 300 Pixel vom Held weg ist, auf die **andere Seite** springen, also vor den Held. Dann ist vorn immer was los. (Tipp: Der Vektor vom Gegner zum Held, noch einmal vom Held aus angelegt.) Warum ist das besser, als ihn zu löschen und einen neuen zu machen?
+
+---
+
+## Kapitel 3: Die Waffe schießt von selbst
+
+Endlich darf der Held zurückschlagen. Seine erste Waffe ist ein **Wurfmesser**: Alle paar Zehntelsekunden fliegt eines auf den nächsten Gegner zu. Zielen musst du nicht, nur gut laufen. 🔪
+
+### 3.1 Gegner bekommen Leben
+
+Bis jetzt sind die Gegner unverwundbar. In `gegner.gd` kommt ein Export dazu, gleich unter `tempo`:
+
+```gdscript
+@export var leben := 2      # so viele Treffer hält er aus
+```
+
+Und ganz unten eine neue Funktion. Die ruft später das Messer auf, wenn es trifft:
+
+```gdscript
+func treffer(schaden: int) -> void:
+	leben -= schaden
+	if leben <= 0:
+		queue_free()
+```
+
+Weil die Fledermaus von `gegner.tscn` erbt, hat sie jetzt auch Leben. Öffne `fledermaus.tscn` und stell **Leben** auf `1`. Sie ist schnell, aber zerbrechlich. Den Wert zeigt der Inspector **ohne** den kleinen Pfeil zum Zurücksetzen, solange er noch geerbt ist. Sobald du ihn änderst, erscheint der Pfeil. So siehst du immer, was die Fledermaus anders macht als der Grund-Gegner.
+
+### 3.2 Das Messer
+
+1. Neue Szene: **Other Node** → `Area2D` → umbenennen in `Messer`.
+2. **Collision → Layer** nur `3` (Waffe), **Mask** nur `2` (Gegner). **Monitorable** aus: Niemand muss das Messer bemerken, das Messer bemerkt die Gegner.
+3. Kinder:
+   - `Sprite2D` → `Bild`, das Tiny-Dungeon-Blatt, **Hframes** `12`, **Vframes** `11`, **Frame** `103`. Das ist ein kleiner Dolch, die Spitze zeigt nach oben.
+   - `CollisionShape2D` → **New CircleShape2D**, **Radius** `4`.
+4. Skript anhängen, **Template: Empty**:
+
+```gdscript
+extends Area2D
+
+const TEMPO = 200.0        # Pixel pro Sekunde
+const LEBENSDAUER = 1.5    # Sekunden, dann ist das Messer weg, auch wenn es nichts getroffen hat
+
+var richtung := Vector2.RIGHT   # setzt die Waffe, bevor das Messer in die Welt kommt
+var schaden := 1                # das auch
+var zeit := LEBENSDAUER
+
+
+func _ready() -> void:
+	# Das Bild zeigt nach oben, der Winkel 0 aber nach rechts. Darum eine Vierteldrehung dazu.
+	rotation = richtung.angle() + PI / 2
+
+
+func _physics_process(delta: float) -> void:
+	position += richtung * TEMPO * delta
+	zeit -= delta
+	if zeit <= 0:
+		queue_free()
+
+
+func _on_body_entered(body: Node2D) -> void:
+	# Trifft das Messer zwei Gegner im selben Bild, zählt nur der erste
+	if is_queued_for_deletion():
+		return
+	body.treffer(schaden)
+	queue_free()
+```
+
+5. Signal verbinden: Tab **Node** → **Signals** → `body_entered` → Doppelklick → **Connect** an `Messer`. Godot findet die Funktion `_on_body_entered`, die schon im Skript steht.
+6. Speichern als `messer.tscn`.
+
+**Warum `richtung.angle() + PI / 2`?** `angle()` gibt den Winkel eines Vektors. 0 heißt nach rechts, und es geht im Uhrzeigersinn weiter, weil in Godot y nach unten zählt. Der Dolch auf dem Kachelblatt zeigt aber nach oben, und das ist eine Vierteldrehung, also `PI / 2`, weniger als rechts. Mit `+ PI / 2` zeigt die Spitze genau in Flugrichtung.
+
+**Warum eine Lebensdauer?** Ein Messer, das danebengeht, fliegt sonst ewig weiter. Nach ein paar Minuten wären Tausende unterwegs, die niemand sieht, und jedes kostet Rechenzeit. 1,5 Sekunden mal 200 Pixel sind 300 Pixel, das reicht bis weit hinter den Bildschirmrand.
+
+**Warum `is_queued_for_deletion()`?** `queue_free()` löscht nicht sofort, sondern am Ende des Bildes. Stecken zwei Spinnen dicht beieinander, kann `body_entered` im selben Bild zweimal kommen. Ohne die Abfrage träfe ein Messer dann beide. In Übung 3 machst du genau das mit Absicht.
+
+### 3.3 Die Waffe
+
+Die Waffe ist ein eigener Node am Held. Sie sucht den nächsten Gegner, wirft ein Messer und wartet dann.
+
+1. `held.tscn` öffnen. Kind von `Held`: `Node2D` → `Waffe`.
+2. Skript an `Waffe`, als `waffe.gd` speichern:
+
+```gdscript
+extends Node2D
+
+@export var geschoss_szene: PackedScene
+@export var abklingzeit := 0.6    # Sekunden zwischen zwei Würfen
+@export var schaden := 1
+@export var reichweite := 150.0   # auf Gegner, die weiter weg sind, wird nicht geworfen
+
+var warten := 0.0
+
+
+func _physics_process(delta: float) -> void:
+	warten -= delta
+	if warten > 0:
+		return
+	var ziel := naechster_gegner()
+	if ziel == null:
+		return   # niemand da: warten bleibt unter 0, beim nächsten Gegner wird sofort geworfen
+
+	var geschoss := geschoss_szene.instantiate()
+	geschoss.richtung = global_position.direction_to(ziel.global_position)
+	geschoss.schaden = schaden
+	# In die Welt, nicht an den Held: Sonst liefe das Messer mit, wenn der Held läuft
+	get_tree().current_scene.add_child(geschoss)
+	geschoss.global_position = global_position
+	warten = abklingzeit
+
+
+func naechster_gegner() -> Node2D:
+	var bester: Node2D = null
+	var bester_abstand := reichweite * reichweite
+	for gegner: Node2D in get_tree().get_nodes_in_group("gegner"):
+		var abstand := global_position.distance_squared_to(gegner.global_position)
+		if abstand < bester_abstand:
+			bester = gegner
+			bester_abstand = abstand
+	return bester
+```
+
+3. Im Inspector bei `Waffe`: **Geschoss Szene** = `messer.tscn`.
+
+**Warum nicht als Kind vom Held?** Ein Kind bewegt sich mit seinem Eltern-Node mit. Ein Messer am Held würde jeden Schritt mitmachen und eine Kurve fliegen, sobald du die Richtung wechselst. Darum kommt es mit `current_scene.add_child` direkt in die Welt. `current_scene` ist die Szene, die gerade läuft, also `welt.tscn`. Erst danach wird `global_position` gesetzt: Jetzt hängt das Messer in der Welt, und Godot weiß, wovon aus es rechnen soll.
+
+**`richtung` und `schaden` vor `add_child`:** `_ready()` vom Messer läuft beim `add_child`. Dann muss die Richtung schon stimmen, sonst dreht sich das Messer nach rechts statt zum Ziel.
+
+**Warum `warten = abklingzeit` und nicht `+=` wie beim Spawner?** Wenn eine Weile niemand in Reichweite ist, wird `warten` immer kleiner, zum Beispiel −5. Mit `+=` käme `warten` erst nach neun Würfen wieder über 0, und es flögen neun Messer direkt hintereinander los, eines pro Bild. Beim Spawner wollten wir genau das: Kein Gegner soll verloren gehen. Hier wäre es ein Fehler.
+
+**`distance_squared_to`** ist der Abstand **zum Quadrat**. Um den echten Abstand auszurechnen, braucht der Rechner eine Wurzel (Pythagoras), und Wurzeln sind vergleichsweise teuer. Um herauszufinden, wer am nächsten ist, ist das Quadrat genauso gut: Wer näher ist, hat auch das kleinere Quadrat. Darum ist auch `bester_abstand` am Anfang `reichweite * reichweite`. Bei 500 Gegnern und mehreren Waffen spart das spürbar Rechenzeit. Mehr dazu in Kapitel 6.
+
+**`for gegner: Node2D in ...`:** Mit `: Node2D` sagst du Godot, was in der Liste steckt. Dann kennt es `global_position` und kann dir beim Tippen helfen.
+
+### 3.4 Ausprobieren
+
+**F5**:
+- Sobald eine Spinne näher als 150 Pixel ist, fliegt ein Messer. Die Spitze zeigt zum Ziel.
+- Spinnen brauchen zwei Treffer, Fledermäuse einen.
+- Ist niemand in Reichweite, wird nicht geworfen.
+- Messer, die danebengehen, verschwinden nach 300 Pixeln.
+
+In meinem Test hat der Held die ersten 20 Sekunden gut ausgesehen. Danach kommen mehr Gegner, als ein einzelnes Messer schafft, und nach etwa 30 Sekunden war die Horde stärker. Das ist so gewollt: Stärker wird der Held mit Edelsteinen und Upgrades, und die kommen in Kapitel 4 und 5.
+
+### 3.5 Was ist neu?
+
+- **Eine Waffe, die selbst zielt:** Sie geht alle Gegner durch und merkt sich den nächsten.
+- **`distance_squared_to`:** Vergleichen ohne Wurzel, schneller bei vielen Gegnern.
+- **Geschosse kommen in die Welt**, nicht an den, der schießt. Werte setzen vor `add_child`, Position danach.
+- **Eine Lebensdauer**, damit danebengegangene Messer nicht ewig fliegen.
+- **`is_queued_for_deletion()`:** Was schon gelöscht werden soll, macht nichts mehr.
+- **Geerbte Werte überschreiben:** Die Fledermaus hat weniger Leben, alles andere bleibt geerbt.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 3
+
+1. **Maschinengewehr (leicht):** Stell **Abklingzeit** auf `0.05`. Wie lange hältst du jetzt durch? Schau auch auf den Zähler und die FPS. Warum wäre das im fertigen Spiel trotzdem langweilig? Stell es danach wieder zurück. 🔫
+2. **Fächer (mittel):** Neuer Export `anzahl := 1` in `waffe.gd`. Bei `3` fliegen drei Messer auf einmal: das mittlere genau aufs Ziel, die anderen 15 Grad daneben. (Tipp: `richtung.rotated(deg_to_rad(15))`. Und wie verteilst du die Winkel, wenn `anzahl` mal 2 oder 5 ist?)
+3. **Durchschlag (mittel):** Das Messer soll durch zwei Gegner fliegen und erst am dritten hängen bleiben. Gib dem Messer eine Variable `durchschlag` und zähl sie bei jedem Treffer herunter. Brauchst du `is_queued_for_deletion()` dann noch? Kann es passieren, dass ein Messer **denselben** Gegner zweimal trifft?
+4. **Rückstoß (mittel):** Ein getroffener Gegner soll ein paar Pixel zurückgeschubst werden. Dafür braucht `treffer` die Flugrichtung des Messers als zweiten Parameter. Der Schaden bleibt gleich, die Waffe fühlt sich aber stärker an. Warum? (Mehr davon in Kapitel 8.)

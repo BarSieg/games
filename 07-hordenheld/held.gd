@@ -24,7 +24,8 @@ func _physics_process(delta: float) -> void:
 	else:
 		lauf_zeit = 0.0
 		$Bild.rotation = 0.0
-		# Wie viele Gegner berühren mich gerade?
+
+	# Wie viele Gegner berühren mich gerade?
 	var treffer: int = $Trefferzone.get_overlapping_bodies().size()
 	if treffer > 0:
 		leben -= treffer * SCHADEN * delta

@@ -2,8 +2,8 @@ extends CharacterBody2D
 
 const WACKELN = 12.0
 const WACKEL_WINKEL = 0.15
-const MAX_ABSTAND = 300.0 # Wenn Gegner so viel Pixel hinter dem Heldenist
-const TELEPORT_ABSTAND = 250.0 # Teleportiert er so viel Pixel vor dem Helden
+const MAX_ABSTAND = 300.0        # ist ein Gegner so viele Pixel hinter dem Held,
+const TELEPORT_ABSTAND = 250.0   # springt er so viele Pixel vor den Held
 
 @export var tempo := 30.0   # Pixel pro Sekunde, langsamer als der Held
 
@@ -17,7 +17,7 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	# Abstand zum Helden messen und falls zu weit teleportierren
+	# Abstand zum Held messen und, falls zu weit, nach vorn springen
 	var richtung := global_position.direction_to(held.global_position)
 	if (global_position - held.global_position).length() > MAX_ABSTAND:
 		global_position += richtung * (MAX_ABSTAND + TELEPORT_ABSTAND)

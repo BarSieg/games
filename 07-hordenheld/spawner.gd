@@ -23,29 +23,29 @@ func _process(delta: float) -> void:
 func neuer_gegner() -> void:
 	var held := get_tree().get_first_node_in_group("held") as Node2D
 	var gegner := gegner_szenen[randi() % gegner_szenen.size()].instantiate()
-	
-	# Ein zufälliger Punkt auf einem Kreis um den Held
-	var alpha := Vector2.from_angle(randf() * TAU).normalized()
-	
-	var bx := get_viewport_rect().size.x / 2 # halbe Bildschirm Breite
-	var by := get_viewport_rect().size.y / 2 # halbe Bildschirm Höhe
-	
-	var tx := 100500.0 # Abstand zum Snittpunkt
-	var ty := 100500.0 # Abstand zum Snittpunkt
 
-	# wo wird der Richtungsvector den Bildschirmrand horisontal schneiden?
+	# Eine zufällige Richtung vom Held aus
+	var alpha := Vector2.from_angle(randf() * TAU)
+
+	var bx := get_viewport_rect().size.x / 2   # halbe Bildschirmbreite
+	var by := get_viewport_rect().size.y / 2   # halbe Bildschirmhöhe
+
+	var tx := INF   # Abstand zum Schnittpunkt
+	var ty := INF   # Abstand zum Schnittpunkt
+
+	# Wo schneidet die Richtung den linken oder rechten Bildschirmrand?
 	if alpha.x > 0:
-		tx = (bx ) / alpha.x # rechts
+		tx = bx / alpha.x    # rechts
 	elif alpha.x < 0:
-		tx = (-bx  ) / alpha.x #links
+		tx = -bx / alpha.x   # links
 
-	# wo wird der Richtungsvector den Bildschirmrand vertical schneiden?
+	# Wo schneidet die Richtung den oberen oder unteren Bildschirmrand?
 	if alpha.y > 0:
-		ty = (by ) / alpha.y # unten
+		ty = by / alpha.y    # unten
 	elif alpha.y < 0:
-		ty = (-by ) / alpha.y # oben
+		ty = -by / alpha.y   # oben
 
 	# nehme den nächsten Schnittpunkt + Abstand hinter dem Bildschirmrand
-	gegner.position = held.global_position + (min(tx, ty) + ABSTAND) * alpha
+	gegner.position = get_viewport().get_camera_2d().get_screen_center_position() + (minf(tx, ty) + ABSTAND) * alpha
 	#prints(alpha, held.global_position, get_viewport_rect().size, tx, ty, gegner.position, versatz.length())
 	add_child(gegner)
