@@ -7,13 +7,11 @@ extends Sprite2D
 const KACHEL = 16
 
 @export var kachelblatt: Texture2D
-@export var kachel_lo := Vector2i(0, 0)   # welche Kachel vom Blatt, gezählt in Kacheln (Spalte, Zeile)
-@export var kachel_ro := Vector2i(0, 0)   # welche Kachel vom Blatt, gezählt in Kacheln (Spalte, Zeile)
-@export var kachel_lu := Vector2i(0, 0)   # welche Kachel vom Blatt, gezählt in Kacheln (Spalte, Zeile)
-@export var kachel_ru := Vector2i(0, 0)   # welche Kachel vom Blatt, gezählt in Kacheln (Spalte, Zeile)
-
-
-
+# Welche Kacheln vom Blatt ins 2×2-Muster kommen, gezählt in Kacheln (Spalte, Zeile)
+@export var kachel_lo := Vector2i(0, 0)   # links oben
+@export var kachel_ro := Vector2i(0, 0)   # rechts oben
+@export var kachel_lu := Vector2i(0, 0)   # links unten
+@export var kachel_ru := Vector2i(0, 0)   # rechts unten
 
 
 func _ready() -> void:
@@ -28,11 +26,11 @@ func _ready() -> void:
 	centered = false
 	# region größer als das Bild selbst: Dann wird es wiederholt, bis die Fläche voll ist
 	region_enabled = true
-	region_rect = Rect2(Vector2.ZERO, get_viewport_rect().size + 4 * Vector2(KACHEL, KACHEL) )
+	region_rect = Rect2(Vector2.ZERO, get_viewport_rect().size + 2 * Vector2(KACHEL, KACHEL))
 
 
 func _process(_delta: float) -> void:
 	# Die linke obere Ecke vom Bildschirm, in der Welt
 	var ecke := get_viewport().get_camera_2d().get_screen_center_position() - get_viewport_rect().size / 2
 	# Auf ganze Kacheln abrunden, und eine Kachel Vorsprung, damit am Rand nie etwas fehlt
-	global_position = (ecke / (2 * KACHEL)).floor() * (2 * KACHEL) - 2 * Vector2(KACHEL , KACHEL)
+	global_position = (ecke / (2 * KACHEL)).floor() * (2 * KACHEL) 

@@ -17,9 +17,10 @@ _(kommt nach und nach)_
 ## Notizen
 _(Was war schwer? Was würde ich anders machen?)_
 
-## Grafiken und Engine
+## Grafiken, Schrift und Engine
 - Figuren und Gegenstände: [Tiny Dungeon](https://kenney.nl/assets/tiny-dungeon) von Kenney, CC0
 - Wiese: [Tiny Town](https://kenney.nl/assets/tiny-town) von Kenney, CC0
+- Schrift: [Kenney Fonts](https://kenney.nl/assets/kenney-fonts) von Kenney, CC0
 - Erstellt mit der [Godot Engine](https://godotengine.org) (MIT-Lizenz)
 
 Für meinen eigenen Code und meine Sounds gilt die [LICENSE](../LICENSE) im Hauptordner.
