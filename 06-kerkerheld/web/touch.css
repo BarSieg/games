@@ -1,0 +1,71 @@
+/* Die Ebene liegt über allem, lässt Berührungen aber durch, außer auf den Knöpfen */
+#touch {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 24px;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  font-family: sans-serif;
+}
+
+/* Querformat: Der Rand ist links und rechts, die Knöpfe sitzen in der Mitte der Höhe */
+@media (orientation: landscape) {
+  #touch { align-items: center; padding: 12px; }
+}
+
+.kreuz, .knoepfe button { pointer-events: auto; touch-action: none; }
+
+/* Steuerkreuz: ein Kreis mit vier Pfeilen */
+.kreuz {
+  position: relative;
+  width: min(40vmin, 170px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+}
+.kreuz span {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: min(8vmin, 32px);
+  transform: translate(-50%, -50%);
+}
+.kreuz span[data-code="ArrowUp"]    { left: 50%; top: 18%; }
+.kreuz span[data-code="ArrowDown"]  { left: 50%; top: 82%; }
+.kreuz span[data-code="ArrowLeft"]  { left: 18%; top: 50%; }
+.kreuz span[data-code="ArrowRight"] { left: 82%; top: 50%; }
+
+.knoepfe {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.knoepfe button {
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: bold;
+}
+.knoepfe .a {
+  width: min(22vmin, 90px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  font-size: min(8vmin, 32px);
+}
+.knoepfe .start {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+
+/* Gedrückt: smaragdgrün, wie die Münzen */
+.kreuz span.an { color: #00f24d; }
+.knoepfe button.an { background: rgba(0, 242, 77, 0.3); border-color: #00f24d; color: #fff; }
