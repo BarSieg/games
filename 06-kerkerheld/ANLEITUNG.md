@@ -5027,8 +5027,5 @@ Auf einem **echten** Handy habe ich es nicht ausprobiert. Zwei Dinge musst du do
 ### Übungsaufgaben zu Kapitel 15
 
 1. **Brummen (leicht):** Lass das Handy beim Drücken von A kurz vibrieren: `navigator.vibrate(15)`. Die Zahl sind Millisekunden. Auf Android geht das, auf dem iPhone passiert einfach nichts. Warum ist das kein Fehler, und wie schreibst du die Zeile so, dass sie auf dem iPhone nicht abstürzt, falls es `navigator.vibrate` dort gar nicht gibt? 📳
-2. **Für Linkshänder (leicht):** Tausch Steuerkreuz und Knöpfe: Kreuz rechts, A links. Das geht mit einer einzigen CSS-Zeile in `#touch`. (Tipp: `flex-direction`.)
-3. **Weniger im Weg (mittel):** Auf einem Tablet im Querformat ist der Rand vielleicht schmaler als das Steuerkreuz, dann liegt es doch über dem Spiel. Mach die Knöpfe dort halb durchsichtig, solange sie nicht gedrückt sind. Woran erkennt CSS, dass der Bildschirm nicht viel breiter als hoch ist? (Tipp: `@media (max-aspect-ratio: ...)`)
-4. **Titelbild (mittel):** Im Titelbild steht nirgends, welche Taste was macht. Auf dem Handy wäre „A drücken“ hilfreich, am PC „Leertaste“. Godot kann fragen, ob es einen Touchscreen gibt: `DisplayServer.is_touchscreen_available()`. Zeig damit im Titelbild den passenden Hinweis. Und was sagt die Funktion auf einem Laptop mit Touchscreen? ✋
 
 **Der Kerkerheld ist fertig!** 🏰 Fünfzehn Kapitel: ein ganzer Dungeon mit Boss, Rätseln, Speichern, zwei Spielarten, drei Sprachen und Musik, spielbar auch auf dem Handy. Committen und Bescheid geben. Laut Roadmap ist das nächste Projekt **07 · Vampire Survivors (light)**: Hunderte Gegner auf einmal, und du lernst, wie man ein Spiel schnell hält, wenn sehr viel gleichzeitig passiert. Genau das braucht DOOM später auch.

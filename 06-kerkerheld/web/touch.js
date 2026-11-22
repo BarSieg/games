@@ -1,6 +1,14 @@
 // Touch-Knöpfe für Handy und Tablet. Sie liegen im schwarzen Rand neben dem Spiel
 // und schicken dem Spiel ganz normale Tastendrücke. Godot merkt keinen Unterschied.
 
+//fallback für vibration
+if (typeof navigator !== 'undefined' && typeof navigator.vibrate !== 'function') {
+    navigator.vibrate = function() {
+        // tue nichts
+        return false;
+    };
+}
+
 // Mit Maus (PC) gibt es keine Knöpfe. "coarse" heißt: ein grober Zeiger, also ein Finger.
 if (matchMedia('(pointer: coarse)').matches) {
   document.addEventListener('DOMContentLoaded', touchKnoepfe);
@@ -37,6 +45,7 @@ function touchKnoepfe() {
       e.preventDefault();
       knopf.classList.add('an');
       taste(knopf.dataset.code, true);
+      if (knopf.dataset.code == "Space") navigator.vibrate(15);
     });
     for (const ende of ['pointerup', 'pointercancel', 'pointerleave']) {
       knopf.addEventListener(ende, () => {

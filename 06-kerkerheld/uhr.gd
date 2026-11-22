@@ -4,7 +4,7 @@ extends Label
 
 
 func _ready() -> void:
-	# visible = Spielstand.iron_man   # Nur der eiserne Held spielt gegen die Uhr
+	visible = Spielstand.iron_man   # Nur der eiserne Held spielt gegen die Uhr
 	Spielstand.gewonnen.connect(stop_uhr)
 
 
