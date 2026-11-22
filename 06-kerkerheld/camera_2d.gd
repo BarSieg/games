@@ -25,9 +25,14 @@ func _ready() -> void:
 
 # Im Bossraum läuft die Bossmusik, solange dort noch etwas lebt. Sonst die Kerkermusik.
 func musik_waehlen() -> void:
+	var geheimnis := get_tree().get_nodes_in_group("secrets").any(
+			func(marker: Marker2D) -> bool: return raum_von(marker.global_position) == raum
+	)
 	var lebt_noch := get_tree().get_nodes_in_group("monster").any(
 			func(monster: Monster) -> bool: return raum_von(monster.start_position) == raum and not monster.tot)
-	if raum_von(boss.global_position) == raum and lebt_noch:
+	if geheimnis:
+		Musik.spielen(Musik.GEHEIMNIS)
+	elif raum_von(boss.global_position) == raum and lebt_noch:
 		Musik.spielen(Musik.BOSS)
 	else:
 		Musik.spielen(Musik.KERKER)

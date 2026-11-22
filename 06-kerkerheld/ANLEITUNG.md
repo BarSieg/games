@@ -4445,7 +4445,7 @@ Neu sind **Audio-Busse**, ein **Autoload, der selbst ein AudioStreamPlayer ist**
 
 ### 14.2 Ein Skript komponiert
 
-Für die Fanfare aus der Truhe gibt es schon `fanfare.py`. Das neue `musik.py` macht dasselbe für drei ganze Stücke. Im Ordner `06-kerkerheld`:
+Für die Fanfare aus der Truhe gibt es schon `fanfare.py`. Das neue `musik.py` macht dasselbe für vier ganze Stücke. Im Ordner `06-kerkerheld`:
 
 ```bash
 python musik.py
@@ -4455,7 +4455,10 @@ python musik.py
 musik_titel.wav: 8 Takte, 21.8 s, 939 KB
 musik_kerker.wav: 8 Takte, 20.0 s, 861 KB
 musik_boss.wav: 8 Takte, 12.6 s, 544 KB
+musik_geheimnis.wav: 8 Takte, 16.0 s, 689 KB
 ```
+
+Das vierte Stück, für den Geheimnisraum, brauchst du erst in Übung 3.
 
 **Mach das als Erstes, noch vor allem anderen in diesem Kapitel.** Warum, steht in 14.10.
 
@@ -4479,9 +4482,9 @@ Die Noten stehen oben im Skript. So fängt der Kerker an:
 1. **Das Ende muss zum Anfang passen.** Ein Ton, der kurz vor Schluss angeschlagen wird, klingt eigentlich über das Ende hinaus. Das Skript rechnet diesen Rest einfach vorne wieder dazu. Wenn das Stück von vorn anfängt, klingt der letzte Ton also noch nach, genau wie er soll.
 2. **Godot muss wissen, dass es wiederholen soll.** Eine WAV-Datei kann neben den Tönen noch andere Abschnitte enthalten. `musik.py` schreibt einen Abschnitt namens `smpl` hinein: „Schleife vom ersten bis zum letzten Sample“. Godot liest ihn beim Import. Schau nach: `musik_kerker.wav` im FileSystem anklicken, dann oben links den Tab **Import**. Bei **Loop Mode** steht `Detect From WAV`. Mehr musst du nicht tun.
 
-Willst du später Musik aus einem anderen Programm benutzen, die keinen `smpl`-Abschnitt hat, stellst du dort **Loop Mode** auf `Forward` und klickst auf **Reimport**. Das kommt in Übung 3.
+Willst du später Musik aus einem anderen Programm benutzen, die keinen `smpl`-Abschnitt hat, stellst du dort **Loop Mode** auf `Forward` und klickst auf **Reimport**.
 
-**Sind 2,3 MB Musik nicht zu viel fürs Web?** Im selben Import-Tab steht bei **Compress → Mode** `QOA`. Godot packt die Töne beim Import auf ungefähr ein Fünftel zusammen. Im fertigen Web-Export ist das ganze Spiel mit Musik gut 2 MB groß.
+**Sind 3 MB Musik nicht zu viel fürs Web?** Im selben Import-Tab steht bei **Compress → Mode** `QOA`. Godot packt die Töne beim Import auf ungefähr ein Fünftel zusammen. Im fertigen Web-Export ist das ganze Spiel mit Musik gut 2 MB groß.
 
 ### 14.3 Ein eigener Bus für die Musik
 
@@ -4768,10 +4771,8 @@ So machst du es rückgängig: `schrift_settings.tres` anklicken, im Inspector be
 
 1. **Gedämpft in der Pause (mittel):** Wenn das Pausenmenü offen ist, klingt die Musik wie aus dem Nebenraum. Ein Bus kann **Effekte** haben. Klick in der Audio-Leiste beim Bus `Musik` auf **Add Effect → LowPassFilter**. Der lässt nur die tiefen Töne durch. Schalte ihn im Bus aus und im Pausenmenü per Code ein und wieder aus: `AudioServer.set_bus_effect_enabled(bus, 0, true)`. Die `0` heißt: der erste Effekt in diesem Bus. Was passiert, wenn du im Bus mit **Cutoff Hz** spielst? 🔊
 2. **Deine eigene Melodie (leicht):** Schreib in `musik.py` die Melodie vom Kerker um und lass das Skript noch einmal laufen. Godot importiert die neue Datei von selbst. Wenn dir ein Takt nicht gefällt, ändere nur diesen einen. Bonus: Mach den Kerker 16 Takte lang, die zweiten 8 mit einer anderen Melodie über demselben Bass. Was musst du am Bass und an der Trommel ändern?
-3. **Musik mit BeepBox (mittel):** 🆓 **BeepBox** (beepbox.co) ist ein kostenloses Musikprogramm im Browser, ganz ohne Anmeldung. Man klickt Noten in ein Raster, wie bei einer Spieluhr. Bau dir damit ein eigenes Stück, zum Beispiel für den Kerker. Exportiere es mit *File → Export* als `.wav`, leg es ins Projekt und stell im Import-Tab **Loop Mode** auf `Forward` → **Reimport**. Warum musst du das hier von Hand machen und bei `musik.py` nicht? Und hörst du an der Nahtstelle einen Knacks? (Tipp: Schau, ob BeepBox beim Export die Ausklingzeit am Ende mitnimmt.)
-4. **Ein Raum mit eigener Musik (mittel):** Der Überraschungsraum (1, -1) bekommt ein eigenes Stück. Schreib in `musik.py` ein viertes Stück, zum Beispiel etwas Fröhliches in Dur, und lass `musik_waehlen()` es in diesem Raum spielen. Wie schreibst du das so, dass ein fünfter Raum mit eigener Musik nur noch eine einzige Zeile kostet? (Tipp: ein Dictionary von Raum zu Stück.)
-5. **Weiter, wo es war (knifflig):** Gehst du vom Kerker in den Bossraum und wieder zurück, fängt die Kerkermusik von vorn an. Schöner wäre es, wenn sie dort weitermacht, wo sie aufgehört hat. `get_playback_position()` sagt dir, wo ein Stück gerade ist, und `play(sekunde)` fängt an einer bestimmten Stelle an. Merk dir in `musik.gd` für jedes Stück, wo es war, zum Beispiel in einem Dictionary. Wann musst du die Stelle speichern? Vor oder nach dem Ausblenden?
-6. **Herzklopfen (mittel):** Bei wenig Leben piept der Warnton aus Kapitel 6. Lass dazu die Musik etwas schneller laufen: `Musik.pitch_scale = 1.1`. Klingt das gut? Was passiert mit der Tonhöhe? Godot hat auch einen Effekt namens **PitchShift**. Kannst du damit die Musik schneller machen, ohne dass sie höher klingt? 🎵
-7. **Für alle (leicht, freiwillig):** Lad den Kerkerheld auf 🆓 **itch.io** hoch. Dafür brauchst du ein Konto, das legst du selbst an. Pack den Inhalt von `web/` in eine ZIP-Datei, lade sie hoch und kreuz **This file will be played in the browser** an. Bei **SharedArrayBuffer support** machst du kein Kreuz, weil du ohne Threads exportiert hast. Und jetzt schick den Link jemandem, der gern Zelda spielt. 🎮
+3. **Ein Raum mit eigener Musik (mittel):** Der Geheimnisraum (1, -1) bekommt ein eigenes Stück. `musik.py` hat es schon erzeugt: `musik_geheimnis.wav`, fröhlich und in Dur. Bau es in `musik.gd` ein und lass `musik_waehlen()` es in diesem Raum spielen. Wie schreibst du das so, dass ein fünfter Raum mit eigener Musik nur noch eine einzige Zeile kostet? (Tipp: ein Dictionary von Raum zu Stück.)
+4. **Herzklopfen (mittel):** Bei wenig Leben piept der Warnton aus Kapitel 6. Lass dazu die Musik etwas schneller laufen: `Musik.pitch_scale = 1.1`. Klingt das gut? Was passiert mit der Tonhöhe? Godot hat auch einen Effekt namens **PitchShift**. Kannst du damit die Musik schneller machen, ohne dass sie höher klingt? 🎵
+5. **Für alle (leicht, freiwillig):** Lad den Kerkerheld auf 🆓 **itch.io** hoch. Dafür brauchst du ein Konto, das legst du selbst an. Pack den Inhalt von `web/` in eine ZIP-Datei, lade sie hoch und kreuz **This file will be played in the browser** an. Bei **SharedArrayBuffer support** machst du kein Kreuz, weil du ohne Threads exportiert hast. Und jetzt schick den Link jemandem, der gern Zelda spielt. 🎮
 
 **Der Kerkerheld ist fertig!** 🏰 Vierzehn Kapitel, ein ganzer Dungeon mit Boss, Rätseln, Speichern, zwei Spielarten, drei Sprachen und Musik. Committen und Bescheid geben. Laut Roadmap ist das nächste Projekt **07 · Vampire Survivors (light)**: Hunderte Gegner auf einmal, und du lernst, wie man ein Spiel schnell hält, wenn sehr viel gleichzeitig passiert. Genau das braucht DOOM später auch.

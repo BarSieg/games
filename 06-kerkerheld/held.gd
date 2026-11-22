@@ -102,6 +102,7 @@ func _physics_process(delta: float) -> void:
 
 # Pause: zeigt den Stand und fragt, ob es zurück zum Titelbild geht
 func pause_menue() -> void:
+	AudioServer.set_bus_effect_enabled(1, 0, true)
 	var stand := tr("Erkundet: %d %%   Zeit: %s") % [Spielstand.erkundet(), Spielstand.formatiere_spielzeit()]
 	match await Dialog.auswahlfrage(stand, [tr("Weiter"), tr("Optionen"), tr("Zum Titelbildschirm")]):
 		0: # weiter
@@ -116,9 +117,9 @@ func pause_menue() -> void:
 			await get_tree().process_frame   # den Tastendruck vom Menü nicht an den Helden weitergeben
 			get_tree().paused = false
 		2: # zum Titelbildschirm
-			if Spielstand.iron_man and not await Dialog.frage("Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildschirm?"):
-				return
-			get_tree().change_scene_to_file("res://titel.tscn")
+			if not Spielstand.iron_man or await Dialog.frage("Iron Man speichert den Zustand nicht. Der gesamte Fortschritt geht verloren. Der Held stirbt. Zurück zum Titelbildschirm?"):
+				get_tree().change_scene_to_file("res://titel.tscn")
+	AudioServer.set_bus_effect_enabled(1, 0, false)
 
 
 # Jedes Bild: Berührt der Held gerade ein Monster?

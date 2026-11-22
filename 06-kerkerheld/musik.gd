@@ -5,6 +5,7 @@ extends AudioStreamPlayer
 const TITEL = preload("res://musik_titel.wav")
 const KERKER = preload("res://musik_kerker.wav")
 const BOSS = preload("res://musik_boss.wav")
+const GEHEIMNIS = preload("res://musik_geheimnis.wav")
 const BLENDE = 0.6     # so lange dauert das Aus- und Einblenden, in Sekunden
 const LEISE = -40.0    # in dB: so gut wie nichts mehr zu hören
 const NORMAL = -10.0    # in dB: so gut wie nichts mehr zu hören

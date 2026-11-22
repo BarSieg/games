@@ -1,8 +1,8 @@
-"""Drei Musikstücke im Stil alter Spielkonsolen als WAV schreiben. Nur die Standardbibliothek.
+"""Vier Musikstücke im Stil alter Spielkonsolen als WAV schreiben. Nur die Standardbibliothek.
 
     python musik.py
 
-erzeugt musik_titel.wav, musik_kerker.wav und musik_boss.wav. Jedes Stück ist eine Schleife:
+erzeugt musik_titel.wav, musik_kerker.wav, musik_boss.wav und musik_geheimnis.wav. Jedes Stück ist eine Schleife:
 Das Ende passt genau an den Anfang. Die Schleife steht in der Datei selbst (im "smpl"-Abschnitt),
 Godot liest sie beim Import und spielt das Stück dann endlos.
 
@@ -43,13 +43,19 @@ STUECKE = {
     "musik_kerker.wav": {
         "tempo": 96,
         "melodie": "_:2 A4:2 D5:3 E5:1 | F5:4 E5:2 D5:2 | D5:3 C5:1 Bb4:2 G4:2 | A4:6 _:2 |"
-                   "_:2 A4:2 D5:3 F5:1 | G5:4 F5:2 D5:2 | D5:2 Bb4:2 C#5:2 E5:2 | D5:6 _:2",
+                   "_:2 A4:2 D5:3 F5:1 | G5:4 F5:2 D5:2 | D5:2 Bb4:2 C#5:2 E5:2 | D5:6 _:2 |"
+                   "_:2 D5:2 F5:3 G5:1 | Bb5:4 F5:2 D5:2 | G5:3 F5:1 D5:2 Bb4:2 | C#5:4 A4:2 _:2 |"
+                   "_:2 A4:2 D5:3 F5:1 | F5:4 D5:2 Bb4:2 | G4:2 Bb4:2 A4:2 C#5:2 | D5:2 A5:2 D5:2 _:2",
         "begleitung": "",
         "bass": "D2:1 D3:1 A2:1 D3:1 D2:1 D3:1 A2:1 D3:1 | Bb1:1 Bb2:1 F2:1 Bb2:1 Bb1:1 Bb2:1 F2:1 Bb2:1 |"
                 "G2:1 G3:1 D3:1 G3:1 G2:1 G3:1 D3:1 G3:1 | A1:1 A2:1 E2:1 A2:1 A1:1 A2:1 E2:1 A2:1 |"
                 "D2:1 D3:1 A2:1 D3:1 D2:1 D3:1 A2:1 D3:1 | Bb1:1 Bb2:1 F2:1 Bb2:1 Bb1:1 Bb2:1 F2:1 Bb2:1 |"
+                "G2:1 G3:1 D3:1 G3:1 A1:1 A2:1 E2:1 A2:1 | D2:1 D3:1 A2:1 D3:1 D2:1 D3:1 A2:1 D3:1 |"
+                "D2:1 D3:1 A2:1 D3:1 D2:1 D3:1 A2:1 D3:1 | Bb1:1 Bb2:1 F2:1 Bb2:1 Bb1:1 Bb2:1 F2:1 Bb2:1 |"
+                "G2:1 G3:1 D3:1 G3:1 G2:1 G3:1 D3:1 G3:1 | A1:1 A2:1 E2:1 A2:1 A1:1 A2:1 E2:1 A2:1 |"
+                "D2:1 D3:1 A2:1 D3:1 D2:1 D3:1 A2:1 D3:1 | Bb1:1 Bb2:1 F2:1 Bb2:1 Bb1:1 Bb2:1 F2:1 Bb2:1 |"
                 "G2:1 G3:1 D3:1 G3:1 A1:1 A2:1 E2:1 A2:1 | D2:1 D3:1 A2:1 D3:1 D2:1 D3:1 A2:1 D3:1",
-        "trommel": "..h...h. " * 8,
+        "trommel": "..h...h. " * 16,
     },
     # Schnell und treibend: der Boss
     "musik_boss.wav": {
@@ -62,6 +68,19 @@ STUECKE = {
                 "E2:1 E3:1 E2:1 E3:1 E2:1 E3:1 E2:1 E3:1 | E2:1 E3:1 E2:1 E3:1 E2:1 E3:1 D3:1 E3:1 |"
                 "C2:1 C3:1 C2:1 C3:1 C2:1 C3:1 C2:1 C3:1 | B1:1 B2:1 B1:1 B2:1 B1:1 B2:1 B1:1 B2:1",
         "trommel": "khshkhsh " * 7 + "khshksss",
+    },
+    # Fröhlich und ein bisschen verspielt, in Dur: der Geheimnisraum
+    "musik_geheimnis.wav": {
+        "tempo": 120,
+        "melodie": "E5:2 G5:2 C6:2 G5:2 | A5:3 G5:1 E5:2 C5:2 | F5:2 A5:2 C6:2 A5:2 | G5:4 D5:2 B4:2 |"
+                   "C5:1 E5:1 G5:1 C6:1 E6:2 C6:2 | A5:2 E5:2 C5:2 E5:2 | F5:2 A5:2 G5:2 B5:2 | C6:4 _:2 G4:2",
+        "begleitung": "C4:1 E4:1 G4:1 E4:1 C4:1 E4:1 G4:1 E4:1 | A3:1 C4:1 E4:1 C4:1 A3:1 C4:1 E4:1 C4:1 |"
+                      "F3:1 A3:1 C4:1 A3:1 F3:1 A3:1 C4:1 A3:1 | G3:1 B3:1 D4:1 B3:1 G3:1 B3:1 D4:1 B3:1 |"
+                      "C4:1 E4:1 G4:1 E4:1 C4:1 E4:1 G4:1 E4:1 | A3:1 C4:1 E4:1 C4:1 A3:1 C4:1 E4:1 C4:1 |"
+                      "F3:1 A3:1 C4:1 A3:1 G3:1 B3:1 D4:1 B3:1 | C4:1 E4:1 G4:1 E4:1 C4:1 E4:1 G4:1 E4:1",
+        "bass": "C2:2 C3:2 G2:2 C3:2 | A1:2 A2:2 E2:2 A2:2 | F1:2 F2:2 C2:2 F2:2 | G1:2 G2:2 D2:2 G2:2 |"
+                "C2:2 C3:2 G2:2 C3:2 | A1:2 A2:2 E2:2 A2:2 | F1:2 F2:2 G1:2 G2:2 | C2:2 C3:2 G2:2 C3:2",
+        "trommel": "k.h.s.h. " * 8,
     },
 }
 
