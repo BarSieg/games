@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://bmmj62uic71c2" path="res://kenney/tiny_town/tilemap_packed.png" id="2_3bccv"]
 [ext_resource type="PackedScene" uid="uid://drc8wjs0mbt43" path="res://held.tscn" id="3_4agmm"]
 [ext_resource type="Script" uid="uid://dd4ioptlc12k4" path="res://spawner.gd" id="4_8bs7t"]
+[ext_resource type="PackedScene" uid="uid://6aojfxxsf1th" path="res://fledermaus.tscn" id="5_8bs7t"]
 [ext_resource type="PackedScene" uid="uid://1yhvps2ygvpb" path="res://gegner.tscn" id="5_gb4j4"]
 [ext_resource type="FontFile" uid="uid://bkaclb4h3km7" path="res://kenney/Kenney Pixel.ttf" id="6_16niv"]
 [ext_resource type="Script" uid="uid://cm2yimy5yc6uw" path="res://info.gd" id="7_rf10p"]
@@ -31,7 +32,7 @@ position = Vector2(-2, 1)
 [node name="Horde" type="Node2D" parent="." unique_id=415058297]
 y_sort_enabled = true
 script = ExtResource("4_8bs7t")
-gegner_szene = ExtResource("5_gb4j4")
+gegner_szenen = Array[PackedScene]([ExtResource("5_gb4j4"), ExtResource("5_8bs7t")])
 
 [node name="Anzeige" type="CanvasLayer" parent="." unique_id=82657305]
 

@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://6aojfxxsf1th"]
+
+[ext_resource type="PackedScene" uid="uid://1yhvps2ygvpb" path="res://gegner.tscn" id="1_cqr5a"]
+
+[node name="Fledermaus" unique_id=1601739021 instance=ExtResource("1_cqr5a")]
+tempo = 50.0
+
+[node name="Bild" parent="." index="0" unique_id=172911976]
+frame = 120
