@@ -10,7 +10,10 @@
 z_index = -10
 script = ExtResource("1_2weay")
 kachelblatt = ExtResource("2_3bccv")
-kachel = Vector2i(1, 0)
+kachel_lo = Vector2i(1, 0)
+kachel_ro = Vector2i(1, 0)
+kachel_lu = Vector2i(1, 0)
+kachel_ru = Vector2i(2, 0)
 
 [node name="Held" parent="." unique_id=2076376353 instance=ExtResource("3_4agmm")]
 position = Vector2(-2, 1)
