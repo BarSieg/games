@@ -6,7 +6,16 @@
 [sub_resource type="CircleShape2D" id="CircleShape2D_s017u"]
 radius = 5.0
 
-[node name="Held" type="CharacterBody2D" unique_id=2076376353]
+[sub_resource type="CircleShape2D" id="CircleShape2D_0orc7"]
+radius = 6.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s017u"]
+bg_color = Color(0.101240985, 0.101241, 0.10124094, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0orc7"]
+bg_color = Color(0.88235295, 0.12156863, 0.24313726, 1)
+
+[node name="Held" type="CharacterBody2D" unique_id=2076376353 groups=["held"]]
 collision_mask = 0
 motion_mode = 1
 script = ExtResource("1_7usdt")
@@ -23,3 +32,22 @@ shape = SubResource("CircleShape2D_s017u")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=15103216]
 position_smoothing_enabled = true
+
+[node name="Trefferzone" type="Area2D" parent="." unique_id=456692263]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Trefferzone" unique_id=604872412]
+position = Vector2(0, 3)
+shape = SubResource("CircleShape2D_0orc7")
+
+[node name="Lebensbalken" type="ProgressBar" parent="." unique_id=199764632]
+z_index = 1
+offset_left = -8.0
+offset_top = 10.0
+offset_right = 8.0
+offset_bottom = 12.0
+theme_override_styles/background = SubResource("StyleBoxFlat_s017u")
+theme_override_styles/fill = SubResource("StyleBoxFlat_0orc7")
+value = 100.0
+show_percentage = false

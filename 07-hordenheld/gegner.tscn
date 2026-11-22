@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://1yhvps2ygvpb"]
+
+[ext_resource type="Script" uid="uid://ctwuj5ndn5ltn" path="res://gegner.gd" id="1_co84x"]
+[ext_resource type="Texture2D" uid="uid://bnbym1pdxbtwp" path="res://kenney/tiny_dungeon/tilemap_packed.png" id="1_v5qxm"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_s017u"]
+radius = 6.0
+
+[node name="Gegner" type="CharacterBody2D" unique_id=1601739021 groups=["gegner"]]
+collision_layer = 2
+collision_mask = 2
+motion_mode = 1
+script = ExtResource("1_co84x")
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=172911976]
+texture = ExtResource("1_v5qxm")
+hframes = 12
+vframes = 11
+frame = 122
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=799739841]
+position = Vector2(0, 2)
+shape = SubResource("CircleShape2D_s017u")

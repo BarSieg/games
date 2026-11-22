@@ -3,8 +3,18 @@
 [ext_resource type="Script" uid="uid://kp0ycry58oag" path="res://boden.gd" id="1_2weay"]
 [ext_resource type="Texture2D" uid="uid://bmmj62uic71c2" path="res://kenney/tiny_town/tilemap_packed.png" id="2_3bccv"]
 [ext_resource type="PackedScene" uid="uid://drc8wjs0mbt43" path="res://held.tscn" id="3_4agmm"]
+[ext_resource type="Script" uid="uid://dd4ioptlc12k4" path="res://spawner.gd" id="4_8bs7t"]
+[ext_resource type="PackedScene" uid="uid://1yhvps2ygvpb" path="res://gegner.tscn" id="5_gb4j4"]
+[ext_resource type="FontFile" uid="uid://bkaclb4h3km7" path="res://kenney/Kenney Pixel.ttf" id="6_16niv"]
+[ext_resource type="Script" uid="uid://cm2yimy5yc6uw" path="res://info.gd" id="7_rf10p"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_s017u"]
+font = ExtResource("6_16niv")
+font_color = Color(0, 0, 0, 1)
+outline_size = 4
 
 [node name="Welt" type="Node2D" unique_id=1926768728]
+y_sort_enabled = true
 
 [node name="Boden" type="Sprite2D" parent="." unique_id=1052935733]
 z_index = -10
@@ -17,3 +27,17 @@ kachel_ru = Vector2i(2, 0)
 
 [node name="Held" parent="." unique_id=2076376353 instance=ExtResource("3_4agmm")]
 position = Vector2(-2, 1)
+
+[node name="Horde" type="Node2D" parent="." unique_id=415058297]
+y_sort_enabled = true
+script = ExtResource("4_8bs7t")
+gegner_szene = ExtResource("5_gb4j4")
+
+[node name="Anzeige" type="CanvasLayer" parent="." unique_id=82657305]
+
+[node name="Info" type="Label" parent="Anzeige" unique_id=35335002]
+offset_left = 4.0
+offset_right = 44.0
+offset_bottom = 23.0
+label_settings = SubResource("LabelSettings_s017u")
+script = ExtResource("7_rf10p")

@@ -321,8 +321,8 @@ var leben := MAX_LEBEN
 „Spawnen“ sagen Spieleentwickler, wenn etwas im Spiel entsteht. Der Spawner macht immer wieder einen neuen Gegner, irgendwo knapp außerhalb vom Bild, und mit der Zeit immer schneller.
 
 In `welt.tscn`:
-1. Kind von `Welt`: `Node2D` → `Gegner`. Alle Gegner kommen als Kinder hier hinein. So liegen sie nicht wild verteilt in der Welt, und die Szene bleibt übersichtlich.
-2. Skript an `Gegner`, als `spawner.gd` speichern:
+1. Kind von `Welt`: `Node2D` → `Horde`. Alle Gegner kommen als Kinder hier hinein. So liegen sie nicht wild verteilt in der Welt, und die Szene bleibt übersichtlich.
+2. Skript an `Horde`, als `spawner.gd` speichern:
 
 ```gdscript
 extends Node2D
@@ -355,7 +355,7 @@ func neuer_gegner() -> void:
 	add_child(gegner)
 ```
 
-3. Im Inspector bei `Gegner`: **Gegner Szene** = `gegner.tscn`.
+3. Im Inspector bei `Horde`: **Gegner Szene** = `gegner.tscn`.
 
 **Warum 240?** Der Bildschirm ist 384 × 216 Pixel groß, der Held steht in der Mitte. Die Ecken sind am weitesten weg: 192 Pixel zur Seite und 108 nach oben. Nach Pythagoras sind das √(192² + 108²) ≈ 220 Pixel. Dazu kommt noch ein halber Gegner, damit er nicht halb im Bild entsteht, und etwas Luft: 240. Auf diesem Kreis ist jeder Punkt außerhalb vom Bild.
 
@@ -370,9 +370,9 @@ func neuer_gegner() -> void:
 Läuft eine Spinne unter dem Held vorbei, sollte sie **vor** ihm zu sehen sein, läuft sie oberhalb vorbei, **hinter** ihm. Godot malt aber einfach in der Reihenfolge der Szene. Dafür gibt es **Y-Sort**: Wer weiter unten steht, wird später gemalt.
 
 1. `Welt` auswählen → **Ordering → Y Sort Enabled** an.
-2. Dasselbe bei `Gegner`.
+2. Dasselbe bei `Horde`.
 
-Weil beide eingeschaltet sind, sortiert Godot die Kinder von `Gegner` zusammen mit dem Held, als lägen alle direkt in der Welt. Der Boden bleibt dank **Z Index** `-10` trotzdem unter allem.
+Weil beide eingeschaltet sind, sortiert Godot die Kinder von `Horde` zusammen mit dem Held, als lägen alle direkt in der Welt. Der Boden bleibt dank **Z Index** `-10` trotzdem unter allem.
 
 Und der Lebensbalken? Der gehört zum Held und würde mit ihm hinter Gegnern verschwinden, die weiter unten stehen. Deshalb hat er **Z Index** `1`: Er wird über allem gemalt, was auf Stufe 0 liegt.
 
