@@ -18,7 +18,8 @@ Vieles kennst du schon: TileMapLayer, Kollisionsebenen, Tweens, Autoload, HUD, S
 11. Der Boss, Spielzeit, Erkundung und ein Abspann ✔
 12. Rätsel und Fallen: Schalter, Gitter, Felsbrocken, Wasserspeier, Klingenfalle ✔
 13. Optionen und eine zweite Sprache: schräg laufen, Deutsch und Englisch ✔
-14. Musik und Web-Export ← *du bist hier*
+14. Musik und Web-Export ✔
+15. Touch-Knöpfe fürs Handy ← *du bist hier*
 
 ---
 
@@ -4775,4 +4776,259 @@ So machst du es rückgängig: `schrift_settings.tres` anklicken, im Inspector be
 4. **Herzklopfen (mittel):** Bei wenig Leben piept der Warnton aus Kapitel 6. Lass dazu die Musik etwas schneller laufen: `Musik.pitch_scale = 1.1`. Klingt das gut? Was passiert mit der Tonhöhe? Godot hat auch einen Effekt namens **PitchShift**. Kannst du damit die Musik schneller machen, ohne dass sie höher klingt? 🎵
 5. **Für alle (leicht, freiwillig):** Lad den Kerkerheld auf 🆓 **itch.io** hoch. Dafür brauchst du ein Konto, das legst du selbst an. Pack den Inhalt von `web/` in eine ZIP-Datei, lade sie hoch und kreuz **This file will be played in the browser** an. Bei **SharedArrayBuffer support** machst du kein Kreuz, weil du ohne Threads exportiert hast. Und jetzt schick den Link jemandem, der gern Zelda spielt. 🎮
 
-**Der Kerkerheld ist fertig!** 🏰 Vierzehn Kapitel, ein ganzer Dungeon mit Boss, Rätseln, Speichern, zwei Spielarten, drei Sprachen und Musik. Committen und Bescheid geben. Laut Roadmap ist das nächste Projekt **07 · Vampire Survivors (light)**: Hunderte Gegner auf einmal, und du lernst, wie man ein Spiel schnell hält, wenn sehr viel gleichzeitig passiert. Genau das braucht DOOM später auch.
+**Fast geschafft!** Ein Kapitel kommt noch: Wer den Link auf dem Handy öffnet, hat keine Tastatur. Committen und Bescheid geben.
+
+---
+
+## Kapitel 15: Touch-Knöpfe fürs Handy
+
+Im Browser auf dem Handy läuft der Kerkerheld schon, man kann nur nichts drücken. In diesem Kapitel bekommt die Webseite ein Steuerkreuz, einen A-Knopf und einen Start-Knopf.
+
+### 15.1 Warum nicht wie beim Hüpfheld?
+
+Beim Hüpfheld liegen die Knöpfe **im Spielbild**: `touch.gd` legt `TouchScreenButton`s auf eine CanvasLayer. Das ging, weil dort mit „expand“ links und rechts noch Welt war.
+
+Der Kerkerheld ist genau 256 × 224 Pixel groß, und ein Raum füllt das ganze Bild. Ein Steuerkreuz aus drei mal drei Feldern zu je 32 Pixeln würde unten links fast ein Viertel des Raums zudecken, genau da, wo Gegner und Truhen stehen. Mit „expand“ sähe man dagegen in die Nachbarräume, und das Schieben der Kamera ergäbe keinen Sinn mehr.
+
+Dafür hat das Handy etwas, das der PC nicht hat: **schwarzen Rand**. Godot vergrößert das Bild nur in ganzen Schritten (Scale Mode `integer`) und lässt den Rest schwarz. Im Hochformat ist der Rand oben und unten, im Querformat links und rechts. Dort ist Platz.
+
+Den Rand malt aber Godot selbst, im Canvas. Godot-Knöpfe kämen da nicht hin, **HTML-Knöpfe schon**: Sie liegen in der Webseite über dem Canvas. Und sie schicken dem Spiel ganz normale Tastendrücke: „Pfeil links“, „Leertaste“, „Esc“. Das ist dasselbe wie dein `pressKey` aus den JavaScript-Spielen. Godot merkt keinen Unterschied. Dialoge, Menüs und die Pause funktionieren deshalb sofort, ohne eine Zeile GDScript.
+
+Der Nachteil: Das geht nur im Browser. Für eine echte Handy-App müsste man es später in Godot lösen.
+
+### 15.2 touch.js
+
+Neue Datei `web/touch.js`, direkt neben `index.html`. Der Export überschreibt nur die Dateien, die er selbst macht (`index.*`), deine Datei bleibt liegen. Und weil im Ordner die `.gdignore` liegt, schaut Godot sie gar nicht an.
+
+```js
+// Touch-Knöpfe für Handy und Tablet. Sie liegen im schwarzen Rand neben dem Spiel
+// und schicken dem Spiel ganz normale Tastendrücke. Godot merkt keinen Unterschied.
+
+// Mit Maus (PC) gibt es keine Knöpfe. "coarse" heißt: ein grober Zeiger, also ein Finger.
+if (matchMedia('(pointer: coarse)').matches) {
+  document.addEventListener('DOMContentLoaded', touchKnoepfe);
+}
+
+// Was Godot mit jeder Taste bekommt: code ist die Taste, key das Zeichen darauf
+const ZEICHEN = { ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown', ArrowLeft: 'ArrowLeft',
+                  ArrowRight: 'ArrowRight', Space: ' ', Escape: 'Escape' };
+
+function taste(code, gedrueckt) {
+  const art = gedrueckt ? 'keydown' : 'keyup';
+  document.getElementById('canvas').dispatchEvent(
+    new KeyboardEvent(art, { code: code, key: ZEICHEN[code], bubbles: true, cancelable: true }));
+}
+
+function touchKnoepfe() {
+  const ebene = document.createElement('div');
+  ebene.id = 'touch';
+  ebene.innerHTML = `
+    <div class="kreuz">
+      <span data-code="ArrowUp">▲</span><span data-code="ArrowLeft">◀</span>
+      <span data-code="ArrowRight">▶</span><span data-code="ArrowDown">▼</span>
+    </div>
+    <div class="knoepfe">
+      <button class="a" data-code="Space">A</button>
+      <button class="start" data-code="Escape">START</button>
+    </div>`;
+  document.body.appendChild(ebene);
+  ebene.addEventListener('contextmenu', (e) => e.preventDefault());   // kein Menü bei langem Drücken
+
+  // A und Start: drücken und loslassen, mehr nicht
+  for (const knopf of ebene.querySelectorAll('button')) {
+    knopf.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      knopf.classList.add('an');
+      taste(knopf.dataset.code, true);
+    });
+    for (const ende of ['pointerup', 'pointercancel', 'pointerleave']) {
+      knopf.addEventListener(ende, () => {
+        if (!knopf.classList.contains('an')) return;
+        knopf.classList.remove('an');
+        taste(knopf.dataset.code, false);
+      });
+    }
+  }
+
+  // Das Steuerkreuz ist eine Fläche: Wohin der Finger von der Mitte aus zeigt, so wird gelaufen.
+  // Schräg drückt zwei Tasten auf einmal, wie auf der Tastatur. Der Finger darf rutschen.
+  const kreuz = ebene.querySelector('.kreuz');
+  let gedrueckt = new Set();
+
+  function richtungen(e) {
+    const r = kreuz.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5;   // -0.5 links bis 0.5 rechts
+    const y = (e.clientY - r.top) / r.height - 0.5;   // -0.5 oben bis 0.5 unten
+    const neu = new Set();
+    if (Math.hypot(x, y) < 0.1) return neu;           // genau in der Mitte: stehen bleiben
+    const winkel = Math.atan2(y, x) * 180 / Math.PI;  // 0 = rechts, 90 = unten, -90 = oben
+    // Acht Stücke zu je 45 Grad. Liegt der Winkel zwischen zwei Richtungen, gelten beide.
+    if (winkel > -67.5 && winkel < 67.5) neu.add('ArrowRight');
+    if (winkel > 22.5 && winkel < 157.5) neu.add('ArrowDown');
+    if (winkel > 112.5 || winkel < -112.5) neu.add('ArrowLeft');
+    if (winkel > -157.5 && winkel < -22.5) neu.add('ArrowUp');
+    return neu;
+  }
+
+  // Nur melden, was sich geändert hat: Losgelassenes los, Neues drücken
+  function setzen(neu) {
+    for (const code of gedrueckt) if (!neu.has(code)) taste(code, false);
+    for (const code of neu) if (!gedrueckt.has(code)) taste(code, true);
+    gedrueckt = neu;
+    for (const pfeil of kreuz.children) pfeil.classList.toggle('an', neu.has(pfeil.dataset.code));
+  }
+
+  kreuz.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    kreuz.setPointerCapture(e.pointerId);   // auch melden, wenn der Finger aus dem Kreuz rutscht
+    setzen(richtungen(e));
+  });
+  kreuz.addEventListener('pointermove', (e) => {
+    if (kreuz.hasPointerCapture(e.pointerId)) setzen(richtungen(e));
+  });
+  for (const ende of ['pointerup', 'pointercancel']) {
+    kreuz.addEventListener(ende, () => setzen(new Set()));
+  }
+}
+```
+
+Was darin passiert:
+- **`matchMedia('(pointer: coarse)')`**: CSS kann fragen, womit gezeigt wird. `coarse` heißt grob, also ein Finger, `fine` wäre eine Maus. Am PC gibt es so gar keine Knöpfe.
+- **`new KeyboardEvent(...)`**: ein nachgemachter Tastendruck. `code` ist die Taste auf der Tastatur, so wie Godot sie im Input Map als *Physical Key* kennt. Godot hört auf dem `<canvas>` zu, deshalb geht der Tastendruck genau dorthin.
+- **Pointer-Events statt Touch-Events**: `pointerdown`, `pointermove` und `pointerup` gibt es für Finger, Maus und Stift gleichermaßen. So kannst du die Knöpfe am PC mit der Maus ausprobieren.
+- **`setPointerCapture`**: Rutscht der Finger beim Laufen über den Rand des Steuerkreuzes hinaus, bekommt das Kreuz trotzdem weiter Bescheid. Sonst bliebe der Held einfach stehen, oder schlimmer: Die Taste bliebe gedrückt.
+- **Das Steuerkreuz** ist nur eine runde Fläche. `Math.atan2` rechnet aus, in welche Richtung der Finger von der Mitte aus zeigt, als Winkel. Es gibt acht Stücke zu je 45 Grad, und in den schrägen Stücken sind zwei Pfeile gleichzeitig gedrückt. Ob der Held dann schräg läuft, entscheidet wie bei der Tastatur deine Option „Schräg laufen“.
+- **`setzen`** meldet nur Änderungen. Bleibt der Finger rechts, kommt kein neues `keydown`. Sonst sähe Godot bei jeder kleinen Fingerbewegung einen neuen Tastendruck. Das ist dasselbe Problem wie neulich mit dem Stick im Dialog.
+
+### 15.3 touch.css
+
+Neue Datei `web/touch.css`:
+
+```css
+/* Die Ebene liegt über allem, lässt Berührungen aber durch, außer auf den Knöpfen */
+#touch {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 24px;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  font-family: sans-serif;
+}
+
+/* Querformat: Der Rand ist links und rechts, die Knöpfe sitzen in der Mitte der Höhe */
+@media (orientation: landscape) {
+  #touch { align-items: center; padding: 12px; }
+}
+
+.kreuz, .knoepfe button { pointer-events: auto; touch-action: none; }
+
+/* Steuerkreuz: ein Kreis mit vier Pfeilen */
+.kreuz {
+  position: relative;
+  width: min(40vmin, 170px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+}
+.kreuz span {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: min(8vmin, 32px);
+  transform: translate(-50%, -50%);
+}
+.kreuz span[data-code="ArrowUp"]    { left: 50%; top: 18%; }
+.kreuz span[data-code="ArrowDown"]  { left: 50%; top: 82%; }
+.kreuz span[data-code="ArrowLeft"]  { left: 18%; top: 50%; }
+.kreuz span[data-code="ArrowRight"] { left: 82%; top: 50%; }
+
+.knoepfe {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.knoepfe button {
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: bold;
+}
+.knoepfe .a {
+  width: min(22vmin, 90px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  font-size: min(8vmin, 32px);
+}
+.knoepfe .start {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+
+/* Gedrückt: smaragdgrün, wie die Münzen */
+.kreuz span.an { color: #00f24d; }
+.knoepfe button.an { background: rgba(0, 242, 77, 0.3); border-color: #00f24d; color: #fff; }
+```
+
+- **`pointer-events: none`** auf der ganzen Ebene: Sie liegt über dem Spiel, aber Berührungen gehen durch. Nur die Knöpfe selbst fangen sie auf.
+- **`justify-content: space-between`** schiebt das Steuerkreuz an den linken und die Knöpfe an den rechten Rand. Im Hochformat sitzen beide unten. **`@media (orientation: landscape)`** setzt sie im Querformat auf halbe Höhe.
+- **`vmin`** ist ein Hundertstel der kürzeren Bildschirmseite. Damit sind die Knöpfe auf kleinen Handys kleiner, und `min(..., 170px)` hält sie auf Tablets in Grenzen.
+- **`-webkit-touch-callout`** und **`user-select`**: Ohne die zeigt das iPhone bei langem Drücken eine Lupe oder will Text markieren.
+
+### 15.4 Die Webseite lädt die Dateien
+
+Die `index.html` macht der Export jedes Mal neu. Was du dort hineinschreibst, ist beim nächsten Export wieder weg. Dafür gibt es im Export-Fenster ein eigenes Feld: *Project → Export → Web*, Abschnitt **HTML**, Feld **Head Include**:
+
+```html
+<link rel="stylesheet" href="touch.css">
+<script src="touch.js"></script>
+```
+
+Was dort steht, kopiert Godot bei jedem Export in den `<head>` der `index.html`. Danach **Export Project**, wie immer ohne Debug.
+
+### 15.5 Ausprobieren
+
+**Am PC**, ohne Handy:
+1. Im Ordner `games` den Server starten (`python -m http.server 8000`) und `http://localhost:8000/06-kerkerheld/web/` öffnen.
+2. **F12** für die Entwicklerwerkzeuge, dann **Strg+Umschalt+M**: Der Browser tut so, als wäre er ein Handy. Oben kannst du ein Gerät aussuchen und mit dem Drehen-Knopf ins Querformat wechseln.
+3. **F5** zum Neuladen. Erst dann fragt `touch.js` neu, ob ein Finger zeigt.
+
+Die Knöpfe lassen sich dann mit der Maus drücken.
+
+**Auf dem Handy:** Am einfachsten committen, pushen und über GitHub Pages öffnen. Ohne Push geht es, wenn Handy und PC im selben WLAN sind. Starte den Server dann mit `python -m http.server 8000 --bind 0.0.0.0` und öffne auf dem Handy `http://<IP vom PC>:8000/06-kerkerheld/web/`. Die IP zeigt `ipconfig` unter *IPv4-Adresse*. Windows fragt beim ersten Mal, ob Python ins Netz darf. Erlaube nur *Private Netzwerke*, nicht *Öffentliche*.
+
+Checkliste:
+- [ ] Am PC ohne Handy-Simulation: keine Knöpfe zu sehen
+- [ ] Hochformat: Steuerkreuz unten links, A und Start unten rechts, nichts davon über dem Spiel
+- [ ] Querformat: Steuerkreuz links, A und Start rechts
+- [ ] Im Titelbild mit dem Kreuz auswählen, mit A starten
+- [ ] Laufen, auch wenn der Finger über den Rand des Kreuzes hinausrutscht
+- [ ] Start öffnet das Pausenmenü, das Kreuz wählt aus, A bestätigt
+- [ ] Ein Dialog lässt sich mit A weiterblättern
+- [ ] Die Musik setzt nach dem ersten Tippen ein
+- [ ] In `README.md` bei **Steuerung** eine Zeile für Handy und Tablet ergänzt
+
+### 15.6 Was ich getestet habe und was nicht
+
+Ich habe das Kapitel in einer Testkopie gebaut und im Browser mit Handy-Simulation ausprobiert, im Hoch- und im Querformat. Die nachgemachten Tastendrücke kommen bei Godot an: Titelmenü, Spielstart, Laufen, schräg und Pausenmenü reagieren.
+
+Auf einem **echten** Handy habe ich es nicht ausprobiert. Zwei Dinge musst du dort selbst prüfen:
+- **Ton:** Browser spielen erst Ton ab, wenn man auf der Seite etwas angetippt hat. Ob ein Tippen auf einen HTML-Knopf dafür reicht, konnte ich nicht testen. Wenn es stumm bleibt, tipp einmal aufs Spielbild.
+- **Mehrere Finger:** Laufen und gleichzeitig A drücken. Pointer-Events zählen jeden Finger einzeln, deshalb sollte das gehen. Sag Bescheid, wenn nicht.
+
+### Übungsaufgaben zu Kapitel 15
+
+1. **Brummen (leicht):** Lass das Handy beim Drücken von A kurz vibrieren: `navigator.vibrate(15)`. Die Zahl sind Millisekunden. Auf Android geht das, auf dem iPhone passiert einfach nichts. Warum ist das kein Fehler, und wie schreibst du die Zeile so, dass sie auf dem iPhone nicht abstürzt, falls es `navigator.vibrate` dort gar nicht gibt? 📳
+2. **Für Linkshänder (leicht):** Tausch Steuerkreuz und Knöpfe: Kreuz rechts, A links. Das geht mit einer einzigen CSS-Zeile in `#touch`. (Tipp: `flex-direction`.)
+3. **Weniger im Weg (mittel):** Auf einem Tablet im Querformat ist der Rand vielleicht schmaler als das Steuerkreuz, dann liegt es doch über dem Spiel. Mach die Knöpfe dort halb durchsichtig, solange sie nicht gedrückt sind. Woran erkennt CSS, dass der Bildschirm nicht viel breiter als hoch ist? (Tipp: `@media (max-aspect-ratio: ...)`)
+4. **Titelbild (mittel):** Im Titelbild steht nirgends, welche Taste was macht. Auf dem Handy wäre „A drücken“ hilfreich, am PC „Leertaste“. Godot kann fragen, ob es einen Touchscreen gibt: `DisplayServer.is_touchscreen_available()`. Zeig damit im Titelbild den passenden Hinweis. Und was sagt die Funktion auf einem Laptop mit Touchscreen? ✋
+
+**Der Kerkerheld ist fertig!** 🏰 Fünfzehn Kapitel: ein ganzer Dungeon mit Boss, Rätseln, Speichern, zwei Spielarten, drei Sprachen und Musik, spielbar auch auf dem Handy. Committen und Bescheid geben. Laut Roadmap ist das nächste Projekt **07 · Vampire Survivors (light)**: Hunderte Gegner auf einmal, und du lernst, wie man ein Spiel schnell hält, wenn sehr viel gleichzeitig passiert. Genau das braucht DOOM später auch.

@@ -22,7 +22,6 @@ var leben := START_LEBEN:
 	set(wert):
 		max_leben = mini(max_leben, MAX_HERZEN * 2)
 		leben = clampi(wert, 0, mini(max_leben, MAX_HERZEN * 2))
-		AudioServer.set_bus_effect_enabled(1, 1, leben < 3)
 		leben_geaendert.emit()
 var gestorben := 0   # wie oft der Held schon gestorben ist, für den Grabstein
 var iron_man := false   # Tot ist tot: kein Speichern, kein Laden

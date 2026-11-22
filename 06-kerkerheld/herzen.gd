@@ -4,12 +4,24 @@ const ABSTAND = 16                       # 14 Pixel Herz, 2 Pixel Luft
 const PRO_REIHE = 5
 const HERZEN_SPACE_Y = 16
 const WARNUNG_FREQUENZ = 0.9
+const SCHNELLER = 1.3
 
 var warnung := 0.0
 
 
 func _ready() -> void:
 	Spielstand.leben_geaendert.connect(queue_redraw)
+	Spielstand.leben_geaendert.connect(herzklopfen)
+	herzklopfen()   # auch gleich beim Start: Man kann ja mit wenig Leben weiterspielen
+
+
+# Wenig Leben: Die Musik läuft schneller (pitch_scale), der PitchShift im Bus holt die Tonhöhe zurück
+func herzklopfen() -> void:
+	var knapp := Spielstand.leben > 0 and Spielstand.leben <= 2
+	AudioServer.set_bus_effect_enabled(AudioServer.get_bus_index("Musik"), 1, knapp)
+	Musik.pitch_scale = SCHNELLER if knapp else 1.0
+	var effekt := AudioServer.get_bus_effect(AudioServer.get_bus_index("Musik"), 1) as AudioEffectPitchShift
+	effekt.pitch_scale = 1.0 / SCHNELLER
 
 
 func _draw() -> void:

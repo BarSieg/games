@@ -20,6 +20,9 @@ var ironman_bestzeit := ""
 
 func _ready() -> void:
 	Musik.spielen(Musik.TITEL)
+	AudioServer.set_bus_effect_enabled(AudioServer.get_bus_index("Musik"), 0, false)
+	AudioServer.set_bus_effect_enabled(AudioServer.get_bus_index("Musik"), 1, false)
+	Musik.pitch_scale = 1.0
 	if Spielstand.spielstand_datei_vorhanden():
 		eintraege.append("Weiter")
 		var stats := Spielstand.load_stats_fuer_titel()

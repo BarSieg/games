@@ -4,7 +4,7 @@
 
 Mein Lernprojekt: Ich baue klassische Spielideen nach, um Spieleentwicklung von Grund auf zu lernen. Es fängt mit einem einfachen Ballspiel an, und am Ende soll ein Ego-Shooter im Stil der 2010er stehen. Der ganze Lernpfad steht in [ROADMAP.md](ROADMAP.md).
 
-Alle Spiele laufen direkt im Browser, ohne Installation und ohne Bibliotheken. Sie sind in reinem JavaScript mit dem HTML-Canvas geschrieben.
+Alle Spiele laufen direkt im Browser, ohne Installation. Die ersten vier (00 bis 03) sind in reinem JavaScript mit dem HTML-Canvas geschrieben, ohne Bibliotheken. Ab 04 baue ich mit der 🆓 Godot-Engine und exportiere fürs Web.
 
 ## Spiele
 
@@ -16,6 +16,9 @@ Alle Spiele laufen direkt im Browser, ohne Installation und ohne Bibliotheken. S
 | 03 | [Weltraumsteine](03-weltraumsteine/) | Mit Schub und Trägheit durchs Asteroidenfeld | Vektoren, Rotation mit sin/cos, Trägheit, Kreis-Kollision |
 | 04 | [Flatterfisch](04-flatterfisch/web/) | Ein Fisch zwischen Korallen | Das erste Spiel mit der Godot-Engine |
 | 05 | [Hüpfheld](05-huepfheld/web/) | Jump’n’Run: Laufen, springen, Gegner plattmachen | Bewegliche Gegner, Kamera, Tween Animation |
+| 06 | [Kerkerheld](06-kerkerheld/web/) | Ein Dungeon von oben, mit Rätseln, Händler und Boss | State Machines, Dialoge, Speichern und Laden, Übersetzen, Musik |
+
+**In Arbeit:** 07 · Hordenheld. Überleben gegen Hunderte Gegner auf einmal, im Stil von Vampire Survivors. Dabei geht es um Performance: wie ein Spiel flüssig bleibt, wenn sehr viel gleichzeitig passiert.
 
 Jeder Ordner hat eine eigene `README.md` mit Steuerung, Lernnotizen und Übungsaufgaben.
 
@@ -39,4 +42,4 @@ Spielen und Ansehen ist ausdrücklich erwünscht, auch über GitHub Pages. Der C
 
 ## Hinweis
 
-Dies ist ein privates Lernprojekt ohne kommerzielle Absicht. Die Spiele sind von bekannten Arcade-Klassikern inspiriert, verwenden aber eigene Namen, eigene Grafiken und eigene Sounds. Das Projekt steht in keiner Verbindung zu Atari, Taito oder anderen Rechteinhabern der Originalspiele. Alle genannten Marken gehören ihren jeweiligen Inhabern.
+Dies ist ein privates Lernprojekt ohne kommerzielle Absicht. Die Spiele sind von bekannten Arcade-Klassikern inspiriert, verwenden aber eigene Namen, eigene Grafiken und eigene Sounds. Das Projekt steht in keiner Verbindung zu Atari, Taito, Nintendo oder anderen Rechteinhabern der Originalspiele. Alle genannten Marken gehören ihren jeweiligen Inhabern.

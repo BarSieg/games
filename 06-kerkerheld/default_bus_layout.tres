@@ -6,7 +6,7 @@ cutoff_hz = 1500.0
 
 [sub_resource type="AudioEffectPitchShift" id="AudioEffectPitchShift_j3pel"]
 resource_name = "PitchShift"
-pitch_scale = 1.1
+pitch_scale = 0.91
 
 [resource]
 bus/1/name = &"Musik"
