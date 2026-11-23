@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Upgrade" format=3 uid="uid://81jwbgw0av5n"]
+
+[ext_resource type="Script" uid="uid://dixocy4w1i0s3" path="res://upgrade.gd" id="1_435xh"]
+
+[resource]
+script = ExtResource("1_435xh")
+titel = "Großer Magnet"
+beschreibung = "Edelsteine kommen von weiter her"
+max_stufe = 3
+knoten = "Magnet/CollisionShape2D"
+eigenschaft = "shape:radius"
+mal = 1.3
+metadata/_custom_type_script = "uid://dixocy4w1i0s3"

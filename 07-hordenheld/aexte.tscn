@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://dlvacu2jkh0kl"]
+
+[ext_resource type="Script" uid="uid://beqilpej2g3db" path="res://aexte.gd" id="1_fxbw0"]
+[ext_resource type="Texture2D" uid="uid://bnbym1pdxbtwp" path="res://kenney/tiny_dungeon/tilemap_packed.png" id="2_ffy8w"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_s017u"]
+radius = 8.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_0orc7"]
+radius = 8.0
+
+[node name="Aexte" type="Node2D" unique_id=668126019]
+script = ExtResource("1_fxbw0")
+
+[node name="Axt" type="Area2D" parent="." unique_id=1662526236]
+collision_layer = 4
+collision_mask = 2
+
+[node name="Bild" type="Sprite2D" parent="Axt" unique_id=1462338786]
+position = Vector2(30, 0)
+rotation = 1.5707964
+texture = ExtResource("2_ffy8w")
+hframes = 12
+vframes = 11
+frame = 118
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Axt" unique_id=2068310273]
+position = Vector2(30, 0)
+shape = SubResource("CircleShape2D_s017u")
+
+[node name="Axt2" type="Area2D" parent="." unique_id=1547696194]
+collision_layer = 4
+collision_mask = 2
+
+[node name="Bild" type="Sprite2D" parent="Axt2" unique_id=646424004]
+position = Vector2(-30, 0)
+rotation = -1.5707964
+texture = ExtResource("2_ffy8w")
+hframes = 12
+vframes = 11
+frame = 118
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Axt2" unique_id=529510985]
+position = Vector2(-30, 0)
+shape = SubResource("CircleShape2D_0orc7")
+
+[connection signal="body_entered" from="Axt" to="." method="_on_axt_body_entered"]
+[connection signal="body_entered" from="Axt2" to="." method="_on_axt_2_body_entered"]

@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://cby6yypbkpb4c"]
+
+[ext_resource type="Script" uid="uid://ceug53mjf0vrs" path="res://glutring.gd" id="1_lut7t"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_s017u"]
+resource_local_to_scene = true
+radius = 24.0
+
+[node name="Glutring" type="Area2D" unique_id=1029540892]
+z_index = -1
+collision_layer = 4
+collision_mask = 2
+monitorable = false
+script = ExtResource("1_lut7t")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=151249780]
+shape = SubResource("CircleShape2D_s017u")

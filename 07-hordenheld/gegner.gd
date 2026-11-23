@@ -35,6 +35,8 @@ func _physics_process(delta: float) -> void:
 
 
 func treffer(schaden: int, stoss: Vector2 = Vector2.ZERO) -> void:
+	if leben <= 0:
+		return   # schon tot, wartet nur noch aufs Wegräumen
 	leben -= schaden
 	if leben <= 0:
 		sterben()

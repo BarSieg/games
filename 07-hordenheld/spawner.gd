@@ -21,10 +21,9 @@ func _process(delta: float) -> void:
 
 
 func neuer_gegner() -> void:
-	var held := get_tree().get_first_node_in_group("held") as Node2D
 	var gegner := gegner_szenen[randi() % gegner_szenen.size()].instantiate()
 
-	# Eine zufällige Richtung vom Held aus
+	# Eine zufällige Richtung von der Bildmitte aus
 	var alpha := Vector2.from_angle(randf() * TAU)
 
 	var bx := get_viewport_rect().size.x / 2   # halbe Bildschirmbreite
@@ -45,7 +44,6 @@ func neuer_gegner() -> void:
 	elif alpha.y < 0:
 		ty = -by / alpha.y   # oben
 
-	# nehme den nächsten Schnittpunkt + Abstand hinter dem Bildschirmrand
+	# Den näheren Schnittpunkt nehmen, plus ABSTAND hinter den Bildschirmrand
 	gegner.position = get_viewport().get_camera_2d().get_screen_center_position() + (minf(tx, ty) + ABSTAND) * alpha
-	#prints(alpha, held.global_position, get_viewport_rect().size, tx, ty, gegner.position, versatz.length())
 	add_child(gegner)

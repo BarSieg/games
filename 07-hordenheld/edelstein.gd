@@ -2,7 +2,7 @@ extends Area2D
 
 const BESCHLEUNIGUNG = 500.0   # so schnell wird er schneller, wenn er zum Held fliegt
 
-# Das Bild, Zeichen für Zeichen. Was nicht in FARBEN steht, bleibt durchsichtig.
+# Das Bild, Zeichen für Zeichen. Was nicht in den FARBEN steht, bleibt durchsichtig.
 const BILD = [
 	"...o...",
 	"..o+o..",
@@ -12,15 +12,15 @@ const BILD = [
 	"..o#o..",
 	"...o...",
 ]
-const FARBEN_1 = {
+const FARBEN_1 = {   # blau, für normale Steine
 	"o": Color(0.05, 0.1, 0.3),   # dunkler Rand
 	"#": Color(0.2, 0.5, 1.0),    # blau
 	"+": Color(0.75, 0.9, 1.0),   # Glanz
 }
 
-const FARBEN_2 = {
+const FARBEN_2 = {   # grün, für Steine ab wert 3
 	"o": Color(0.1, 0.3, 0.05),   # dunkler Rand
-	"#": Color(0.5, 1.0,0.2),    # blau
+	"#": Color(0.5, 1.0, 0.2),   # grün
 	"+": Color(0.9, 1.0, 0.75),   # Glanz
 }
 
@@ -32,7 +32,7 @@ var tempo := -60.0        # negativ: erst ein kleiner Hüpfer weg vom Held, dann
 func _draw() -> void:
 	# Die Mitte vom Bild soll auf der Position vom Stein liegen
 	var mitte := Vector2i(BILD[0].length(), BILD.size()) / 2
-	var farben = FARBEN_1 if wert < 3 else FARBEN_2
+	var farben: Dictionary = FARBEN_1 if wert < 3 else FARBEN_2
 	for y in BILD.size():
 		for x in BILD[y].length():
 			var zeichen: String = BILD[y][x]

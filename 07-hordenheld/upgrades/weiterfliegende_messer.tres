@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Upgrade" format=3 uid="uid://bj4g637v01ofg"]
+
+[ext_resource type="Script" uid="uid://dixocy4w1i0s3" path="res://upgrade.gd" id="1_lnvdf"]
+
+[resource]
+script = ExtResource("1_lnvdf")
+titel = "Weiter werfen"
+beschreibung = "Messer fliegen 30cm weiter"
+max_stufe = 3
+knoten = "Waffe"
+eigenschaft = "reichweite"
+plus = 30.0
+metadata/_custom_type_script = "uid://dixocy4w1i0s3"

@@ -1,9 +1,20 @@
 [gd_scene format=3 uid="uid://drc8wjs0mbt43"]
 
 [ext_resource type="Script" uid="uid://c1xvj17nx46o2" path="res://held.gd" id="1_7usdt"]
+[ext_resource type="Script" uid="uid://dixocy4w1i0s3" path="res://upgrade.gd" id="2_anf6d"]
 [ext_resource type="Texture2D" uid="uid://bnbym1pdxbtwp" path="res://kenney/tiny_dungeon/tilemap_packed.png" id="2_xw2dj"]
+[ext_resource type="Resource" uid="uid://peck234o5ukk" path="res://upgrades/flinke_fuesse.tres" id="3_orv5f"]
 [ext_resource type="Script" uid="uid://bjow78u0c4lti" path="res://waffe.gd" id="3_q6bl5"]
 [ext_resource type="PackedScene" uid="uid://g2wf66m766eh" path="res://messer.tscn" id="4_kdfus"]
+[ext_resource type="Resource" uid="uid://81jwbgw0av5n" path="res://upgrades/grosser_magnet.tres" id="4_x52g1"]
+[ext_resource type="Resource" uid="uid://wtjc2hlob6gu" path="res://upgrades/heiltrank.tres" id="5_uyaaw"]
+[ext_resource type="Resource" uid="uid://f3iugkm8n3wk" path="res://upgrades/noch_ein_messer.tres" id="6_5brab"]
+[ext_resource type="Resource" uid="uid://b4whs2b126som" path="res://upgrades/schaerfere_messer.tres" id="7_6hbgr"]
+[ext_resource type="Resource" uid="uid://bb8tl1iqu05ww" path="res://upgrades/schneller_werfen.tres" id="8_7f7wg"]
+[ext_resource type="Resource" uid="uid://d3x0p1piex2vx" path="res://upgrades/glutring.tres" id="9_orv5f"]
+[ext_resource type="Resource" uid="uid://gqow3u7q37fb" path="res://upgrades/heisse_glut.tres" id="10_uyaaw"]
+[ext_resource type="Resource" uid="uid://bj4g637v01ofg" path="res://upgrades/weiterfliegende_messer.tres" id="11_5brab"]
+[ext_resource type="Resource" uid="uid://bbfw5p3onpng3" path="res://upgrades/aexte.tres" id="12_5brab"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_s017u"]
 radius = 5.0
@@ -25,6 +36,7 @@ radius = 40.0
 collision_mask = 0
 motion_mode = 1
 script = ExtResource("1_7usdt")
+upgrades = Array[ExtResource("2_anf6d")]([ExtResource("3_orv5f"), ExtResource("4_x52g1"), ExtResource("5_uyaaw"), ExtResource("6_5brab"), ExtResource("7_6hbgr"), ExtResource("8_7f7wg"), ExtResource("9_orv5f"), ExtResource("10_uyaaw"), ExtResource("11_5brab"), ExtResource("12_5brab")])
 
 [node name="Bild" type="Sprite2D" parent="." unique_id=1341013985]
 texture = ExtResource("2_xw2dj")

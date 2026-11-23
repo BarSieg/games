@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Upgrade" format=3 uid="uid://peck234o5ukk"]
+
+[ext_resource type="Script" uid="uid://dixocy4w1i0s3" path="res://upgrade.gd" id="1_8ynqu"]
+
+[resource]
+script = ExtResource("1_8ynqu")
+titel = "Flinke Füße"
+beschreibung = "10 % schneller laufen"
+max_stufe = 3
+eigenschaft = "tempo"
+mal = 1.1
+metadata/_custom_type_script = "uid://dixocy4w1i0s3"

@@ -9,15 +9,41 @@ const WACKELN = 15.0      # so schnell wackelt er beim Laufen hin und her
 const WACKEL_WINKEL = 0.15   # so weit, in Radiant (0.15 sind etwa 9 Grad)
 const MAX_LEBEN = 100.0
 const SCHADEN = 10.0      # so viel Leben kostet ein Gegner pro Sekunde, solange er den Held berührt
-const UPGRADES = ["Noch ein Messer", "Schneller werfen", "Schärfere Messer", "Großer Magnet", "Heiltrank", "Flinke Füße"]
 
 var lauf_zeit := 0.0
-var leben := MAX_LEBEN
 var erfahrung := 0
 var level := 1
 var naechstes_level := 5   # so viel Erfahrung braucht das nächste Level
 var tempo := STARTTEMPO
+@export var upgrades: Array[Upgrade] = []
 
+var leben := MAX_LEBEN:
+	set(wert):
+		leben = clampf(wert, 0, MAX_LEBEN)
+		$Lebensbalken.value = leben
+var stufen: Dictionary[Upgrade, int] = {}   # wie oft welches Upgrade schon gewählt wurde
+
+
+func _ready() -> void:
+	# prüfe upgrades, schritt 1 alle waffen anhängen
+	var neue_waffen := []
+	for upgrade in upgrades:
+		if upgrade.neue_waffe != null:
+			var waffe := upgrade.neue_waffe.instantiate()
+			neue_waffen.append(waffe)
+			add_child(waffe)
+	# jetzt prüfe die knoten und eigenschaften
+	for upgrade in upgrades:
+		var finde_knoten := get_node_or_null(upgrade.knoten)
+		if finde_knoten == null:
+			push_error("Upgrade '" + upgrade.titel + "' braucht den Knoten '" + upgrade.knoten + "'")
+		else:
+			var finde_eigenschaft = finde_knoten.get_indexed(upgrade.eigenschaft)
+			if finde_eigenschaft == null:
+				push_error("Upgrade '" + upgrade.titel + "' Knoten '" + upgrade.knoten + "' braucht Eigenschaft '" + upgrade.eigenschaft + "'")
+	# und lösche die zusätzlichen waffen wieder
+	for waffe in neue_waffen:
+		waffe.queue_free()
 
 func _physics_process(delta: float) -> void:
 	var richtung := Input.get_vector("links", "rechts", "hoch", "runter")
@@ -38,7 +64,6 @@ func _physics_process(delta: float) -> void:
 	var treffer: int = $Trefferzone.get_overlapping_bodies().size()
 	if treffer > 0:
 		leben -= treffer * SCHADEN * delta
-		$Lebensbalken.value = leben
 		if leben <= 0:
 			get_tree().reload_current_scene()
 	$Bild.modulate = Color(1, 0.4, 0.4) if treffer > 0 else Color.WHITE
@@ -64,18 +89,19 @@ func _on_magnet_area_entered(area: Area2D) -> void:
 	area.anziehen(self)
 
 
-func upgrade(wahl: String) -> void:
-	match wahl:
-		"Noch ein Messer":
-			$Waffe.anzahl += 1
-		"Schneller werfen":
-			$Waffe.abklingzeit *= 0.85
-		"Schärfere Messer":
-			$Waffe.schaden += 1
-		"Großer Magnet":
-			$Magnet/CollisionShape2D.shape.radius *= 1.3
-		"Heiltrank":
-			leben = MAX_LEBEN
-			$Lebensbalken.value = leben
-		"Flinke Füße":
-			tempo *= 1.1
+func stufe(upgrade: Upgrade) -> int:
+	return stufen.get(upgrade, 0)
+
+
+func moegliche_upgrades() -> Array[Upgrade]:
+	var liste: Array[Upgrade] = []
+	for upgrade in upgrades:
+		if upgrade.max_stufe == 0 or stufe(upgrade) < upgrade.max_stufe:
+			if upgrade.braucht == null or stufe(upgrade.braucht) > 0:
+				liste.append(upgrade)
+	return liste
+
+
+func upgrade_waehlen(upgrade: Upgrade) -> void:
+	upgrade.anwenden(self, stufe(upgrade))
+	stufen[upgrade] = stufe(upgrade) + 1

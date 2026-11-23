@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Upgrade" format=3 uid="uid://f3iugkm8n3wk"]
+
+[ext_resource type="Script" uid="uid://dixocy4w1i0s3" path="res://upgrade.gd" id="1_x4ic1"]
+
+[resource]
+script = ExtResource("1_x4ic1")
+titel = "Noch ein Messer"
+beschreibung = "Ein Messer mehr bei jedem Wurf"
+max_stufe = 4
+knoten = "Waffe"
+eigenschaft = "anzahl"
+plus = 1.0
+metadata/_custom_type_script = "uid://dixocy4w1i0s3"

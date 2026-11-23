@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" format=3 uid="uid://bbfw5p3onpng3"]
+
+[ext_resource type="PackedScene" uid="uid://dlvacu2jkh0kl" path="res://aexte.tscn" id="1_udbmr"]
+[ext_resource type="Script" uid="uid://dixocy4w1i0s3" path="res://upgrade.gd" id="2_mjknu"]
+
+[resource]
+script = ExtResource("2_mjknu")
+titel = "Äxte"
+beschreibung = "Äxte fliegen rund um dich, jede Stufe schneller"
+max_stufe = 3
+knoten = "Aexte"
+eigenschaft = "drehtempo"
+mal = 1.25
+neue_waffe = ExtResource("1_udbmr")
+metadata/_custom_type_script = "uid://dixocy4w1i0s3"

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" format=3 uid="uid://d3x0p1piex2vx"]
+
+[ext_resource type="Script" uid="uid://dixocy4w1i0s3" path="res://upgrade.gd" id="1_jbv0a"]
+[ext_resource type="PackedScene" uid="uid://cby6yypbkpb4c" path="res://glutring.tscn" id="1_sqhid"]
+
+[resource]
+script = ExtResource("1_jbv0a")
+titel = "Glutring"
+beschreibung = "Brennt Gegner rund um dich, jede Stufe größer"
+max_stufe = 4
+knoten = "Glutring/CollisionShape2D"
+eigenschaft = "shape:radius"
+mal = 1.25
+neue_waffe = ExtResource("1_sqhid")
+metadata/_custom_type_script = "uid://dixocy4w1i0s3"

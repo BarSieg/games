@@ -12,8 +12,8 @@ Gespielt wird mit dem Controller. Die Tastatur geht natürlich auch.
 1. Projekt, Held und eine Wiese ohne Ende ✔
 2. Gegner kommen von überall ✔
 3. Die Waffe schießt von selbst ✔
-4. Edelsteine, Erfahrung und Level-Up ← *du bist hier*
-5. Upgrades als Daten: mehrere Waffen mit Stufen
+4. Edelsteine, Erfahrung und Level-Up ✔
+5. Upgrades als Daten: mehrere Waffen mit Stufen ← *du bist hier*
 6. Hunderte Gegner: Der Profiler zeigt, was bremst
 7. Object Pooling: wiederverwenden statt wegwerfen
 8. Game Feel: Wackeln, Blitzen, Zahlen
@@ -913,3 +913,319 @@ Fertig? Committen und Bescheid geben.
 2. **Grün ist mehr wert (mittel):** Man soll schon von Weitem sehen, welcher Stein mehr bringt. Steine mit `wert` ab `3` sollen grün sein statt blau. Dafür brauchst du eine zweite Farbtabelle neben `FARBEN`. Wo entscheidest du, welche genommen wird? (Tipp: `_draw()` läuft erst, wenn der Stein in der Welt ist. Ist `wert` dann schon gesetzt?) 💚
 3. **Flinke Füße (mittel):** Neues Upgrade: Der Held läuft 10 % schneller. `TEMPO` ist eine Konstante, die kann sich nicht ändern. Was musst du umbauen? An wie vielen Stellen musst du den Namen „Flinke Füße“ schreiben?
 4. **Zwei Level auf einmal (mittel):** Stell zum Testen die Erfahrung der Fledermaus auf `30`. Was passiert, wenn du eine einsammelst? Nimm dann in `waehlen()` die Zeile `held.level_pruefen()` heraus und probier es noch einmal. Was ist jetzt anders, und wann kommt das fehlende Menü doch noch? Danach wieder zurückstellen.
+
+---
+
+## Kapitel 5: Upgrades als Daten: mehrere Waffen mit Stufen
+
+Am Ende von Kapitel 4 stand jedes Upgrade an zwei Stellen: in `UPGRADES` und im `match`. Mit „Flinke Füße“ hast du es selbst gemerkt. In diesem Kapitel wird jedes Upgrade eine **eigene kleine Datei**, mit Titel, Beschreibung, höchster Stufe und dem, was es bewirkt. Neue Upgrades baust du dann im Inspector zusammen, ganz ohne Code. Und weil das so einfach ist, kommt gleich eine zweite Waffe dazu: der **Glutring**. 🔥
+
+### 5.1 Eine eigene Resource
+
+Eine **Resource** kennst du schon: Der `CircleShape2D` ist eine, die `LabelSettings` in `schrift.tres` auch. Das sind Datenpakete, die Godot in einer Datei speichern und im Inspector anzeigen kann. Jetzt baust du deine eigene.
+
+Im **FileSystem** unten links: Rechtsklick auf `res://` → **Create New** → **Script…**. **Inherits** `Resource`, **Path** `res://upgrade.gd`, **Template** `Empty`:
+
+```gdscript
+class_name Upgrade
+extends Resource
+
+@export var titel := ""
+@export var beschreibung := ""
+@export var max_stufe := 5   # so oft kann man es wählen, 0 heißt: beliebig oft
+
+@export_group("Wirkung")
+@export var knoten := "."      # welcher Node, vom Held aus gesehen
+@export var eigenschaft := ""  # welche Variable von diesem Node
+@export var mal := 1.0         # erst malnehmen ...
+@export var plus := 0.0        # ... dann dazuzählen
+@export var neue_waffe: PackedScene   # gibt es eine, kommt sie beim ersten Mal an den Held
+
+
+func anwenden(held: Node, stufe: int) -> void:
+	if neue_waffe != null and stufe == 0:
+		held.add_child(neue_waffe.instantiate())
+		return
+	var ziel := held.get_node(knoten)
+	var alt = ziel.get_indexed(eigenschaft)
+	ziel.set_indexed(eigenschaft, alt * mal + plus)
+```
+
+- **`extends Resource` und `class_name Upgrade`:** Damit kennt Godot einen neuen Typ von Resource, so wie `CircleShape2D`. Im nächsten Schritt kannst du ihn ganz normal über das Menü anlegen.
+- **`@export_group("Wirkung")`** macht im Inspector eine aufklappbare Gruppe. Alles darunter gehört dazu. Oben stehen Titel und Beschreibung fürs Menü, unten in der Gruppe, was das Upgrade tut.
+- **Ein Upgrade ist eine Rechnung:** Nimm die Variable `eigenschaft` vom Node `knoten`, mal `mal`, plus `plus`. Damit gehen drei Arten von Upgrades:
+
+| Art | mal | plus | Beispiel |
+|---|---|---|---|
+| etwas dazu | `1` | `1` | Noch ein Messer: aus 1 wird 2 |
+| prozentual mehr oder weniger | `0.85` | `0` | Schneller werfen: aus 0,6 wird 0,51 |
+| auf einen festen Wert | `0` | `100` | Heiltrank: egal wie viel, danach 100 |
+
+- **`get_node(knoten)`:** `knoten` ist ein Pfad vom Held aus, so wie bei `$`. `"Waffe"` ist `$Waffe`, und `"."` ist der Held selbst.
+- **`get_indexed` und `set_indexed`** lesen und schreiben eine Variable, deren Namen in einem Text steht. `get_indexed("anzahl")` ist dasselbe wie `.anzahl`. Mit Doppelpunkt geht es auch tiefer hinein: `"shape:radius"` heißt `.shape.radius`. Damit kommt das Upgrade sogar an den Radius vom Magnet-Kreis.
+- **`var alt` ohne Typ**, mit `=` statt `:=`: Was herauskommt, kann eine ganze Zahl sein (`anzahl`) oder eine Kommazahl (`abklingzeit`). Erst beim Spielen steht fest, was es ist.
+- **Ganze Zahlen:** `1 * 1.0 + 1.0` ergibt die Kommazahl `2.0`. `anzahl` ist aber eine ganze Zahl. Godot schneidet beim Speichern die Nachkommastellen ab, und aus `2.0` wird `2`. Das passt. Aber Vorsicht bei `mal 1.5` auf eine ganze Zahl: Aus 3 wird 4,5, und abgeschnitten bleibt 4.
+- **`neue_waffe`:** Ist hier eine Szene eingetragen, hängt das Upgrade sie beim ersten Wählen an den Held. Ab dem zweiten Mal macht es die normale Rechnung. Dazu mehr beim Glutring.
+
+**Und Tippfehler?** Schreibst du `anzhal` statt `anzahl`, liefert `get_indexed` nichts (`null`), und beim Malnehmen bleibt das Spiel mit *Invalid operands 'Nil' and 'float'* stehen. Ein falscher Knoten-Pfad meldet *Node not found*. Das ist besser als vorher: Da ist bei einem Tippfehler einfach nichts passiert, und keiner hat es gemerkt.
+
+### 5.2 Die Upgrade-Dateien
+
+1. Im **FileSystem**: Rechtsklick auf `res://` → **Create New** → **Folder…** → `upgrades`.
+2. Rechtsklick auf `upgrades` → **Create New** → **Resource…** → oben `Upgrade` eintippen → **Create** → als `noch_ein_messer.tres` speichern.
+3. Die Datei ist im Inspector offen. Trag die Werte aus der ersten Zeile der Tabelle ein und speichere mit **Strg+S**.
+4. Für die nächste: Rechtsklick auf die fertige Datei → **Duplicate…** → neuer Name. Dann nur noch die Werte ändern. Das geht schneller als jedes Mal von vorn.
+
+| Datei | Titel | Beschreibung | Max Stufe | Knoten | Eigenschaft | Mal | Plus |
+|---|---|---|---|---|---|---|---|
+| `noch_ein_messer` | Noch ein Messer | Ein Messer mehr bei jedem Wurf | 4 | `Waffe` | `anzahl` | 1 | 1 |
+| `schneller_werfen` | Schneller werfen | 15 % kürzere Pause zwischen den Würfen | 5 | `Waffe` | `abklingzeit` | 0.85 | 0 |
+| `schaerfere_messer` | Schärfere Messer | Jedes Messer macht 1 Schaden mehr | 5 | `Waffe` | `schaden` | 1 | 1 |
+| `grosser_magnet` | Großer Magnet | Edelsteine kommen von weiter her | 3 | `Magnet/CollisionShape2D` | `shape:radius` | 1.3 | 0 |
+| `flinke_fuesse` | Flinke Füße | 10 % schneller laufen | 3 | `.` | `tempo` | 1.1 | 0 |
+| `heiltrank` | Heiltrank | Alle Lebenspunkte zurück | 0 | `.` | `leben` | 0 | 100 |
+
+Die Knoten-Pfade müssen genau so heißen wie in deinem `held.tscn`. Heißt dein Kreis im Magnet anders, nimm deinen Namen.
+
+Jetzt steht auch fest, wie oft man etwas wählen kann. Vier zusätzliche Messer sind genug, und nach fünfmal „Schneller werfen“ ist Schluss. Nur den Heiltrank gibt es beliebig oft.
+
+### 5.3 Der Held merkt sich die Stufen
+
+In `held.gd` fliegen die Konstante `UPGRADES` und die ganze Funktion `upgrade()` mit dem `match` raus. Dafür kommt unter die Konstanten ein Export:
+
+```gdscript
+@export var upgrades: Array[Upgrade] = []
+```
+
+`leben` bekommt einen Setter, und eine neue Variable kommt dazu:
+
+```gdscript
+var leben := MAX_LEBEN:
+	set(wert):
+		leben = clampf(wert, 0, MAX_LEBEN)
+		$Lebensbalken.value = leben
+var stufen: Dictionary[Upgrade, int] = {}   # wie oft welches Upgrade schon gewählt wurde
+```
+
+Den Setter kennst du aus dem Kerkerheld. Er ist für den Heiltrank da: Das Upgrade schreibt nur `leben`, vom Lebensbalken weiß es nichts. Der Setter sorgt dafür, dass der Balken trotzdem mitgeht. In `_physics_process` kannst du deshalb die Zeile `$Lebensbalken.value = leben` löschen, das macht jetzt auch der Setter.
+
+`tempo` als Variable hast du aus Übung 3 von Kapitel 4. Falls nicht: `const TEMPO` in `const STARTTEMPO` umbenennen, `var tempo := STARTTEMPO` dazu, und in `_physics_process` mit `tempo` statt `TEMPO` rechnen.
+
+Unten, wo vorher `upgrade()` stand, kommen drei neue Funktionen hin:
+
+```gdscript
+func stufe(upgrade: Upgrade) -> int:
+	return stufen.get(upgrade, 0)
+
+
+func moegliche_upgrades() -> Array[Upgrade]:
+	var liste: Array[Upgrade] = []
+	for upgrade in upgrades:
+		if upgrade.max_stufe == 0 or stufe(upgrade) < upgrade.max_stufe:
+			liste.append(upgrade)
+	return liste
+
+
+func upgrade_waehlen(upgrade: Upgrade) -> void:
+	upgrade.anwenden(self, stufe(upgrade))
+	stufen[upgrade] = stufe(upgrade) + 1
+```
+
+Jetzt die Liste füllen: `held.tscn` öffnen, `Held` auswählen. Im Inspector steht **Upgrades**. Klapp es auf, klick sechsmal **Add Element**, und zieh die sechs Dateien aus dem FileSystem in die leeren Felder.
+
+- **`Dictionary[Upgrade, int]`** ist ein Dictionary mit Typen, wie das Inventar im Kerkerheld, nur dass Godot jetzt aufpasst: Schlüssel sind Upgrades, Werte ganze Zahlen. Etwas anderes hineinzustecken gibt schon im Editor einen Fehler.
+- **`stufen.get(upgrade, 0)`:** Wurde das Upgrade noch nie gewählt, steht es nicht im Dictionary. `get` liefert dann die `0` statt eines Fehlers.
+- **`moegliche_upgrades()`** sammelt alles, was noch nicht ausgereizt ist.
+
+**Warum steht die Stufe nicht in der Upgrade-Datei?** Das wäre doch praktisch: `upgrade.stufe += 1`, fertig. Aber denk an den Magnet aus Kapitel 4: Resources teilt Godot. Die Datei `noch_ein_messer.tres` gibt es im ganzen Spiel genau einmal. Stirbt der Held und das Spiel fängt neu an, hätte sie immer noch Stufe 3, und der neue Held käme nie wieder auf vier Messer. Darum gilt: Die Datei sagt, **was** ein Upgrade ist. **Wie oft** es gewählt wurde, merkt sich der Held. Und der fängt bei jedem Neustart wieder bei null an.
+
+### 5.4 Das Menü zeigt Stufen und Beschreibung
+
+In `welt.tscn`:
+1. Noch ein Kind von `LevelUp/Kasten`, ganz unten: `Label` → `Beschreibung`. **Horizontal Alignment** `Center`, **Vertical Alignment** `Bottom`, **Label Settings** → **Load** → `schrift.tres`.
+2. Bei **Layout → Custom Minimum Size** das **y** auf `20`. Dadurch ist das Label höher als die Schrift, und weil sie unten steht, entsteht eine Lücke. Ohne die Lücke sieht die Beschreibung aus wie eine vierte Wahl.
+
+Das neue `levelup.gd`, im Ganzen:
+
+```gdscript
+extends CanvasLayer
+
+var held: Held
+var angebot: Array[Upgrade] = []   # die Upgrades, die gerade zur Wahl stehen
+var auswahl := 0                   # welches davon markiert ist
+
+@onready var zeilen: Array[Label] = [$Kasten/Wahl1, $Kasten/Wahl2, $Kasten/Wahl3]
+
+
+func _ready() -> void:
+	hide()
+	held = get_tree().get_first_node_in_group("held")
+	held.level_auf.connect(zeigen)
+
+
+func zeigen(level: int) -> void:
+	angebot = held.moegliche_upgrades()
+	if angebot.is_empty():
+		return   # alles ausgereizt, dann gibt es eben nichts
+	angebot.shuffle()
+	angebot.resize(mini(angebot.size(), 3))
+
+	$Kasten/Titel.text = "Level %d!" % level
+	for i in 3:
+		zeilen[i].visible = i < angebot.size()
+		if zeilen[i].visible:
+			zeilen[i].text = beschriftung(angebot[i])
+	auswahl = 0
+	markieren()
+	show()
+	get_tree().paused = true
+
+
+func beschriftung(upgrade: Upgrade) -> String:
+	var stufe := held.stufe(upgrade)
+	if upgrade.neue_waffe != null and stufe == 0:
+		return upgrade.titel + "  NEU!"
+	if upgrade.max_stufe == 0:
+		return upgrade.titel
+	return "%s  %d/%d" % [upgrade.titel, stufe + 1, upgrade.max_stufe]
+
+
+func _process(_delta: float) -> void:
+	if not visible:
+		return
+	if Input.is_action_just_pressed("runter"):
+		auswahl = wrapi(auswahl + 1, 0, angebot.size())
+		markieren()
+	elif Input.is_action_just_pressed("hoch"):
+		auswahl = wrapi(auswahl - 1, 0, angebot.size())
+		markieren()
+	elif Input.is_action_just_pressed("ok"):
+		waehlen()
+
+
+func markieren() -> void:
+	for i in angebot.size():
+		zeilen[i].modulate = Color.YELLOW if i == auswahl else Color(1, 1, 1, 0.5)
+	$Kasten/Beschreibung.text = angebot[auswahl].beschreibung
+
+
+func waehlen() -> void:
+	hide()
+	get_tree().paused = false
+	held.upgrade_waehlen(angebot[auswahl])
+	held.level_pruefen()
+```
+
+Was sich geändert hat:
+- **Weniger als drei:** Ist fast alles ausgereizt, bleiben vielleicht nur noch zwei oder eins übrig. `mini(angebot.size(), 3)` nimmt die kleinere Zahl. Ein `resize(3)` bei nur zwei Einträgen würde die Liste sonst mit `null` auffüllen. Leere Zeilen werden versteckt, und `wrapi` springt nur über so viele Zeilen, wie da sind.
+- **Kein `assign` mehr:** `moegliche_upgrades()` baut jedes Mal eine neue Liste. `shuffle` bringt also nur diese Kopie durcheinander, nicht die Liste im Held.
+- **`2/4` hinter dem Titel** zeigt, welche Stufe man bekommt, wenn man es wählt. Eine neue Waffe bekommt ein „NEU!“, der Heiltrank nichts.
+- **Die Beschreibung** wechselt mit der Auswahl, darum steht sie in `markieren()`.
+
+Jetzt **F5**. Das Spiel sollte genauso laufen wie vorher, nur das Menü zeigt mehr. Erst wenn das klappt, kommt die neue Waffe.
+
+### 5.5 Eine zweite Waffe: der Glutring
+
+Ein glühender Ring um den Held, der alles verbrennt, was ihm zu nahe kommt. Er zielt nicht, er wirft nichts. Er ist einfach da und hilft genau dann, wenn die Horde schon ganz nah ist.
+
+1. Neue Szene: **Other Node** → `Area2D` → `Glutring`.
+2. **Collision → Layer** nur `3` (Waffe), **Mask** nur `2` (Gegner). **Monitorable** aus. Wie beim Messer.
+3. **CanvasItem → Ordering → Z Index** `-1`. Dann liegt das Glühen unter dem Held und den Gegnern, aber über dem Boden (der hat `-10`).
+4. Kind: `CollisionShape2D` → **New CircleShape2D**, **Radius** `24`, und wieder **Resource → Local To Scene** an. Der Radius wird gleich per Upgrade wachsen, das kennst du jetzt.
+5. Skript anhängen, `glutring.gd`:
+
+```gdscript
+extends Area2D
+
+@export var schaden := 1
+@export var takt := 0.5   # alle so viele Sekunden brennt er
+
+var warten := 0.0
+var zeit := 0.0
+
+
+func _physics_process(delta: float) -> void:
+	warten -= delta
+	if warten > 0:
+		return
+	warten = takt
+	for gegner: Node2D in get_overlapping_bodies():
+		gegner.treffer(schaden)
+
+
+func _process(delta: float) -> void:
+	zeit += delta
+	queue_redraw()
+
+
+func _draw() -> void:
+	var radius: float = $CollisionShape2D.shape.radius
+	var flackern := 0.8 + 0.2 * sin(zeit * 8.0)
+	draw_circle(Vector2.ZERO, radius, Color(1.0, 0.3, 0.0, 0.3 * flackern))
+	draw_arc(Vector2.ZERO, radius, 0, TAU, 48, Color(1.0, 0.8, 0.2, flackern))
+```
+
+6. Speichern als `glutring.tscn`. **Nicht** in den Held ziehen! Das macht nachher das Upgrade.
+
+Dann die siebte Upgrade-Datei, `upgrades/glutring.tres`:
+
+| Titel | Beschreibung | Max Stufe | Knoten | Eigenschaft | Mal | Plus | Neue Waffe |
+|---|---|---|---|---|---|---|---|
+| Glutring | Brennt Gegner rund um dich, jede Stufe größer | 4 | `Glutring/CollisionShape2D` | `shape:radius` | 1.25 | 0 | `glutring.tscn` |
+
+Bei **Neue Waffe** ziehst du `glutring.tscn` aus dem FileSystem ins Feld. Dann die Datei in die **Upgrades**-Liste vom Held, als siebtes Element.
+
+- **Stufe 1 hängt den Ring an den Held**, so steht es in `anwenden()`. Stufe 2 bis 4 machen ihn jeweils ein Viertel größer: 24 → 30 → 37,5 → 47 Pixel. Dass das Upgrade den Ring unter `Glutring/...` findet, liegt daran, dass ein Node beim Einfügen so heißt wie die Wurzel seiner Szene.
+- **`get_overlapping_bodies()`** statt `body_entered`: Das Messer trifft einmal beim Hineinfliegen. Der Ring soll aber jeden brennen, **solange** er drin ist, alle halbe Sekunde wieder. Das ist dieselbe Frage wie beim Schaden vom Held: Wer ist gerade da?
+- **`queue_redraw()` in jedem Bild:** Beim Edelstein hieß es, `_draw()` läuft nur einmal. Der Ring soll aber flackern und mitwachsen. Mit `queue_redraw()` malt er jedes Bild neu. Bei einem einzigen Kreis kostet das nichts. Bei hundert Edelsteinen würde man es lassen.
+- **`draw_circle` und `draw_arc`:** eine halb durchsichtige Fläche und ein heller Rand. Das `flackern` schwankt mit `sin` zwischen 0,6 und 1,0 und macht beides mal heller, mal dunkler.
+
+Und das Schönste: Für das neue Upgrade hast du am Held **keine einzige Zeile** geändert.
+
+### 5.6 Ein Gegner stirbt zweimal
+
+Mit dem Glutring kann etwas passieren, das es vorher fast nie gab: Ein Gegner bekommt im **selben Bild** zwei Treffer, einen vom Ring und einen vom Messer. Bei deinem Fächer geht das übrigens auch schon: Zwei Messer starten am selben Punkt, und steht eine Fledermaus direkt daneben, treffen beide sie im ersten Bild.
+
+Was passiert dann? Der erste Treffer bringt `leben` auf 0, `sterben()` lässt einen Edelstein fallen und ruft `queue_free()` auf. Aber `queue_free()` räumt erst **am Ende des Bildes** auf. Bis dahin ist der Gegner noch da, und der zweite Treffer bringt `leben` auf −1. Das ist auch ≤ 0, also noch einmal `sterben()`, und noch ein Edelstein. Doppelte Erfahrung für einen Gegner. Ich habe es ausprobiert: Zwei Treffer im selben Bild auf eine Fledermaus, zwei Edelsteine.
+
+Die Lösung ist eine Zeile ganz oben in `treffer()` in `gegner.gd`:
+
+```gdscript
+func treffer(schaden: int, stoss: Vector2 = Vector2.ZERO) -> void:
+	if leben <= 0:
+		return   # schon tot, wartet nur noch aufs Wegräumen
+	leben -= schaden
+	...
+```
+
+Ein toter Gegner nimmt keine Treffer mehr an. Merk dir das Muster, du brauchst es in DOOM wieder: Zwischen „ist gestorben“ und „ist weg“ gibt es immer einen kurzen Moment, in dem noch Dinge passieren können.
+
+### 5.7 Ausprobieren
+
+**F5**:
+- Das erste Level kommt wieder nach etwa 20 Sekunden. Im Menü stehen jetzt Stufen wie `1/5` und unten eine Beschreibung, die mit der Auswahl wechselt.
+- Wähl den Glutring, sobald er kommt. Ein flackernder oranger Ring erscheint um den Held, und Gegner, die hineinlaufen, sterben nach ein bis zwei Bränden. Beim nächsten Mal steht `Glutring  2/4` da, und der Ring wird größer.
+- „Noch ein Messer“ kommt nach `4/4` nicht mehr. Der Heiltrank kommt immer wieder.
+- Stirb einmal und fang neu an: Alles ist wieder auf Stufe 0, auch der Glutring ist weg.
+
+In meinem Test mit dem Glutring kamen die Level schneller als ohne: Level 2 nach 20 Sekunden, Level 7 nach 42. Wer viele Gegner verbrennt, sammelt viele Edelsteine.
+
+### 5.8 Was ist neu?
+
+- **Eine eigene Resource-Klasse** mit `extends Resource` und `class_name`. Jede Datei davon ist ein Datenpaket, das man im Inspector ausfüllt.
+- **Daten statt Code:** Ein neues Upgrade ist eine neue Datei, kein neuer `match`-Zweig. Titel, Beschreibung, Stufen und Wirkung stehen an **einer** Stelle.
+- **`get_indexed` und `set_indexed`:** eine Variable lesen und schreiben, deren Name in einem Text steht, mit `:` auch tiefer hinein.
+- **`@export_group`** für Ordnung im Inspector.
+- **Ein Dictionary mit Typen:** `Dictionary[Upgrade, int]`.
+- **Was eine Datei weiß und was der Held weiß:** Geteilte Resources dürfen sich im Spiel nicht ändern. Der Spielstand gehört in den Node.
+- **Eine Waffe, die erst durch ein Upgrade entsteht**, und **`get_overlapping_bodies()`** für Schaden, solange jemand drin ist.
+- **Tote nehmen keine Treffer an:** Zwischen `queue_free()` und dem Verschwinden ist noch ein Moment Zeit.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 5
+
+1. **Weiter werfen (leicht):** Ein neues Upgrade „Weiter werfen“: Die `reichweite` der Waffe steigt um 30 Pixel, höchstens dreimal. Wie viele Zeilen Code musst du dafür schreiben? 🎯
+2. **Heiße Glut (mittel):** Noch ein Upgrade: Der Glutring macht 1 Schaden mehr. Probier es aus und wähl es, **bevor** du den Glutring hast. Was passiert, und warum? Bau dann in `upgrade.gd` ein `@export var braucht: Upgrade` ein, und sorg in `moegliche_upgrades()` dafür, dass ein Upgrade erst angeboten wird, wenn das, was es braucht, mindestens Stufe 1 hat. 🔥
+3. **Tippfehler-Wächter (mittel):** Fehler sollen nicht erst auffallen, wenn man im Spiel zufällig das kaputte Upgrade wählt. Prüf in `_ready()` vom Held alle Upgrades: Gibt es den Knoten, und hat er die Eigenschaft? Wenn nicht, gib mit `push_error()` aus, welches Upgrade kaputt ist. Tipps: `get_node_or_null()` liefert `null` statt eines Fehlers, und `get_indexed()` liefert `null`, wenn es die Eigenschaft nicht gibt. Und was machst du mit dem Glutring, den es beim Start ja noch gar nicht gibt? 🔍
+4. **Kreisende Äxte (schwer):** Eine dritte Waffe: Zwei Äxte kreisen um den Held. Eine Szene `aexte.tscn` mit einem `Node2D` als Wurzel, das sich mit `rotation += drehtempo * delta` dreht. Darunter zwei `Area2D` mit je einer Axt vom Kenney-Blatt, 30 Pixel links und rechts vom Mittelpunkt, die mit `body_entered` Schaden machen. Dazu ein Upgrade mit **Neue Waffe**, dessen weitere Stufen das `drehtempo` erhöhen. Wird ein Gegner, der im Kreis stehen bleibt, bei jeder Runde wieder getroffen? 🪓

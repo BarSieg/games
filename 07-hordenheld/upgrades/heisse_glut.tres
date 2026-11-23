@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Upgrade" format=3 uid="uid://gqow3u7q37fb"]
+
+[ext_resource type="Resource" uid="uid://d3x0p1piex2vx" path="res://upgrades/glutring.tres" id="1_go06q"]
+[ext_resource type="Script" uid="uid://dixocy4w1i0s3" path="res://upgrade.gd" id="1_i810o"]
+
+[resource]
+script = ExtResource("1_i810o")
+titel = "Heiße Glut"
+beschreibung = "Der Glutring macht 1 Schaden mehr"
+max_stufe = 2
+knoten = "Glutring"
+eigenschaft = "schaden"
+plus = 1.0
+braucht = ExtResource("1_go06q")
+metadata/_custom_type_script = "uid://dixocy4w1i0s3"

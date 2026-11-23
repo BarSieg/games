@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Upgrade" format=3 uid="uid://bb8tl1iqu05ww"]
+
+[ext_resource type="Script" uid="uid://dixocy4w1i0s3" path="res://upgrade.gd" id="1_1jhhq"]
+
+[resource]
+script = ExtResource("1_1jhhq")
+titel = "Schneller werfen"
+beschreibung = "15 % kürzere Pause zwischen den Würfen"
+knoten = "Waffe"
+eigenschaft = "abklingzeit"
+mal = 0.85
+metadata/_custom_type_script = "uid://dixocy4w1i0s3"

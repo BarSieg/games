@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Upgrade" format=3 uid="uid://wtjc2hlob6gu"]
+
+[ext_resource type="Script" uid="uid://dixocy4w1i0s3" path="res://upgrade.gd" id="1_4u3ja"]
+
+[resource]
+script = ExtResource("1_4u3ja")
+titel = "Heiltrank"
+beschreibung = "Alle Lebenspunkte zurück"
+max_stufe = 0
+eigenschaft = "leben"
+mal = 0.0
+plus = 100.0
+metadata/_custom_type_script = "uid://dixocy4w1i0s3"
