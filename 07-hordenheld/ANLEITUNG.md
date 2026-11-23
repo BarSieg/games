@@ -4,7 +4,7 @@
 
 Wie immer baust du selbst im Godot-Editor, Kapitel für Kapitel. Nach jedem Kapitel meldest du dich, ich schaue deine Dateien durch, dann kommt das nächste.
 
-Vieles kennst du aus dem Kerkerheld: CharacterBody2D, Kollisionsebenen, Autoloads, Signale, Tweens, Optionen, Musik, Web-Export. Darum geht es schnell voran. Neu ist vor allem eine Frage: **Was passiert, wenn sehr viel gleichzeitig los ist?** Dafür lernst du den **Profiler**, **Object Pooling** und ein paar Tricks, die DOOM später genauso braucht. Dazu ein **Upgrade-System** und viel **Game Feel**: Treffer müssen sich gut anfühlen.
+Vieles kennst du aus dem Kerkerheld: CharacterBody2D, Kollisionsebenen, Autoloads, Signale, Tweens, Optionen, Musik, Web-Export. Darum geht es schnell voran. Neu ist vor allem eine Frage: **Was passiert, wenn sehr viel gleichzeitig los ist?** Dafür lernst du den **Profiler**, misst, was wirklich bremst, und lernst ein paar Tricks, die DOOM später genauso braucht. Dazu ein **Upgrade-System** und viel **Game Feel**: Treffer müssen sich gut anfühlen.
 
 Gespielt wird mit dem Controller. Die Tastatur geht natürlich auch.
 
@@ -13,9 +13,9 @@ Gespielt wird mit dem Controller. Die Tastatur geht natürlich auch.
 2. Gegner kommen von überall ✔
 3. Die Waffe schießt von selbst ✔
 4. Edelsteine, Erfahrung und Level-Up ✔
-5. Upgrades als Daten: mehrere Waffen mit Stufen ← *du bist hier*
-6. Hunderte Gegner: Der Profiler zeigt, was bremst
-7. Object Pooling: wiederverwenden statt wegwerfen
+5. Upgrades als Daten: mehrere Waffen mit Stufen ✔
+6. Hunderte Gegner: Der Profiler zeigt, was bremst ← *du bist hier*
+7. Die Horde wird billiger: Gedränge ohne teure Physik
 8. Game Feel: Wackeln, Blitzen, Zahlen
 9. Die Uhr: Wellen, Elite-Gegner, Sieg und Game Over
 10. Titelbild, Musik und Web-Export
@@ -1229,3 +1229,220 @@ Fertig? Committen und Bescheid geben.
 2. **Heiße Glut (mittel):** Noch ein Upgrade: Der Glutring macht 1 Schaden mehr. Probier es aus und wähl es, **bevor** du den Glutring hast. Was passiert, und warum? Bau dann in `upgrade.gd` ein `@export var braucht: Upgrade` ein, und sorg in `moegliche_upgrades()` dafür, dass ein Upgrade erst angeboten wird, wenn das, was es braucht, mindestens Stufe 1 hat. 🔥
 3. **Tippfehler-Wächter (mittel):** Fehler sollen nicht erst auffallen, wenn man im Spiel zufällig das kaputte Upgrade wählt. Prüf in `_ready()` vom Held alle Upgrades: Gibt es den Knoten, und hat er die Eigenschaft? Wenn nicht, gib mit `push_error()` aus, welches Upgrade kaputt ist. Tipps: `get_node_or_null()` liefert `null` statt eines Fehlers, und `get_indexed()` liefert `null`, wenn es die Eigenschaft nicht gibt. Und was machst du mit dem Glutring, den es beim Start ja noch gar nicht gibt? 🔍
 4. **Kreisende Äxte (schwer):** Eine dritte Waffe: Zwei Äxte kreisen um den Held. Eine Szene `aexte.tscn` mit einem `Node2D` als Wurzel, das sich mit `rotation += drehtempo * delta` dreht. Darunter zwei `Area2D` mit je einer Axt vom Kenney-Blatt, 30 Pixel links und rechts vom Mittelpunkt, die mit `body_entered` Schaden machen. Dazu ein Upgrade mit **Neue Waffe**, dessen weitere Stufen das `drehtempo` erhöhen. Wird ein Gegner, der im Kreis stehen bleibt, bei jeder Runde wieder getroffen? 🪓
+
+---
+
+## Kapitel 6: Hunderte Gegner: Der Profiler zeigt, was bremst
+
+Dein Held ist so stark geworden, dass er die Horde klein hält. Mehr als 250 Gegner auf einmal schafft das Spiel gar nicht mehr. Für das Spiel ist das ein Problem für später: In Kapitel 9 kommen Wellen und Elite-Gegner. Fürs Messen ist es jetzt eins. Wer wissen will, wo die Grenze liegt, muss sie erreichen können.
+
+In diesem Kapitel baust du dir deshalb zuerst Werkzeuge: eine Anzeige, die mehr verrät als die FPS, einen Knopf für 100 Gegner mehr und einen unverwundbaren Held. Dann misst du mit den Werkzeugen von Godot selbst, dem **Monitor** und dem **Profiler**. Und am Ende weißt du, was wirklich bremst. Kleiner Hinweis vorab: Es ist nicht das, was man vermutet. 🔬
+
+### 6.1 Warum die FPS lügen
+
+Oben steht `FPS: 60`. Klingt gut, sagt aber wenig. Godot wartet nach jedem Bild auf den Bildschirm (das heißt **V-Sync**), und der zeigt meist 60 Bilder pro Sekunde. Ob dein Rechner für ein Bild 2 Millisekunden braucht oder 16, die Anzeige sagt in beiden Fällen 60. Erst wenn es zu spät ist, fällt die Zahl.
+
+Ehrlicher ist die Frage: **Wie lange dauert ein Bild?** Bei 60 Bildern pro Sekunde hat jedes Bild 1000 / 60 = **16,7 Millisekunden**. Das ist das Budget. Solange alles zusammen darunter bleibt, läuft das Spiel flüssig. Wie weit du vom Rand entfernt bist, sieht man nur an den Millisekunden.
+
+Die meiste Arbeit in deinem Spiel passiert in `_physics_process`: Gegner laufen, Messer fliegen, Edelsteine sausen. Darum zeigt die Anzeige ab jetzt, wie lange das zuletzt gedauert hat. `info.gd`:
+
+```gdscript
+extends Label
+
+var held: Held
+
+
+func _ready() -> void:
+	held = get_tree().get_first_node_in_group("held")
+
+
+func _process(_delta: float) -> void:
+	var physik := Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000
+	text = "Level %d   Gegner: %d   FPS: %d   Physik: %.1f ms" % [held.level, get_tree().get_node_count_in_group("gegner"), Engine.get_frames_per_second(), physik]
+	if held.unverwundbar:
+		text += "   UNVERWUNDBAR"
+```
+
+**`Performance.get_monitor()`** fragt die Messwerte ab, die Godot sowieso mitschreibt. `TIME_PHYSICS_PROCESS` ist die Zeit für den letzten Physik-Schritt, in Sekunden. Mal 1000 sind es Millisekunden. `%.1f` zeigt eine Kommazahl mit einer Stelle nach dem Komma.
+
+`held.unverwundbar` gibt es noch nicht, das kommt jetzt.
+
+### 6.2 Ein Werkzeugkasten zum Testen
+
+**Der Held wird unverwundbar.** In `held.gd` eine neue Variable zu den anderen:
+
+```gdscript
+var unverwundbar := false   # zum Testen, schaltet das Werkzeug um
+```
+
+Und beim Schaden eine Bedingung mehr:
+
+```gdscript
+	if treffer > 0 and not unverwundbar:
+```
+
+**Das Werkzeug.** In `welt.tscn`: Kind von `Welt` → `Node` → `Werkzeug`. Skript `werkzeug.gd`:
+
+```gdscript
+extends Node
+
+# Werkzeuge zum Messen und Testen. Nur auf der Tastatur:
+# F1 = 100 Gegner mehr, F2 = Held unverwundbar an/aus
+
+const MONITORE = ["Gegner", "Messer", "Edelsteine"]
+const GRUPPEN = ["gegner", "messer", "beute"]
+
+
+func _ready() -> void:
+	for i in MONITORE.size():
+		Performance.add_custom_monitor("Hordenheld/" + MONITORE[i], get_tree().get_node_count_in_group.bind(GRUPPEN[i]))
+
+
+func _exit_tree() -> void:
+	for monitor in MONITORE:
+		Performance.remove_custom_monitor("Hordenheld/" + monitor)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	match event.keycode:
+		KEY_F1:
+			for i in 100:
+				$"../Horde".neuer_gegner()
+		KEY_F2:
+			var held: Held = get_tree().get_first_node_in_group("held")
+			held.unverwundbar = not held.unverwundbar
+```
+
+Die Monitore brauchen noch Gruppen: In `messer.tscn` kommt `Messer` in die Gruppe `messer`, in `edelstein.tscn` kommt `Edelstein` in die Gruppe `beute`. Tab **Node** → **Groups**, wie beim Held.
+
+- **Nur Tastatur, mit Absicht:** Das Spiel wird mit dem Controller gespielt. Das Werkzeug ist aber für **dich** am Rechner, nicht für die Spieler. Darum fragt es die Tasten direkt ab, ohne Eintrag in der Input Map. So kommt es keiner Aktion vom Controller in die Quere.
+- **`event.echo`:** Hältst du eine Taste gedrückt, schickt Windows sie nach einer Weile immer wieder. Das sind Echos. Die werden ignoriert, sonst kämen bei langem Drücken Tausende Gegner.
+- **`$"../Horde"`:** Der Pfad hat zwei Punkte, also geht er erst eine Stufe nach oben zur `Welt` und dann zur `Horde`. Mit Anführungszeichen, weil `..` sonst kein gültiger Name wäre. `neuer_gegner()` aus deinem Spawner setzt jeden neuen Gegner an den Bildrand, wie sonst auch.
+- **`add_custom_monitor`** kommt gleich in 6.4 dran.
+
+### 6.3 Der Monitor
+
+Godot schreibt beim Spielen ständig Messwerte mit. **F5**, dann unten im Editor den Tab **Debugger** → **Monitors**. Links steht eine lange Liste zum Anhaken. Hak diese an:
+
+| Gruppe | Wert | Was es zeigt |
+|---|---|---|
+| Time | **FPS** | wie gehabt |
+| Time | **Physics Process** | die Zeit pro Physik-Schritt, wie in deiner Anzeige |
+| Object | **Nodes** | wie viele Nodes es gerade gibt |
+| Physics 2D | **Collision Pairs** | wie viele Paare von Körpern sich gerade so nah sind, dass die Physik genauer hinschauen muss |
+
+Rechts erscheint für jeden Wert ein Verlauf über die Zeit. Spiel eine Minute und schau zu, wie die Kurven wachsen.
+
+### 6.4 Eigene Monitore
+
+Ganz unten in der Liste steht jetzt eine Gruppe **Hordenheld** mit **Gegner**, **Messer** und **Edelsteine**. Das sind deine. Hak sie auch an.
+
+- **`Performance.add_custom_monitor(name, funktion)`:** Godot ruft die Funktion beim Messen immer wieder auf und malt, was sie zurückgibt. Der Teil vor dem `/` ist die Gruppe in der Liste.
+- **`.bind(...)`:** `get_node_count_in_group` braucht den Namen der Gruppe. Godot ruft die Funktion aber ohne Werte auf. `bind` hängt den Wert vorher an. `get_node_count_in_group.bind("gegner")` ist eine fertige Funktion, die man ohne Werte aufrufen kann, und sie zählt trotzdem die Gegner.
+- **`_exit_tree()`:** Stirbt der Held, lädt `reload_current_scene()` die Welt neu, und ein neues `Werkzeug` meldet seine Monitore an. Die alten gibt es aber noch, und zweimal derselbe Name ergibt einen Fehler. Darum meldet das Werkzeug sie ab, wenn es die Welt verlässt.
+
+### 6.5 Der Versuch
+
+Jetzt geht es an die Grenze.
+
+1. **F5**, dann **F2**. In der Anzeige steht `UNVERWUNDBAR`.
+2. Nicht bewegen. Drück **F1**, warte, bis die neuen Gegner beim Held angekommen sind, und schau auf `Physik`. Dann wieder **F1**. Immer so weiter.
+3. Schau dir dabei die Kurven im Monitor an.
+
+So sah es bei mir aus, auf einer Kopie deines Projekts mit allen Waffen auf der höchsten Stufe:
+
+| Gegner | Physik pro Schritt | Kollisionspaare | FPS |
+|---|---|---|---|
+| 250 | 5 ms | 350 | 60 |
+| 500 | 10 ms | 1000 | 60 |
+| 1000 | 25 ms | 2200 | **5** |
+| 2000 | 42 ms | 6500 | **3** |
+
+Bis 500 merkt man nichts. Bei 1000 ist das Budget von 16,7 ms überschritten. Und dann fallen die FPS nicht auf 40, sondern **auf 5**. Warum so tief?
+
+**Die Todesspirale:** Die Physik soll immer genau 60 Schritte pro Sekunde machen, egal wie schnell der Rechner ist. Sonst würden die Gegner auf langsamen Rechnern langsamer laufen. Dauert ein Schritt aber 25 ms, schafft Godot in einer Sekunde nur 40. Also hängt es an jedes Bild ein paar Schritte dran, um aufzuholen. Die dauern auch 25 ms, das Bild wird noch länger, es fehlen noch mehr Schritte … Bis zu acht Physik-Schritte macht Godot pro Bild, dann gibt es auf. Darum gibt es kein langsames Abrutschen. Unterhalb der Grenze läuft alles flüssig, darüber bricht es zusammen.
+
+### 6.6 Der Profiler
+
+Jetzt wissen wir, **dass** die Physik zu lange dauert. Aber **wer** ist schuld? Dafür gibt es den Profiler.
+
+1. **F5**, **F2**, dann so lange **F1**, bis etwa 1000 Gegner da sind und das Spiel ruckelt.
+2. **Debugger** → **Profiler** → **Start**. Ein paar Sekunden warten, dann **Stop**.
+3. Links steht eine Liste mit allem, was Zeit gekostet hat. Klapp **Script Functions** auf.
+
+Ganz oben steht mit großem Abstand `_physics_process` aus `gegner.gd`. Messer, Edelsteine, Glutring und Äxte kommen weit dahinter.
+
+Der Profiler zeigt Funktionen, keine einzelnen Zeilen. Die Zeit von `move_and_slide()` zählt er mit zu `_physics_process`, weil sie von dort aufgerufen wird. Um herauszufinden, welche Zeile es ist, habe ich die Zeit um `move_and_slide()` herum mit der Stoppuhr gemessen (`Time.get_ticks_usec()` davor und danach). Bei 1000 Gegnern:
+
+| | pro Physik-Schritt |
+|---|---|
+| alle Gegner-Skripte zusammen | 20 ms |
+| davon nur `move_and_slide()` | **18 ms** |
+| alles andere: Richtung, Teleport, Wackeln | 2 ms |
+
+Neun Zehntel der Zeit stecken in **einer Zeile**.
+
+### 6.7 Warum `move_and_slide()` im Gedränge so teuer ist
+
+`move_and_slide()` bewegt den Körper und prüft dabei, ob er an etwas anstößt. Stößt er an, rutscht er an der Kante entlang und prüft **noch einmal**. Bis zu viermal pro Aufruf, so steht es bei **Max Slides**.
+
+Ein Gegner allein auf der Wiese: ein kurzer Test, fertig. Ein Gegner mitten in einem Klumpen aus tausend: Er stößt rundherum an Nachbarn, rutscht, stößt wieder an, rutscht wieder. Und jeder Nachbar macht im selben Schritt dasselbe. Darum steigen die Kollisionspaare viel schneller als die Gegner. Doppelt so viele Gegner ergeben fast dreimal so viele Paare.
+
+Das erklärt vermutlich auch, warum du beim Ausprobieren ohne Waffen locker auf 1000 gekommen bist: Wenn der Held läuft, zieht die Horde als lange Schlange hinterher, und es gibt wenig Gedränge. Steht er still, wird daraus ein dichter Klumpen. Wer misst, muss den **schlimmsten Fall** messen, und der ist hier: stillstehen.
+
+### 6.8 Eine schnelle Hilfe
+
+Viermal rutschen braucht ein Gegner gar nicht. In `gegner.tscn`: `Gegner` auswählen → **CharacterBody2D** → **Max Slides** von `4` auf `1`. Die Fledermaus erbt das.
+
+Jetzt rutscht ein Gegner nicht mehr um ein Hindernis herum, er bleibt davor stehen und drückt. Im Gedränge sieht man den Unterschied kaum, die Horde schiebt trotzdem. Gemessen, wieder bei 1000 Gegnern:
+
+| Max Slides | Physik pro Schritt | FPS |
+|---|---|---|
+| 4 | 25 ms | 5 |
+| 1 | **15 ms** | **60** |
+
+Mit einer Zahl im Inspector bist du wieder unter dem Budget. Knapp, aber drunter. Bei 2000 Gegnern hilft das allerdings auch nicht mehr, da sind es immer noch über 30 ms.
+
+### 6.9 Was nicht bremst
+
+Genauso wichtig wie der Täter: wer es **nicht** war.
+
+- **Die Waffen:** Mit allen Waffen auf höchster Stufe und ganz ohne Waffen waren die Zeiten fast gleich. Bei 1000 Gegnern 25 ms mit und 22 ms ohne.
+- **Die Messer:** Schau auf deinen Monitor **Messer**. Es sind nur eine Handvoll gleichzeitig unterwegs, weil jedes nach spätestens anderthalb Sekunden verschwindet.
+- **Die Edelsteine:** meist ein paar Dutzend. Die meisten werden gleich eingesammelt, und wer nur herumliegt, kostet fast nichts: `_physics_process` endet sofort mit `return`.
+- **Das Malen:** Die Zeit für `_process` lag selbst bei 2000 Gegnern unter 2 ms.
+
+Für Kapitel 7 war **Object Pooling** geplant: Messer und Edelsteine nicht wegwerfen und neu bauen, sondern wiederverwenden. Das ist eine gute Technik, aber hier würde sie fast nichts bringen. Bei fünf Messern gleichzeitig gibt es nichts zu sparen. Darum nimmt sich Kapitel 7 stattdessen das vor, was wirklich bremst: die Gegner und ihr Gedränge.
+
+Das ist die wichtigste Regel beim Schnellermachen: **Erst messen, dann ändern.** Hättest du ohne Messen angefangen, hättest du vermutlich die Messer optimiert. Viel Arbeit, kein Gewinn.
+
+### 6.10 Ausprobieren
+
+**F5**:
+- Oben steht jetzt auch `Physik: … ms`. Am Anfang deutlich unter 1 ms.
+- **F2** schaltet `UNVERWUNDBAR` an und aus. Die Gegner färben den Held weiter rot, aber der Lebensbalken bleibt voll.
+- Jedes **F1** bringt 100 Gegner vom Bildrand. Im Monitor springt **Hordenheld/Gegner** um 100 nach oben.
+- Stirb einmal (F2 aus) und mach weiter: Die Monitore gibt es weiter, ohne Fehlermeldung.
+- Mit **Max Slides** `1` bleiben 1000 stillstehende Gegner flüssig.
+
+### 6.11 Was ist neu?
+
+- **Millisekunden statt FPS:** Das Budget ist 16,7 ms pro Bild. FPS zeigen erst ein Problem, wenn es schon da ist.
+- **`Performance.get_monitor()`** für eigene Anzeigen, **`add_custom_monitor()`** für eigene Kurven im Debugger.
+- **`Callable.bind()`**: einer Funktion vorher Werte mitgeben.
+- **Der Monitor-Tab** für Verläufe, **der Profiler** für den Schuldigen.
+- **Die Todesspirale:** Über dem Budget fallen die FPS nicht langsam, sondern stürzen ab.
+- **Den schlimmsten Fall messen**, und **erst messen, dann ändern**.
+- **Max Slides:** wie oft `move_and_slide()` es pro Aufruf nochmal versucht.
+- **Ein Werkzeug-Node**, der nur fürs Entwickeln da ist.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 6
+
+1. **Stehen oder laufen (leicht):** Hol dir mit F1 etwa 800 Gegner. Steh erst still und lies `Physik` und die **Collision Pairs** ab. Dann lauf große Kreise. Wie stark ändern sich die beiden Werte? Erklär, warum. 🏃
+2. **Ganz ohne Rutschen (mittel):** Ersetz in `gegner.gd` zum Ausprobieren `move_and_slide()` durch `position += velocity * delta`. Was passiert mit der Horde, mit `Physik` und mit den Collision Pairs? Warum ist die Physik trotzdem noch beschäftigt, obwohl keiner mehr `move_and_slide()` aufruft? (Tipp: Schau dir die **Collision Mask** der Gegner an.) Danach alles zurückbauen. 🧪
+3. **Der Ruckler zählt (mittel):** Die Zahl hinter `Physik` zappelt, man kann sie kaum lesen. Zeig stattdessen den **höchsten** Wert der letzten Sekunde. Warum ist der höchste Wert wichtiger als der Durchschnitt? 📈
+4. **Wo ist die Grenze? (schwer):** Neue Taste **F3**: Ab jetzt kommen jede Sekunde automatisch 50 Gegner dazu, bis ein Physik-Schritt länger als 16,7 ms dauert. Dann hört es auf, und im **Output** steht, bei wie vielen Gegnern die Grenze war. Lass den Held dabei stillstehen. Wie viele schafft dein Rechner mit Max Slides `4`, wie viele mit `1`? ⏱️

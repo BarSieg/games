@@ -10,13 +10,13 @@ const WACKEL_WINKEL = 0.15   # so weit, in Radiant (0.15 sind etwa 9 Grad)
 const MAX_LEBEN = 100.0
 const SCHADEN = 10.0      # so viel Leben kostet ein Gegner pro Sekunde, solange er den Held berührt
 
+@export var upgrades: Array[Upgrade] = []
+
 var lauf_zeit := 0.0
 var erfahrung := 0
 var level := 1
 var naechstes_level := 5   # so viel Erfahrung braucht das nächste Level
 var tempo := STARTTEMPO
-@export var upgrades: Array[Upgrade] = []
-
 var leben := MAX_LEBEN:
 	set(wert):
 		leben = clampf(wert, 0, MAX_LEBEN)
@@ -25,14 +25,14 @@ var stufen: Dictionary[Upgrade, int] = {}   # wie oft welches Upgrade schon gew�
 
 
 func _ready() -> void:
-	# prüfe upgrades, schritt 1 alle waffen anhängen
+	# Upgrades prüfen. Schritt 1: alle neuen Waffen kurz anhängen, sonst gibt es ihre Knoten nicht
 	var neue_waffen := []
 	for upgrade in upgrades:
 		if upgrade.neue_waffe != null:
 			var waffe := upgrade.neue_waffe.instantiate()
 			neue_waffen.append(waffe)
 			add_child(waffe)
-	# jetzt prüfe die knoten und eigenschaften
+	# Schritt 2: Knoten und Eigenschaften prüfen
 	for upgrade in upgrades:
 		var finde_knoten := get_node_or_null(upgrade.knoten)
 		if finde_knoten == null:
@@ -41,9 +41,10 @@ func _ready() -> void:
 			var finde_eigenschaft = finde_knoten.get_indexed(upgrade.eigenschaft)
 			if finde_eigenschaft == null:
 				push_error("Upgrade '" + upgrade.titel + "' Knoten '" + upgrade.knoten + "' braucht Eigenschaft '" + upgrade.eigenschaft + "'")
-	# und lösche die zusätzlichen waffen wieder
+	# Schritt 3: die Waffen wieder wegräumen
 	for waffe in neue_waffen:
-		waffe.queue_free()
+		waffe.free()
+
 
 func _physics_process(delta: float) -> void:
 	var richtung := Input.get_vector("links", "rechts", "hoch", "runter")
