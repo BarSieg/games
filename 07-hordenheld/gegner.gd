@@ -4,7 +4,10 @@ const WACKELN = 12.0
 const WACKEL_WINKEL = 0.15
 const MAX_ABSTAND = 300.0        # ist ein Gegner so viele Pixel hinter dem Held,
 const TELEPORT_ABSTAND = 250.0   # springt er so viele Pixel vor den Held
+const FLUEGELSCHLAG = 20.0   # so schnell schlägt eine Fledermaus mit den Flügeln
+const FLUEGEL_BREITE = 0.3   # so stark wird das Bild schmaler und breiter (0.3 = 70 % bis 130 %)
 
+@export var flattern := false   # an: flattern statt wackeln
 @export var tempo := 30.0   # Pixel pro Sekunde, langsamer als der Held
 @export var leben := 2      # so viele Treffer hält er aus
 @export var beute_szene: PackedScene   # das bleibt liegen, wenn er stirbt
@@ -17,7 +20,6 @@ var lauf_zeit := randf() * TAU
 
 func _ready() -> void:
 	held = get_tree().get_first_node_in_group("held")
-	max_slides = 1
 
 
 func _physics_process(delta: float) -> void:
@@ -28,11 +30,14 @@ func _physics_process(delta: float) -> void:
 		richtung *= -1
 	# stur zulaufen
 	velocity = richtung * tempo
-	move_and_slide()
+	position += velocity * delta
 
 	$Bild.flip_h = richtung.x < 0
 	lauf_zeit += delta
-	$Bild.rotation = sin(lauf_zeit * WACKELN) * WACKEL_WINKEL
+	if flattern:
+		$Bild.scale.x = 1.0 + sin(lauf_zeit * FLUEGELSCHLAG) * FLUEGEL_BREITE
+	else:
+		$Bild.rotation = sin(lauf_zeit * WACKELN) * WACKEL_WINKEL
 
 
 func treffer(schaden: int, stoss: Vector2 = Vector2.ZERO) -> void:

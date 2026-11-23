@@ -1748,3 +1748,13 @@ Fertig? Committen und Bescheid geben.
 2. **Wie groß ist ein Kästchen? (leicht):** Stell `KAESTCHEN` auf `48`, dann auf `6`. Was passiert mit `Physik`, was mit der Horde? Warum steht bei der Konstante "nie kleiner als PLATZ"? 📏
 3. **Weich oder hart? (mittel):** Mach aus der Konstante `SCHIEBEN` ein `@export var schieben := 0.25` und benenn sie überall um. Starte das Spiel, wähl im Scene-Dock oben **Remote** und dort die `Horde`. Jetzt kannst du `Schieben` im Inspector ändern, während das Spiel läuft. Probier `0.05`, `0.5` und `1.0`. Was siehst du jeweils, und warum? 🎚️
 4. **Halbe Arbeit (schwer):** Lass in jedem Physik-Schritt nur jedes zweite Kästchen rechnen, im Wechsel wie die Felder eines Schachbretts: einmal die weißen, einmal die schwarzen. Damit die Horde nicht zu weich wird, schiebt jeder dafür doppelt so stark. Wie viel spart das? Und warum geht dabei kein Paar verloren? Tipp: Du brauchst einen Zähler für die Schritte und `(kaestchen.x + kaestchen.y + schritt) % 2`. Achtung: In GDScript ist `-3 % 2` nicht `1`, sondern `-1`. ♟️
+
+
+### Antworten zu Kapitel 7
+F3 liefert 1430 nach dem Umbau
+1. 1051 mit Positionabfragen
+2. Mit KAESTCHEN = 48 bricht alles zusammen schon bei 696 Gegner -> möglichst kleine Kästchen lohnen sich
+Mit KAESTCHEN = 6 braucht es 1420 Gegner um Das Limit zu erreichen, die Gegner kommen aber noch dichter aneinander.
+3. Bei dem Wert 0.05 wirkt Schieben gar nicht, alle laufen ineinnader.
+Bei dem Wert 0.5 gehen die Gegner weiter auseinander, aber neben dem Helden sind mehr von denen und sie springen hin und her.
+Bei dem Wert 1.0 Springen alle hin und her.
