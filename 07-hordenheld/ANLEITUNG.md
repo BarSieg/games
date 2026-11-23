@@ -14,8 +14,8 @@ Gespielt wird mit dem Controller. Die Tastatur geht natürlich auch.
 3. Die Waffe schießt von selbst ✔
 4. Edelsteine, Erfahrung und Level-Up ✔
 5. Upgrades als Daten: mehrere Waffen mit Stufen ✔
-6. Hunderte Gegner: Der Profiler zeigt, was bremst ← *du bist hier*
-7. Die Horde wird billiger: Gedränge ohne teure Physik
+6. Hunderte Gegner: Der Profiler zeigt, was bremst ✔
+7. Die Horde wird billiger: Gedränge ohne teure Physik ← *du bist hier*
 8. Game Feel: Wackeln, Blitzen, Zahlen
 9. Die Uhr: Wellen, Elite-Gegner, Sieg und Game Over
 10. Titelbild, Musik und Web-Export
@@ -1263,7 +1263,7 @@ func _process(_delta: float) -> void:
 		text += "   TESTMODUS"
 ```
 
-**`Performance.get_monitor()`** fragt die Messwerte ab, die Godot sowieso mitschreibt. `TIME_PHYSICS_PROCESS` ist die Zeit für den letzten Physik-Schritt, in Sekunden. Mal 1000 sind es Millisekunden. `%.1f` zeigt eine Kommazahl mit einer Stelle nach dem Komma.
+**`Performance.get_monitor()`** fragt die Messwerte ab, die Godot sowieso mitschreibt. `TIME_PHYSICS_PROCESS` ist die Zeit für den **längsten** Physik-Schritt der letzten Sekunde, in Sekunden. Godot rechnet sie einmal pro Sekunde neu aus. Mal 1000 sind es Millisekunden. `%.1f` zeigt eine Kommazahl mit einer Stelle nach dem Komma.
 
 `held.testmodus` gibt es noch nicht, das kommt jetzt.
 
@@ -1401,7 +1401,7 @@ Neun Zehntel der Zeit stecken in **einer Zeile**.
 
 Ein Gegner allein auf der Wiese: ein kurzer Test, fertig. Ein Gegner mitten in einem Klumpen aus tausend: Er stößt rundherum an Nachbarn, rutscht, stößt wieder an, rutscht wieder. Und jeder Nachbar macht im selben Schritt dasselbe. Darum steigen die Kollisionspaare viel schneller als die Gegner. Doppelt so viele Gegner ergeben fast dreimal so viele Paare.
 
-Das erklärt vermutlich auch, warum du beim Ausprobieren ohne Waffen locker auf 1000 gekommen bist: Wenn der Held läuft, zieht die Horde als lange Schlange hinterher, und es gibt wenig Gedränge. Steht er still, wird daraus ein dichter Klumpen. Wer misst, muss den **schlimmsten Fall** messen, und der ist hier: stillstehen.
+Wer misst, muss den **schlimmsten Fall** messen. Ich hatte hier zuerst behauptet, das sei Stillstehen. Falsch, wie du in Übung 1 herausgefunden hast: Läuft der Held, wird es noch teurer. Warum, steht in Kapitel 7.
 
 ### 6.8 Eine schnelle Hilfe
 
@@ -1463,5 +1463,288 @@ Fertig? Committen und Bescheid geben.
 
 1. **Stehen oder laufen (leicht):** Hol dir mit F1 etwa 800 Gegner. Steh erst still und lies `Physik` und die **Collision Pairs** ab. Dann lauf große Kreise. Wie stark ändern sich die beiden Werte? Erklär, warum. 🏃
 2. **Ganz ohne Rutschen (mittel):** Ersetz in `gegner.gd` zum Ausprobieren `move_and_slide()` durch `position += velocity * delta`. Was passiert mit der Horde, mit `Physik` und mit den Collision Pairs? Warum ist die Physik trotzdem noch beschäftigt, obwohl keiner mehr `move_and_slide()` aufruft? (Tipp: Schau dir die **Collision Mask** der Gegner an.) Danach alles zurückbauen. 🧪
-3. **Der Ruckler zählt (mittel):** Die Zahl hinter `Physik` zappelt, man kann sie kaum lesen. Zeig stattdessen den **höchsten** Wert der letzten Sekunde. Warum ist der höchste Wert wichtiger als der Durchschnitt? 📈
+3. **Der Ruckler zählt (mittel):** Die Zahl hinter `Physik` ändert sich nur einmal pro Sekunde. Finde heraus, was sie genau zeigt: den letzten Schritt, den Durchschnitt oder den höchsten Wert der Sekunde? Warum ist der höchste Wert wichtiger als der Durchschnitt? 📈
 4. **Wo ist die Grenze? (schwer):** Neue Taste **F3**: Ab jetzt kommen jede Sekunde automatisch 50 Gegner dazu, bis ein Physik-Schritt länger als 16,7 ms dauert. Dann hört es auf, und im **Output** steht, bei wie vielen Gegnern die Grenze war. Lass den Held dabei stillstehen. Wie viele schafft dein Rechner mit `max_slides` `4`, wie viele mit `1`? ⏱️
+
+
+### Antworten zu Kapitel 6
+1. Wenn man läuft wird die performance noch schlechter. Vermutlich, weil sich die Gegner noch zusätzlich teleportieren.
+2. Die Gegner merken einander und wenn alle übereinander liegen löst es irgendwo aus, auch ohne move_and_slide()
+3. Sieht gut aus. Anscheinend rechent Godot diese Zahl bereits ein mal pro Sekunde aus.
+4. 1106 bei max_slides = 1, 647 bei max_slides = [default]
+
+
+---
+
+## Kapitel 7: Die Horde wird billiger: Gedränge ohne teure Physik
+
+Kapitel 6 hat den Täter gefunden: `move_and_slide()` der Gegner im Gedränge. In diesem Kapitel nimmst du ihn aus dem Spiel. Die Gegner stoßen nicht mehr über die Physik aneinander, stattdessen schiebt die Horde sie selbst auseinander. Damit das schnell genug geht, lernst du einen Trick, den schon DOOM benutzt hat: ein **Raster**.
+
+Und weil "erst messen, dann ändern" weiter gilt, misst du nach jedem Schritt. Einmal wird dabei etwas herauskommen, das man so nicht erwartet. 🧮
+
+### 7.1 Warum Laufen noch teurer ist
+
+Deine Antwort zu Übung 1 aus Kapitel 6 stimmt, ich habe es nachgemessen. 1000 Gegner, nur das Startmesser, Zeit pro Physik-Schritt im Schnitt:
+
+| | stehen | laufen |
+|---|---|---|
+| `move_and_slide()` mit `max_slides = 1` | 12,5 ms | **17 ms** |
+
+Und deine Vermutung stimmt auch: Es liegt am Teleport. Läuft der Held, fallen hinten ständig Gegner zurück. Jeder, der mehr als 300 Pixel hinter ihm ist, springt nach vorn. Die springen aber nicht einzeln, sondern als ganze Traube, und landen auf einem Fleck vor dem Held, mitten in den Gegnern, die dort schon stehen. Lauter Körper, die ineinander stecken. `move_and_slide()` muss sie alle auseinanderdrücken, und die Kollisionspaare schießen in die Höhe.
+
+Im echten Spiel läuft der Held fast immer. Der teure Fall ist also der normale.
+
+### 7.2 Der Plan
+
+In Übung 2 aus Kapitel 6 hast du schon gesehen, was passiert, wenn die Gegner einfach mit `position += velocity * delta` laufen: Die Horde fällt auf einem Punkt zusammen. Die Physik war trotzdem noch beschäftigt, weil die Gegner sich über ihre **Collision Mask** gegenseitig wahrnehmen.
+
+Der Plan hat darum zwei Teile:
+
+1. **Die Physik vergisst das Gedränge.** Die Gegner bekommen keine Collision Mask mehr. Ihren **Collision Layer** 2 behalten sie. Den brauchen Messer, Glutring, Äxte und die Trefferzone des Helds, um sie zu finden.
+2. **Die Horde schiebt selbst.** Einmal pro Physik-Schritt schaut die Horde, welche Gegner sich zu nah sind, und schiebt sie auseinander.
+
+Die einfachste Art für Teil 2: Jeder Gegner misst den Abstand zu jedem anderen. Bei 1000 Gegnern sind das 1000 × 999, also rund **eine Million** Abstände pro Schritt. GDScript schafft in meinem Test zwei bis drei Millionen solcher Abstände pro Sekunde. Ein einziger Schritt würde also rund 400 ms dauern, mehr als 20-mal so lange wie das ganze Budget. So geht es nicht.
+
+### 7.3 Das Raster
+
+Die meisten der Million Abstände sind Unsinn. Ein Gegner links am Bildrand kann einen Gegner rechts am Bildrand nie berühren. Man muss nur die Nachbarn fragen. Aber woher weiß man, wer die Nachbarn sind, ohne alle Abstände zu messen?
+
+Man legt ein **Raster** über die Welt, wie Kästchenpapier. Jedes Kästchen ist 12 × 12 Pixel groß, genau so groß wie der Abstand, den zwei Gegner halten wollen. Jeder Gegner landet in dem Kästchen, in dem er gerade steht. Wer einem Gegner näher als 12 Pixel ist, steht dann entweder im selben Kästchen oder in einem der acht drumherum. Weiter weg kann er nicht sein:
+
+```
+┌───┬───┬───┐
+│ ↖ │ ↑ │ ↗ │
+├───┼───┼───┤
+│ ← │ X │ → │   X ist der Gegner. Nur in diesen neun Kästchen
+├───┼───┼───┤   kann jemand stehen, der ihm zu nah ist.
+│ ↙ │ ↓ │ ↘ │
+└───┴───┴───┘
+```
+
+Statt 999 Abständen misst jeder Gegner nur noch zu denen in neun Kästchen. Im Gedränge sind das etwa ein Dutzend.
+
+Welches Kästchen? Position geteilt durch 12, abgerundet. Ein Gegner bei `(30, -5)`: 30 / 12 = 2,5 → **2**. -5 / 12 = -0,4 → **-1** (abgerundet heißt bei Minuszahlen: weiter weg von null). Er steht im Kästchen `(2, -1)`. Kästchen haben ganze Zahlen, darum ist es ein `Vector2i`, das i steht für integer, ganze Zahl.
+
+> **DOOM macht das genauso.** Jede DOOM-Karte hat eine **Blockmap**: ein Raster aus Blöcken von 128 × 128 Einheiten. Jeder Block weiß, welche Wände und welche Monster gerade in ihm stecken. Läuft ein Monster, prüft DOOM nur die Wände und Monster in den Blöcken drumherum, nicht die ganze Karte. Damals lief das auf Rechnern, die tausendmal langsamer waren als deiner. Das Raster, das du jetzt baust, ist dasselbe in klein.
+
+### 7.4 Die Gegner verlassen die Physik
+
+In `gegner.tscn`: `Gegner` auswählen → **CollisionObject2D** → **Collision** → **Mask**: den Haken bei **2** wegnehmen, sodass gar kein Feld mehr markiert ist. **Layer** bleibt bei 2. Die Fledermaus erbt das.
+
+In `gegner.gd` fliegt in `_ready()` die Zeile mit `max_slides` raus. Ohne `move_and_slide()` hat sie keine Bedeutung mehr. Und in `_physics_process()` wird aus
+
+```gdscript
+	move_and_slide()
+```
+
+ein
+
+```gdscript
+	position += velocity * delta
+```
+
+Der Gegner bleibt ein `CharacterBody2D`. Ein Körper muss er bleiben, sonst finden ihn Messer und Glutring nicht mehr, und `velocity` ist weiter eine praktische Variable für sein Tempo.
+
+**F5**, F2, ein paarmal F1: Die Horde läuft zu einem Haufen zusammen, wie in der Übung. Dafür ist `Physik` ganz unten. Jetzt muss die Horde nur noch Platz machen.
+
+### 7.5 Die Horde macht Platz
+
+Alles kommt in `spawner.gd`, das Skript der `Horde`. Zuerst drei neue Konstanten unter die anderen:
+
+```gdscript
+const PLATZ = 12.0       # so viel Abstand will jeder Gegner zu jedem anderen
+const KAESTCHEN = 12.0   # so groß ist ein Kästchen im Raster, nie kleiner als PLATZ
+const SCHIEBEN = 0.25    # so viel von der Überlappung wird pro Schritt weggeschoben
+```
+
+12 Pixel sind zwei Kollisionskreise mit Radius 6, so weit wie vorher mit der Physik.
+
+Dann zwischen `_process()` und `neuer_gegner()`:
+
+```gdscript
+func _physics_process(_delta: float) -> void:
+	platz_machen()
+
+
+func platz_machen() -> void:
+	var gegner := get_children()
+
+	# 1. Jeden Gegner nur einmal nach seiner Position fragen
+	var orte := PackedVector2Array()
+	for einer: Node2D in gegner:
+		orte.append(einer.position)
+
+	# 2. Das Raster: zu jedem Kästchen die Nummern der Gegner darin
+	var raster: Dictionary[Vector2i, PackedInt32Array] = {}
+	for i in orte.size():
+		var kaestchen := Vector2i((orte[i] / KAESTCHEN).floor())
+		if not raster.has(kaestchen):
+			raster[kaestchen] = PackedInt32Array()
+		raster[kaestchen].append(i)
+
+	# 3. Jeder Gegner schaut in sein Kästchen und in die acht drumherum
+	var schub := PackedVector2Array()
+	schub.resize(orte.size())
+	for i in orte.size():
+		var kaestchen := Vector2i((orte[i] / KAESTCHEN).floor())
+		for x in range(-1, 2):
+			for y in range(-1, 2):
+				var nachbar := kaestchen + Vector2i(x, y)
+				if not raster.has(nachbar):
+					continue
+				for j in raster[nachbar]:
+					var weg := orte[i] - orte[j]
+					var abstand := weg.length()
+					if abstand < PLATZ and i != j:
+						if abstand < 0.01:
+							# genau aufeinander: irgendeine Richtung
+							weg = Vector2.from_angle(randf() * TAU)
+							abstand = 1.0
+						schub[i] += weg / abstand * (PLATZ - abstand) * SCHIEBEN
+
+	# 4. Alle auf einmal verschieben
+	for i in gegner.size():
+		gegner[i].position += schub[i]
+```
+
+Das ist viel auf einmal, darum Schritt für Schritt:
+
+- **Wer kommt zuerst dran?** Die Gegner sind Kinder der Horde. Godot ruft `_physics_process` immer zuerst beim Elternteil auf, dann bei den Kindern. Die Horde schiebt also, danach läuft jeder Gegner seinen Schritt.
+- **Schritt 1, die Liste:** Ein **`PackedVector2Array`** ist eine Liste, in der nur `Vector2` stehen dürfen. Dafür ist sie eng gepackt und schnell. Gegner Nummer `i` steht an der Stelle `orte[i]`. Warum wird jeder Gegner nur einmal gefragt? Eine Frage an einen Knoten wie `einer.position` geht durch Godots Innereien und ist viel langsamer als ein Blick in eine Liste. In Schritt 3 braucht jeder Gegner die Positionen von etwa einem Dutzend Nachbarn. Lieber 1000 Fragen und danach nur noch in die Liste schauen als 12 000 Fragen. Wie viel das ausmacht, misst du in Übung 1.
+- **Schritt 2, das Raster:** Ein **Dictionary** kennst du: zu jedem Schlüssel ein Wert. Hier ist der Schlüssel ein Kästchen, der Wert eine Liste mit den Nummern der Gegner darin. **`PackedInt32Array`** ist eine gepackte Liste für ganze Zahlen. `.floor()` rundet beide Werte eines Vektors ab, `Vector2i(...)` macht ganze Zahlen daraus. Kästchen, in denen niemand steht, kommen gar nicht ins Dictionary. Darum fragt Schritt 3 vorher mit `has()`.
+- **Schritt 3, der Schub:** `range(-1, 2)` zählt -1, 0, 1. Zwei davon ineinander ergeben die neun Kästchen. `weg / abstand` ist die Richtung vom Nachbarn weg, mit der Länge 1. `PLATZ - abstand` ist, wie weit die beiden ineinanderstecken. Davon nur ein Viertel (`SCHIEBEN`), damit es weich bleibt. Würde jeder die ganze Überlappung auf einmal wegschieben, würden sie übers Ziel hinausschießen und zittern.
+- **`i != j`:** Jeder Gegner steht ja auch selbst in seinem Kästchen. Von sich selbst muss er nicht wegrücken.
+- **Genau aufeinander:** Nach einem Teleport stehen manchmal zwei auf demselben Pixel. Dann ist der Abstand 0, und es gibt keine Richtung, in die man schieben könnte. Durch 0 teilen geht auch nicht. Also eine zufällige Richtung.
+- **Schritt 4:** Erst wenn für alle der Schub feststeht, wird verschoben. So wird jeder nach denselben Positionen beurteilt, egal ob er vorn oder hinten in der Liste steht.
+
+**F5**. Die Horde verteilt sich wieder. Sie steht etwas dichter als mit der Physik, weil Schieben weicher ist als Anstoßen. Und die Teleport-Trauben lösen sich in ein paar Schritten auf.
+
+### 7.6 Messen: eine Überraschung
+
+So misst du in diesem Kapitel:
+
+1. **F5** und **sofort F2**, bevor das erste Level-Up kommt. Dann hat der Held nur das Startmesser, und es sterben kaum Gegner. So misst du nur das Gedränge.
+2. Zehnmal **F1**, warten, bis alle beim Held sind.
+3. Erst stillstehen und ablesen, dann große Kreise laufen und ablesen.
+
+Bei mir, im Schnitt pro Physik-Schritt:
+
+| | stehen | laufen |
+|---|---|---|
+| `move_and_slide()` | 12,5 ms | 17 ms |
+| Raster, erste Fassung | 11,5 ms | 11,5 ms |
+
+Im Laufen ein großer Gewinn. Im Stehen aber fast nichts, obwohl die Physik jetzt fast nichts mehr tut. Wo bleibt die Zeit?
+
+Der **Profiler** zeigt es: `platz_machen()` braucht etwa 6 ms. Die Physik in C++, wie Godot selbst gebaut ist, war schnell. GDScript ist viel langsamer. Dieselbe Arbeit kostet in GDScript ein Vielfaches. Wer die Physik durch GDScript ersetzt, muss deshalb deutlich **weniger** Arbeit machen als die Physik, nicht nur dieselbe.
+
+> Deine Anzeige zeigt höhere Zahlen als meine Tabelle, oft 3 bis 5 ms mehr. Das ist kein Fehler. Sie zeigt den **längsten** Schritt der letzten Sekunde, meine Tabelle den Durchschnitt. Für den Vergleich vorher/nachher taugen beide. Zum Vergleich: Ganz ohne Schieben, also mit dem Haufen aus 7.4, waren es bei mir 6,5 ms. Darunter kommt man mit 1000 einzelnen Gegner-Nodes nicht.
+
+### 7.7 Jedes Paar nur einmal
+
+Schau dir an, wie oft gerechnet wird. Gegner 5 und Gegner 8 stehen sich zu nah. Wenn Nummer 5 dran ist, misst er den Abstand zu 8 und rückt weg. Wenn Nummer 8 dran ist, misst er **denselben** Abstand zu 5 und rückt in die andere Richtung. Jedes Paar wird zweimal gerechnet.
+
+Dabei ist das Ergebnis jedes Mal genau gleich, nur umgedreht. Schiebt 8 den Gegner 5 nach links, schiebt 5 den Gegner 8 genauso weit nach rechts. (In der Physik heißt das **Actio gleich Reactio**.) Es reicht also, jedes Paar einmal zu rechnen und beiden ihren Schub zu geben.
+
+Nur: Wie sorgt man dafür, dass jedes Paar genau einmal drankommt? Nicht mehr jeder Gegner schaut in neun Kästchen, sondern jedes **Kästchen** schaut in sich selbst und nur in **vier** Nachbarn:
+
+```
+┌───┬───┬───┐
+│   │   │   │
+├───┼───┼───┤
+│   │ X │ → │   X schaut nur in sich selbst und in diese vier.
+├───┼───┼───┤   Die anderen vier schauen zu X, wenn sie selbst dran sind.
+│ ↙ │ ↓ │ ↘ │
+└───┴───┴───┘
+```
+
+Nimm zwei Kästchen nebeneinander, A links und B rechts. A schaut nach rechts, also zu B. B schaut nicht nach links. Das Paar A–B kommt genau einmal dran. Das gilt für jede Richtung: Von zwei benachbarten Kästchen schaut immer genau eins zum anderen.
+
+Bleibt das eigene Kästchen. Stehen dort die Gegner 3, 7 und 9, rechnet 3 mit 7 und 9, und 7 nur noch mit 9. Jeder rechnet nur mit denen, die nach ihm in der Liste stehen.
+
+Oben bei den Konstanten:
+
+```gdscript
+# das eigene Kästchen, rechts daneben und die drei darunter
+const HALBE_NACHBARN = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1)]
+```
+
+In `platz_machen()` ersetzt du den ganzen **Schritt 3**, bis kurz vor `# 4.`:
+
+```gdscript
+	# 3. Jedes Paar nur einmal: Jedes Kästchen schaut in sich selbst und in vier Nachbarn
+	var schub := PackedVector2Array()
+	schub.resize(orte.size())
+	for kaestchen in raster:
+		var hier := raster[kaestchen]
+		for richtung in HALBE_NACHBARN:
+			if not raster.has(kaestchen + richtung):
+				continue
+			var dort := raster[kaestchen + richtung]
+			for a in hier.size():
+				var i := hier[a]
+				# im eigenen Kästchen nur mit denen, die nach mir in der Liste stehen
+				var anfang := a + 1 if richtung == Vector2i.ZERO else 0
+				for b in range(anfang, dort.size()):
+					var j := dort[b]
+					var weg := orte[i] - orte[j]
+					var abstand := weg.length()
+					if abstand < PLATZ:
+						if abstand < 0.01:
+							# genau aufeinander: irgendeine Richtung
+							weg = Vector2.from_angle(randf() * TAU)
+							abstand = 1.0
+						var stoss := weg / abstand * (PLATZ - abstand) * SCHIEBEN
+						schub[i] += stoss   # i wird weggeschoben,
+						schub[j] -= stoss   # j genauso weit in die andere Richtung
+```
+
+- **`for kaestchen in raster`** geht durch alle Schlüssel des Dictionarys, also durch alle Kästchen, in denen jemand steht.
+- **`a` und `i`:** `a` ist die Stelle in der Liste des Kästchens, `i` die Nummer des Gegners. Mit `a` weiß man, wer "nach mir" kommt, mit `i` findet man die Position in `orte`.
+- **`a + 1 if ... else 0`:** Im eigenen Kästchen fängt `b` hinter `a` an. Bei einem Nachbarkästchen sind alle dran, da gibt es keine Doppelten.
+- **`i != j`** fällt weg: Im eigenen Kästchen fängt `b` hinter `a` an, also trifft keiner mehr sich selbst.
+
+Gemessen:
+
+| | stehen | laufen |
+|---|---|---|
+| `move_and_slide()` | 12,5 ms | 17 ms |
+| Raster, erste Fassung | 11,5 ms | 11,5 ms |
+| Raster, jedes Paar einmal | **9 ms** | **9 ms** |
+| (ganz ohne Schieben) | 6,5 ms | 6,5 ms |
+
+Halb so viele Abstände, und statt neunmal pro Gegner wird nur noch fünfmal pro Kästchen im Dictionary nachgeschlagen. Das Schieben selbst kostet jetzt nur noch 2,5 ms. Und Stehen und Laufen kosten gleich viel, der Teleport ist kein Problem mehr.
+
+### 7.8 Was es gebracht hat
+
+Im normalen Spiel mit bis zu 250 Gegnern merkst du von alldem nichts mehr, da sind es jetzt nur noch 2 bis 3 ms. Und wenn Kapitel 9 die Wellen bringt, ist Platz für viel mehr.
+
+Eine Nebenwirkung, damit sie dich nicht überrascht: Mit allen Waffen kann die Anzeige trotzdem kurz hochspringen. Die Horde ist jetzt weicher und drängt schneller in den Glutring. Der erwischt dann alle halbe Sekunde viele Gegner auf einmal. Jeder Tod kostet etwas: Ein Edelstein wird gebaut, der Gegner wird weggeräumt. Bei hundert Toten im selben Schritt sind das ein paar Millisekunden. Dafür sterben die Gegner jetzt auch schneller. 🔥
+
+### 7.9 Ausprobieren
+
+**F5**:
+- Die Horde verteilt sich wie vorher, nur etwas dichter. Keiner steckt dauerhaft in einem anderen.
+- Lauf große Kreise mit 1000 Gegnern: Die Trauben nach dem Teleport lösen sich auf, und `Physik` bleibt unten.
+- Messer, Glutring und Äxte treffen wie vorher, und die Gegner machen den Held weiter rot.
+- Im Monitor sind die **Collision Pairs** fast bei null.
+- **F3** aus deiner Übung: Wo liegt deine Grenze jetzt?
+
+### 7.10 Was ist neu?
+
+- **Physik nur, wo sie gebraucht wird:** Layer ja, damit die Waffen die Gegner finden. Mask nein, damit sie nicht miteinander rechnen.
+- **Das Raster** (bei DOOM die **Blockmap**): Wer sich berühren kann, steht im selben oder im Nachbarkästchen.
+- **`Dictionary` mit `Vector2i` als Schlüssel** für Kästchen, `floor()` zum Abrunden.
+- **`PackedVector2Array`** und **`PackedInt32Array`:** schnelle Listen für nur einen Typ.
+- **Knoten fragen ist teuer:** einmal abfragen, in eine Liste schreiben, dann nur noch in der Liste rechnen.
+- **Actio gleich Reactio:** Jedes Paar nur einmal rechnen, beiden den Schub geben.
+- **GDScript ist langsamer als Godots eigener Code.** Wer Engine-Arbeit selbst übernimmt, muss weniger davon machen.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 7
+
+1. **Was kostet eine Frage? (leicht):** Ersetz in Schritt 3 `orte[i] - orte[j]` durch `gegner[i].position - gegner[j].position`. Weil `gegner` eine Liste von Knoten ist, weiß Godot den Typ nicht mehr, also schreib `var weg: Vector2 = ...` statt `:=`. Miss mit 1000 Gegnern. Wie viel teurer wird es durch die eine Zeile? Danach zurückbauen. 🔍
+2. **Wie groß ist ein Kästchen? (leicht):** Stell `KAESTCHEN` auf `48`, dann auf `6`. Was passiert mit `Physik`, was mit der Horde? Warum steht bei der Konstante "nie kleiner als PLATZ"? 📏
+3. **Weich oder hart? (mittel):** Mach aus der Konstante `SCHIEBEN` ein `@export var schieben := 0.25` und benenn sie überall um. Starte das Spiel, wähl im Scene-Dock oben **Remote** und dort die `Horde`. Jetzt kannst du `Schieben` im Inspector ändern, während das Spiel läuft. Probier `0.05`, `0.5` und `1.0`. Was siehst du jeweils, und warum? 🎚️
+4. **Halbe Arbeit (schwer):** Lass in jedem Physik-Schritt nur jedes zweite Kästchen rechnen, im Wechsel wie die Felder eines Schachbretts: einmal die weißen, einmal die schwarzen. Damit die Horde nicht zu weich wird, schiebt jeder dafür doppelt so stark. Wie viel spart das? Und warum geht dabei kein Paar verloren? Tipp: Du brauchst einen Zähler für die Schritte und `(kaestchen.x + kaestchen.y + schritt) % 2`. Achtung: In GDScript ist `-3 % 2` nicht `1`, sondern `-1`. ♟️
