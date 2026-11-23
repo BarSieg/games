@@ -1236,7 +1236,7 @@ Fertig? Committen und Bescheid geben.
 
 Dein Held ist so stark geworden, dass er die Horde klein hält. Mehr als 250 Gegner auf einmal schafft das Spiel gar nicht mehr. Für das Spiel ist das ein Problem für später: In Kapitel 9 kommen Wellen und Elite-Gegner. Fürs Messen ist es jetzt eins. Wer wissen will, wo die Grenze liegt, muss sie erreichen können.
 
-In diesem Kapitel baust du dir deshalb zuerst Werkzeuge: eine Anzeige, die mehr verrät als die FPS, einen Knopf für 100 Gegner mehr und einen unverwundbaren Held. Dann misst du mit den Werkzeugen von Godot selbst, dem **Monitor** und dem **Profiler**. Und am Ende weißt du, was wirklich bremst. Kleiner Hinweis vorab: Es ist nicht das, was man vermutet. 🔬
+In diesem Kapitel baust du dir deshalb zuerst Werkzeuge: eine Anzeige, die mehr verrät als die FPS, einen Knopf für 100 Gegner mehr und einen Testmodus, in dem der Held nicht stirbt und kein Level-Up das Spiel anhält. Dann misst du mit den Werkzeugen von Godot selbst, dem **Monitor** und dem **Profiler**. Und am Ende weißt du, was wirklich bremst. Kleiner Hinweis vorab: Es ist nicht das, was man vermutet. 🔬
 
 ### 6.1 Warum die FPS lügen
 
@@ -1259,27 +1259,38 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	var physik := Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000
 	text = "Level %d   Gegner: %d   FPS: %d   Physik: %.1f ms" % [held.level, get_tree().get_node_count_in_group("gegner"), Engine.get_frames_per_second(), physik]
-	if held.unverwundbar:
-		text += "   UNVERWUNDBAR"
+	if held.testmodus:
+		text += "   TESTMODUS"
 ```
 
 **`Performance.get_monitor()`** fragt die Messwerte ab, die Godot sowieso mitschreibt. `TIME_PHYSICS_PROCESS` ist die Zeit für den letzten Physik-Schritt, in Sekunden. Mal 1000 sind es Millisekunden. `%.1f` zeigt eine Kommazahl mit einer Stelle nach dem Komma.
 
-`held.unverwundbar` gibt es noch nicht, das kommt jetzt.
+`held.testmodus` gibt es noch nicht, das kommt jetzt.
 
 ### 6.2 Ein Werkzeugkasten zum Testen
 
-**Der Held wird unverwundbar.** In `held.gd` eine neue Variable zu den anderen:
+**Der Testmodus.** Zum Messen braucht der Held zwei Dinge: Er darf nicht sterben, sonst ist der Versuch vorbei. Und er darf keine Erfahrung sammeln. Sonst kommt bei hundert Gegnern ständig das Level-Up-Menü, hält das Spiel an, und du siehst nur noch Menüs statt Messwerte. In `held.gd` eine neue Variable zu den anderen:
 
 ```gdscript
-var unverwundbar := false   # zum Testen, schaltet das Werkzeug um
+var testmodus := false   # unverwundbar und keine Erfahrung, schaltet das Werkzeug um
 ```
 
-Und beim Schaden eine Bedingung mehr:
+Beim Schaden eine Bedingung mehr:
 
 ```gdscript
-	if treffer > 0 and not unverwundbar:
+	if treffer > 0 and not testmodus:
 ```
+
+Und ganz am Anfang von `erfahrung_dazu()`:
+
+```gdscript
+func erfahrung_dazu(wert: int) -> void:
+	if testmodus:
+		return   # keine Level-Ups, die das Spiel beim Messen anhalten
+	erfahrung += wert
+```
+
+Die Edelsteine fliegen trotzdem zum Held und verschwinden. Sie bringen nur nichts.
 
 **Das Werkzeug.** In `welt.tscn`: Kind von `Welt` → `Node` → `Werkzeug`. Skript `werkzeug.gd`:
 
@@ -1287,7 +1298,7 @@ Und beim Schaden eine Bedingung mehr:
 extends Node
 
 # Werkzeuge zum Messen und Testen. Nur auf der Tastatur:
-# F1 = 100 Gegner mehr, F2 = Held unverwundbar an/aus
+# F1 = 100 Gegner mehr, F2 = Testmodus an/aus
 
 const MONITORE = ["Gegner", "Messer", "Edelsteine"]
 const GRUPPEN = ["gegner", "messer", "beute"]
@@ -1312,7 +1323,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				$"../Horde".neuer_gegner()
 		KEY_F2:
 			var held: Held = get_tree().get_first_node_in_group("held")
-			held.unverwundbar = not held.unverwundbar
+			held.testmodus = not held.testmodus
 ```
 
 Die Monitore brauchen noch Gruppen: In `messer.tscn` kommt `Messer` in die Gruppe `messer`, in `edelstein.tscn` kommt `Edelstein` in die Gruppe `beute`. Tab **Node** → **Groups**, wie beim Held.
@@ -1347,7 +1358,7 @@ Ganz unten in der Liste steht jetzt eine Gruppe **Hordenheld** mit **Gegner**, *
 
 Jetzt geht es an die Grenze.
 
-1. **F5**, dann **F2**. In der Anzeige steht `UNVERWUNDBAR`.
+1. **F5**, dann gleich **F2**, bevor das erste Level-Up kommt. In der Anzeige steht `TESTMODUS`. (Während das Menü offen ist, ist alles angehalten, auch das Werkzeug. Dann erst eine Karte wählen.)
 2. Nicht bewegen. Drück **F1**, warte, bis die neuen Gegner beim Held angekommen sind, und schau auf `Physik`. Dann wieder **F1**. Immer so weiter.
 3. Schau dir dabei die Kurven im Monitor an.
 
@@ -1386,7 +1397,7 @@ Neun Zehntel der Zeit stecken in **einer Zeile**.
 
 ### 6.7 Warum `move_and_slide()` im Gedränge so teuer ist
 
-`move_and_slide()` bewegt den Körper und prüft dabei, ob er an etwas anstößt. Stößt er an, rutscht er an der Kante entlang und prüft **noch einmal**. Bis zu viermal pro Aufruf, so steht es bei **Max Slides**.
+`move_and_slide()` bewegt den Körper und prüft dabei, ob er an etwas anstößt. Stößt er an, rutscht er an der Kante entlang und prüft **noch einmal**. Bis zu viermal pro Aufruf, so steht es in der Eigenschaft **`max_slides`**.
 
 Ein Gegner allein auf der Wiese: ein kurzer Test, fertig. Ein Gegner mitten in einem Klumpen aus tausend: Er stößt rundherum an Nachbarn, rutscht, stößt wieder an, rutscht wieder. Und jeder Nachbar macht im selben Schritt dasselbe. Darum steigen die Kollisionspaare viel schneller als die Gegner. Doppelt so viele Gegner ergeben fast dreimal so viele Paare.
 
@@ -1394,11 +1405,19 @@ Das erklärt vermutlich auch, warum du beim Ausprobieren ohne Waffen locker auf 
 
 ### 6.8 Eine schnelle Hilfe
 
-Viermal rutschen braucht ein Gegner gar nicht. In `gegner.tscn`: `Gegner` auswählen → **CharacterBody2D** → **Max Slides** von `4` auf `1`. Die Fledermaus erbt das.
+Viermal rutschen braucht ein Gegner gar nicht. Im Inspector findest du das nicht: `max_slides` versteckt Godot dort, man kann es nur im Code setzen. Also in `gegner.gd` in `_ready()` eine Zeile dazu:
+
+```gdscript
+func _ready() -> void:
+	held = get_tree().get_first_node_in_group("held")
+	max_slides = 1   # nur einmal rutschen statt viermal, spart im Gedränge viel Zeit
+```
+
+Die Fledermaus hat dasselbe Skript, sie bekommt es also auch.
 
 Jetzt rutscht ein Gegner nicht mehr um ein Hindernis herum, er bleibt davor stehen und drückt. Im Gedränge sieht man den Unterschied kaum, die Horde schiebt trotzdem. Gemessen, wieder bei 1000 Gegnern:
 
-| Max Slides | Physik pro Schritt | FPS |
+| `max_slides` | Physik pro Schritt | FPS |
 |---|---|---|
 | 4 | 25 ms | 5 |
 | 1 | **15 ms** | **60** |
@@ -1422,10 +1441,10 @@ Das ist die wichtigste Regel beim Schnellermachen: **Erst messen, dann ändern.*
 
 **F5**:
 - Oben steht jetzt auch `Physik: … ms`. Am Anfang deutlich unter 1 ms.
-- **F2** schaltet `UNVERWUNDBAR` an und aus. Die Gegner färben den Held weiter rot, aber der Lebensbalken bleibt voll.
+- **F2** schaltet `TESTMODUS` an und aus. Die Gegner färben den Held weiter rot, aber der Lebensbalken bleibt voll, und der Erfahrungsbalken bleibt stehen.
 - Jedes **F1** bringt 100 Gegner vom Bildrand. Im Monitor springt **Hordenheld/Gegner** um 100 nach oben.
 - Stirb einmal (F2 aus) und mach weiter: Die Monitore gibt es weiter, ohne Fehlermeldung.
-- Mit **Max Slides** `1` bleiben 1000 stillstehende Gegner flüssig.
+- Mit `max_slides = 1` bleiben 1000 stillstehende Gegner flüssig.
 
 ### 6.11 Was ist neu?
 
@@ -1435,7 +1454,7 @@ Das ist die wichtigste Regel beim Schnellermachen: **Erst messen, dann ändern.*
 - **Der Monitor-Tab** für Verläufe, **der Profiler** für den Schuldigen.
 - **Die Todesspirale:** Über dem Budget fallen die FPS nicht langsam, sondern stürzen ab.
 - **Den schlimmsten Fall messen**, und **erst messen, dann ändern**.
-- **Max Slides:** wie oft `move_and_slide()` es pro Aufruf nochmal versucht.
+- **`max_slides`:** wie oft `move_and_slide()` es pro Aufruf nochmal versucht.
 - **Ein Werkzeug-Node**, der nur fürs Entwickeln da ist.
 
 Fertig? Committen und Bescheid geben.
@@ -1445,4 +1464,4 @@ Fertig? Committen und Bescheid geben.
 1. **Stehen oder laufen (leicht):** Hol dir mit F1 etwa 800 Gegner. Steh erst still und lies `Physik` und die **Collision Pairs** ab. Dann lauf große Kreise. Wie stark ändern sich die beiden Werte? Erklär, warum. 🏃
 2. **Ganz ohne Rutschen (mittel):** Ersetz in `gegner.gd` zum Ausprobieren `move_and_slide()` durch `position += velocity * delta`. Was passiert mit der Horde, mit `Physik` und mit den Collision Pairs? Warum ist die Physik trotzdem noch beschäftigt, obwohl keiner mehr `move_and_slide()` aufruft? (Tipp: Schau dir die **Collision Mask** der Gegner an.) Danach alles zurückbauen. 🧪
 3. **Der Ruckler zählt (mittel):** Die Zahl hinter `Physik` zappelt, man kann sie kaum lesen. Zeig stattdessen den **höchsten** Wert der letzten Sekunde. Warum ist der höchste Wert wichtiger als der Durchschnitt? 📈
-4. **Wo ist die Grenze? (schwer):** Neue Taste **F3**: Ab jetzt kommen jede Sekunde automatisch 50 Gegner dazu, bis ein Physik-Schritt länger als 16,7 ms dauert. Dann hört es auf, und im **Output** steht, bei wie vielen Gegnern die Grenze war. Lass den Held dabei stillstehen. Wie viele schafft dein Rechner mit Max Slides `4`, wie viele mit `1`? ⏱️
+4. **Wo ist die Grenze? (schwer):** Neue Taste **F3**: Ab jetzt kommen jede Sekunde automatisch 50 Gegner dazu, bis ein Physik-Schritt länger als 16,7 ms dauert. Dann hört es auf, und im **Output** steht, bei wie vielen Gegnern die Grenze war. Lass den Held dabei stillstehen. Wie viele schafft dein Rechner mit `max_slides` `4`, wie viele mit `1`? ⏱️

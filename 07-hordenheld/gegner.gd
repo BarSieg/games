@@ -17,6 +17,7 @@ var lauf_zeit := randf() * TAU
 
 func _ready() -> void:
 	held = get_tree().get_first_node_in_group("held")
+	max_slides = 1
 
 
 func _physics_process(delta: float) -> void:

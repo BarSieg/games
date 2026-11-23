@@ -23,6 +23,8 @@ var leben := MAX_LEBEN:
 		$Lebensbalken.value = leben
 var stufen: Dictionary[Upgrade, int] = {}   # wie oft welches Upgrade schon gewählt wurde
 
+# zum Testen
+var testmodus := false   # schaltet das Werkzeug um
 
 func _ready() -> void:
 	# Upgrades prüfen. Schritt 1: alle neuen Waffen kurz anhängen, sonst gibt es ihre Knoten nicht
@@ -63,7 +65,7 @@ func _physics_process(delta: float) -> void:
 
 	# Wie viele Gegner berühren mich gerade?
 	var treffer: int = $Trefferzone.get_overlapping_bodies().size()
-	if treffer > 0:
+	if treffer > 0 and not testmodus:
 		leben -= treffer * SCHADEN * delta
 		if leben <= 0:
 			get_tree().reload_current_scene()
@@ -71,6 +73,8 @@ func _physics_process(delta: float) -> void:
 
 
 func erfahrung_dazu(wert: int) -> void:
+	if testmodus:
+		return
 	erfahrung += wert
 	erfahrung_geaendert.emit(erfahrung, naechstes_level)
 	level_pruefen()
