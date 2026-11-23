@@ -11,8 +11,8 @@ Gespielt wird mit dem Controller. Die Tastatur geht natürlich auch.
 **Geplante Kapitel:**
 1. Projekt, Held und eine Wiese ohne Ende ✔
 2. Gegner kommen von überall ✔
-3. Die Waffe schießt von selbst ← *du bist hier*
-4. Edelsteine, Erfahrung und Level-Up
+3. Die Waffe schießt von selbst ✔
+4. Edelsteine, Erfahrung und Level-Up ← *du bist hier*
 5. Upgrades als Daten: mehrere Waffen mit Stufen
 6. Hunderte Gegner: Der Profiler zeigt, was bremst
 7. Object Pooling: wiederverwenden statt wegwerfen
@@ -582,3 +582,334 @@ Fertig? Committen und Bescheid geben.
 2. **Fächer (mittel):** Neuer Export `anzahl := 1` in `waffe.gd`. Bei `3` fliegen drei Messer auf einmal: eines genau aufs Ziel, die anderen 15 Grad links und rechts daneben. (Tipp: `richtung.rotated(deg_to_rad(15))`. Und was machst du bei `2`, wo es keine Mitte gibt, oder bei `5`?)
 3. **Durchschlag (mittel):** Das Messer soll durch zwei Gegner fliegen und erst am dritten hängen bleiben. Gib dem Messer eine Variable `durchschlag` und zähl sie bei jedem Treffer herunter. Brauchst du `is_queued_for_deletion()` dann noch? Kann es passieren, dass ein Messer **denselben** Gegner zweimal trifft?
 4. **Rückstoß (mittel):** Ein getroffener Gegner soll ein paar Pixel zurückgeschubst werden. Dafür braucht `treffer` die Flugrichtung des Messers als zweiten Parameter. Der Schaden bleibt gleich, die Waffe fühlt sich aber stärker an. Warum? (Mehr davon in Kapitel 8.)
+
+---
+
+## Kapitel 4: Edelsteine, Erfahrung und Level-Up
+
+Jeder besiegte Gegner lässt einen Edelstein fallen. Kommt der Held nah genug heran, saust der Stein zu ihm hin und bringt Erfahrung. Ist der Balken oben voll, steigt der Held ein Level auf: Das Spiel hält an, und du wählst eines von drei Upgrades. Ab jetzt wird der Held stärker, je länger er durchhält. 💎
+
+### 4.1 Der Edelstein
+
+Auf den Kenney-Blättern gibt es keinen Edelstein, also malst du ihn selbst, wie die Münzen und Herzen im Kerkerheld: mit `_draw()` und einem Bild aus Text.
+
+1. Neue Szene: **Other Node** → `Area2D` → umbenennen in `Edelstein`.
+2. **Collision → Layer** nur `4` (Beute), **Mask** ganz leer. **Monitoring** aus: Der Stein muss selbst niemanden bemerken. Ihn bemerkt gleich der Magnet vom Held.
+3. Kind: `CollisionShape2D` → **New CircleShape2D**, **Radius** `3`.
+4. Skript anhängen, **Template: Empty**:
+
+```gdscript
+extends Area2D
+
+const BESCHLEUNIGUNG = 500.0   # so schnell wird er schneller, wenn er zum Held fliegt
+
+# Das Bild, Zeichen für Zeichen. Was nicht in FARBEN steht, bleibt durchsichtig.
+const BILD = [
+	"...o...",
+	"..o+o..",
+	".o+##o.",
+	"o+####o",
+	".o###o.",
+	"..o#o..",
+	"...o...",
+]
+const FARBEN = {
+	"o": Color(0.05, 0.1, 0.3),   # dunkler Rand
+	"#": Color(0.2, 0.5, 1.0),    # blau
+	"+": Color(0.75, 0.9, 1.0),   # Glanz
+}
+
+var wert := 1             # so viel Erfahrung bringt er, setzt der Gegner
+var ziel: Node2D = null   # wohin er fliegt, setzt der Magnet
+var tempo := -60.0        # negativ: erst ein kleiner Hüpfer weg vom Held, dann hin
+
+
+func _draw() -> void:
+	# Die Mitte vom Bild soll auf der Position vom Stein liegen
+	var mitte := Vector2i(BILD[0].length(), BILD.size()) / 2
+	for y in BILD.size():
+		for x in BILD[y].length():
+			var zeichen: String = BILD[y][x]
+			if zeichen in FARBEN:
+				draw_rect(Rect2(Vector2i(x, y) - mitte, Vector2.ONE), FARBEN[zeichen])
+
+
+func anziehen(held: Node2D) -> void:
+	ziel = held
+
+
+func _physics_process(delta: float) -> void:
+	if ziel == null:
+		return   # liegt einfach da
+	tempo += BESCHLEUNIGUNG * delta
+	global_position = global_position.move_toward(ziel.global_position, tempo * delta)
+	if global_position.distance_squared_to(ziel.global_position) < 4 * 4:
+		ziel.erfahrung_dazu(wert)
+		queue_free()
+```
+
+5. Speichern als `edelstein.tscn`.
+
+**`move_toward(ziel, schritt)`** geht von einem Punkt aus höchstens `schritt` Pixel auf das Ziel zu, und nie darüber hinaus. Ist `schritt` negativ, geht es **weg** vom Ziel. Darum fängt `tempo` bei −60 an: Der Stein hüpft erst ein kleines Stück vom Held weg, wird dann langsamer, dreht um und saust immer schneller zu ihm hin. Das kostet eine Zeile und sieht viel lebendiger aus, als wenn er einfach angeflogen käme.
+
+**Warum malt `_draw()` nicht jedes Bild neu?** Godot ruft `_draw()` nur einmal auf und merkt sich das Ergebnis. Erst `queue_redraw()` würde neu malen. Hundert Edelsteine kosten deshalb kaum etwas.
+
+### 4.2 Gegner lassen Edelsteine fallen
+
+In `gegner.gd` zwei neue Exports, gleich unter `leben`:
+
+```gdscript
+@export var beute_szene: PackedScene   # das bleibt liegen, wenn er stirbt
+@export var erfahrung := 1             # so viel ist die Beute wert
+```
+
+In `treffer()` wird aus `queue_free()` ein `sterben()`. Und ganz unten kommt die neue Funktion:
+
+```gdscript
+func sterben() -> void:
+	var beute := beute_szene.instantiate()
+	beute.wert = erfahrung
+	beute.position = global_position
+	# call_deferred: erst am Ende des Bildes einfügen, siehe unten
+	get_tree().current_scene.add_child.call_deferred(beute)
+	queue_free()
+```
+
+In `gegner.tscn`: **Beute Szene** = `edelstein.tscn`. Die Fledermaus erbt das.
+
+**Warum `call_deferred`?** `sterben()` wird vom Messer aufgerufen, und zwar aus `body_entered`, also mitten in der Physik-Berechnung. In diesem Moment darf man keine neuen Körper oder Areas einfügen, Godot meldet sonst einen Fehler: *Can't change this state while flushing queries*. `call_deferred` heißt: Mach das, aber erst, wenn die Physik fertig ist. Den Wert und die Position kannst du trotzdem sofort setzen, nur das Einfügen in die Welt wartet.
+
+### 4.3 Der Magnet und die Erfahrung
+
+In `held.tscn`:
+1. Kind von `Held`: `Area2D` → `Magnet`. **Collision → Layer** ganz leer, **Mask** nur `4` (Beute). **Monitorable** aus.
+2. Kind von `Magnet`: `CollisionShape2D` → **New CircleShape2D**, **Radius** `40`. Dann den Kreis aufklappen → **Resource** → **Local To Scene** an. Warum, steht in 4.6.
+3. `Magnet` auswählen → Tab **Node** → **Signals** → `area_entered` → **Connect** an `Held`.
+
+Das Skript `held.gd` bekommt ganz oben eine Zeile **vor** `extends`, darunter zwei Signale:
+
+```gdscript
+class_name Held
+extends CharacterBody2D
+
+signal erfahrung_geaendert(erfahrung: int, ziel: int)
+signal level_auf(level: int)
+```
+
+Zu den Variablen kommen drei dazu:
+
+```gdscript
+var erfahrung := 0
+var level := 1
+var naechstes_level := 5   # so viel Erfahrung braucht das nächste Level
+```
+
+Und unten drei neue Funktionen:
+
+```gdscript
+func erfahrung_dazu(wert: int) -> void:
+	erfahrung += wert
+	erfahrung_geaendert.emit(erfahrung, naechstes_level)
+	level_pruefen()
+
+
+func level_pruefen() -> void:
+	if erfahrung < naechstes_level:
+		return
+	erfahrung -= naechstes_level   # was zu viel war, bleibt fürs nächste Level
+	level += 1
+	naechstes_level += 5           # jedes Level braucht 5 mehr als das davor
+	erfahrung_geaendert.emit(erfahrung, naechstes_level)
+	level_auf.emit(level)
+
+
+func _on_magnet_area_entered(area: Area2D) -> void:
+	area.anziehen(self)
+```
+
+- **`class_name Held`:** Jetzt kennt Godot den Held als eigenen Typ, so wie `Monster` im Kerkerheld. Wer `var held: Held` schreibt, bekommt beim Tippen `level`, `erfahrung_dazu` und die Signale vorgeschlagen, und Tippfehler fallen schon im Editor auf.
+- **Signale mit Werten:** `erfahrung_geaendert` schickt gleich mit, wie viel Erfahrung da ist und wie viel gebraucht wird. Der Balken muss dann nicht selbst beim Held nachfragen.
+- **Der Magnet** ist eine zweite Area am Held, viel größer als die Trefferzone. Sobald ein Edelstein hineinkommt, bekommt der Stein Bescheid und fliegt los. Den Rest macht er selbst. Das gilt auch für Steine, die direkt im Magnet entstehen, weil ein Gegner neben dem Held stirbt: `area_entered` kommt dann gleich im ersten Bild.
+- **5, 10, 15, 20 …:** Die ersten Level gehen schnell, danach wird es zäher. Für Level 10 brauchst du schon 225 Erfahrung.
+
+### 4.4 Der Erfahrungsbalken
+
+In `welt.tscn`, in der `Anzeige`:
+1. Kind von `Anzeige`: `ProgressBar` → `Erfahrung`. Wie beim Lebensbalken, in dieser Reihenfolge: **Show Percentage** aus, **Background** fast schwarz, **Fill** blau wie die Edelsteine. Dann **Layout → Transform**: **Position** `0, 0`, **Size** `384, 3`. Ein dünner Strich über die ganze Breite, ganz oben.
+2. Zieh `Erfahrung` im Szenenbaum **über** `Info`, und setz bei `Info` die **Position** auf `4, 3`, damit die Schrift unter dem Balken steht.
+3. Skript an `Erfahrung`, als `erfahrung.gd` speichern:
+
+```gdscript
+extends ProgressBar
+
+
+func _ready() -> void:
+	var held: Held = get_tree().get_first_node_in_group("held")
+	held.erfahrung_geaendert.connect(_on_erfahrung_geaendert)
+	max_value = held.naechstes_level
+	value = 0
+
+
+func _on_erfahrung_geaendert(erfahrung: int, ziel: int) -> void:
+	max_value = ziel
+	value = erfahrung
+```
+
+Und `info.gd` zeigt jetzt auch das Level:
+
+```gdscript
+extends Label
+
+var held: Held
+
+
+func _ready() -> void:
+	held = get_tree().get_first_node_in_group("held")
+
+
+func _process(_delta: float) -> void:
+	text = "Level %d   Gegner: %d   FPS: %d" % [held.level, get_tree().get_node_count_in_group("gegner"), Engine.get_frames_per_second()]
+```
+
+**Signal im Code verbinden:** Den Held gibt es in `welt.tscn` nur als Instanz, sein Signal lässt sich im Editor nicht so einfach mit einem Node in der `Anzeige` verbinden. `connect()` macht dasselbe wie der **Connect**-Knopf, nur im Skript.
+
+### 4.5 Das Level-Up-Menü
+
+Steigt der Held auf, hält das Spiel an, und drei Upgrades stehen zur Wahl.
+
+In `welt.tscn`:
+1. Kind von `Welt`: `CanvasLayer` → `LevelUp`. **Layer** `10`, damit es über der Anzeige liegt. **Process → Mode** → `Always`. Warum, steht unten.
+2. Kind von `LevelUp`: `ColorRect` → `Abdunkeln`. Oben im Editor das **Anker-Symbol** → **Full Rect**. **Color** schwarz, Alpha etwa `150`. Das dunkelt das Spiel dahinter ab.
+3. Kind von `LevelUp`: `VBoxContainer` → `Kasten`. **Anker-Symbol** → **Center**. **Theme Overrides → Constants → Separation** `6`.
+4. Vier Kinder von `Kasten`, alle `Label`: `Titel`, `Wahl1`, `Wahl2`, `Wahl3`. Bei allen **Horizontal Alignment** → `Center`.
+
+   Die Schrift soll aussehen wie beim Zähler. Damit du sie nicht viermal einstellen musst: Bei `Info` neben **Label Settings** auf den Pfeil → **Save As** → `schrift.tres`. Bei den vier neuen Labels dann **Label Settings** → **Load** → `schrift.tres`. Änderst du später die Schrift, ändert sie sich überall.
+5. Skript an `LevelUp`, als `levelup.gd` speichern:
+
+```gdscript
+extends CanvasLayer
+
+var held: Held
+var angebot: Array[String] = []   # die drei Upgrades, die gerade zur Wahl stehen
+var auswahl := 0                  # welches davon markiert ist
+
+@onready var zeilen: Array[Label] = [$Kasten/Wahl1, $Kasten/Wahl2, $Kasten/Wahl3]
+
+
+func _ready() -> void:
+	hide()
+	held = get_tree().get_first_node_in_group("held")
+	held.level_auf.connect(zeigen)
+
+
+func zeigen(level: int) -> void:
+	$Kasten/Titel.text = "Level %d!" % level
+	# Alle Upgrades mischen und die ersten drei nehmen: drei verschiedene, zufällig
+	angebot.assign(Held.UPGRADES)
+	angebot.shuffle()
+	angebot.resize(3)
+	for i in 3:
+		zeilen[i].text = angebot[i]
+	auswahl = 0
+	markieren()
+	show()
+	get_tree().paused = true
+
+
+func _process(_delta: float) -> void:
+	if not visible:
+		return
+	if Input.is_action_just_pressed("runter"):
+		auswahl = wrapi(auswahl + 1, 0, 3)
+		markieren()
+	elif Input.is_action_just_pressed("hoch"):
+		auswahl = wrapi(auswahl - 1, 0, 3)
+		markieren()
+	elif Input.is_action_just_pressed("ok"):
+		waehlen()
+
+
+func markieren() -> void:
+	for i in 3:
+		zeilen[i].modulate = Color.YELLOW if i == auswahl else Color(1, 1, 1, 0.5)
+
+
+func waehlen() -> void:
+	hide()
+	get_tree().paused = false
+	held.upgrade(angebot[auswahl])
+	# Hat der Held genug Erfahrung für noch ein Level, kommt das Menü gleich noch einmal
+	held.level_pruefen()
+```
+
+- **`get_tree().paused = true`** hält alles an, was **Process Mode** `Inherit` hat, und das ist fast alles: Held, Gegner, Messer, Edelsteine, der Spawner. Das Menü selbst muss aber weiterlaufen, sonst könnte man nie wieder etwas auswählen. Darum steht `LevelUp` auf `Always`.
+- **`is_action_just_pressed`** statt eines eigenen `_input`: Das kennst du vom Pausenmenü im Kerkerheld. Der Stick schickt bei jeder kleinen Bewegung ein neues Ereignis, und die Auswahl würde wild springen. `just_pressed` meldet nur den Moment, in dem die Richtung gedrückt wird.
+- **`wrapi(wert, 0, 3)`** hält eine Zahl zwischen 0 und 2. Aus 3 wird 0, aus −1 wird 2. Wer unten weiterdrückt, landet wieder oben.
+- **`assign`, `shuffle`, `resize`:** `assign` kopiert die Liste der Upgrades in `angebot`. Ohne Kopie würde `shuffle` die Liste im Held durcheinanderbringen, und die ist eine Konstante. `resize(3)` schneidet alles nach dem dritten Eintrag ab.
+- **`Held.UPGRADES`** mit großem H: Das ist die Konstante der **Klasse** `Held`, die gibt es auch ohne einen bestimmten Held. Das geht dank `class_name`.
+
+### 4.6 Die Upgrades
+
+Fehlt noch, was die Upgrades tun. In `held.gd` eine neue Konstante zu den anderen:
+
+```gdscript
+const UPGRADES = ["Noch ein Messer", "Schneller werfen", "Schärfere Messer", "Großer Magnet", "Heiltrank"]
+```
+
+Und unten eine neue Funktion:
+
+```gdscript
+func upgrade(wahl: String) -> void:
+	match wahl:
+		"Noch ein Messer":
+			$Waffe.anzahl += 1
+		"Schneller werfen":
+			$Waffe.abklingzeit *= 0.85
+		"Schärfere Messer":
+			$Waffe.schaden += 1
+		"Großer Magnet":
+			$Magnet/CollisionShape2D.shape.radius *= 1.3
+		"Heiltrank":
+			leben = MAX_LEBEN
+			$Lebensbalken.value = leben
+```
+
+`anzahl` hast du in Übung 2 von Kapitel 3 eingebaut. Ab jetzt ist es ein Upgrade, und der Fächer mit festem Abstand wird mit jedem Messer breiter.
+
+**Warum Local To Scene beim Magnet?** Eine Form wie der `CircleShape2D` ist eine **Resource**, und Resources teilt Godot: Jeder, der `held.tscn` lädt, bekommt **denselben** Kreis. Das spart Speicher, hat aber einen Haken. Ohne Local To Scene vergrößert „Großer Magnet“ den Kreis, der in `held.tscn` steckt. Stirbt der Held und das Spiel fängt mit `reload_current_scene()` von vorn an, hat der neue Held schon den großen Magnet. Ich habe das ausprobiert, es passiert wirklich. **Local To Scene** heißt: Jede Instanz der Szene bekommt ihre eigene Kopie. Merk dir die Regel: Wer eine Resource im Spiel verändert, braucht eine eigene Kopie davon.
+
+**`* 0.85`** heißt 15 % kürzer. Mehrmals gewählt wird es immer kürzer, aber nie 0: 0,6 → 0,51 → 0,43 → 0,37 …
+
+**Ein Haken, der dir auffallen wird:** Jedes Upgrade steht an **zwei** Stellen, einmal in `UPGRADES` und einmal im `match`. Vertippst du dich an einer, passiert beim Wählen einfach nichts, ohne Fehlermeldung. Und dass es bei „Schneller werfen“ nach dem fünften Mal reicht, steht nirgends. In Kapitel 5 werden die Upgrades deshalb zu **Daten**: jedes eine eigene kleine Datei mit Namen, Beschreibung und Stufen.
+
+### 4.7 Ausprobieren
+
+**F5**:
+- Besiegte Gegner lassen blaue Edelsteine liegen. Läufst du hin, hüpfen sie kurz weg und sausen dann zu dir.
+- Der blaue Balken oben füllt sich. In meinem Test kam das erste Level nach etwa 20 Sekunden.
+- Das Spiel hält an, drei Upgrades erscheinen. Mit dem Stick oder dem D-Pad wählen, mit A bestätigen. Die Auswahl springt nicht.
+- Danach geht es genau da weiter, wo es angehalten hat.
+- „Noch ein Messer“: Ab jetzt fliegen zwei. „Großer Magnet“: Steine kommen schon von weiter weg.
+
+Steine, die außerhalb vom Magnet liegen, bleiben liegen. Wer sie will, muss hinlaufen, auch mitten durch die Horde. So soll es sein.
+
+### 4.8 Was ist neu?
+
+- **Beute mit `call_deferred`:** Neue Körper und Areas kommen erst nach der Physik in die Welt.
+- **`move_toward`** mit wachsendem Tempo, und negativem Tempo für den Hüpfer am Anfang.
+- **Ein Magnet aus einer zweiten Area**, viel größer als die Trefferzone.
+- **Geteilte Resources:** Wer eine Form im Spiel verändert, braucht **Local To Scene**.
+- **`class_name`** für den Held: Typen, Vorschläge beim Tippen und `Held.UPGRADES`.
+- **Signale mit Werten**, im Code verbunden mit `connect()`.
+- **Pause** mit `get_tree().paused` und **Process Mode** `Always` für das Menü.
+- **`wrapi`**, `shuffle` und `resize` für eine Auswahl aus drei.
+- **LabelSettings als Datei**, damit alle Texte gleich aussehen.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 4
+
+1. **Fette Beute (leicht):** Fledermäuse sind schwer zu treffen und sollen sich mehr lohnen. Gib ihnen **Erfahrung** `3`. Woran merkst du im Spiel, dass es geklappt hat? 🦇
+2. **Grün ist mehr wert (mittel):** Man soll schon von Weitem sehen, welcher Stein mehr bringt. Steine mit `wert` ab `3` sollen grün sein statt blau. Dafür brauchst du eine zweite Farbtabelle neben `FARBEN`. Wo entscheidest du, welche genommen wird? (Tipp: `_draw()` läuft erst, wenn der Stein in der Welt ist. Ist `wert` dann schon gesetzt?) 💚
+3. **Flinke Füße (mittel):** Neues Upgrade: Der Held läuft 10 % schneller. `TEMPO` ist eine Konstante, die kann sich nicht ändern. Was musst du umbauen? An wie vielen Stellen musst du den Namen „Flinke Füße“ schreiben?
+4. **Zwei Level auf einmal (mittel):** Stell zum Testen die Erfahrung der Fledermaus auf `30`. Was passiert, wenn du eine einsammelst? Nimm dann in `waehlen()` die Zeile `held.level_pruefen()` heraus und probier es noch einmal. Was ist jetzt anders, und wann kommt das fehlende Menü doch noch? Danach wieder zurückstellen.
