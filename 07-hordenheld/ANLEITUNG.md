@@ -579,6 +579,6 @@ Fertig? Committen und Bescheid geben.
 ### Übungsaufgaben zu Kapitel 3
 
 1. **Maschinengewehr (leicht):** Stell **Abklingzeit** auf `0.05`. Wie lange hältst du jetzt durch? Schau auch auf den Zähler und die FPS. Warum wäre das im fertigen Spiel trotzdem langweilig? Stell es danach wieder zurück. 🔫
-2. **Fächer (mittel):** Neuer Export `anzahl := 1` in `waffe.gd`. Bei `3` fliegen drei Messer auf einmal: das mittlere genau aufs Ziel, die anderen 15 Grad daneben. (Tipp: `richtung.rotated(deg_to_rad(15))`. Und wie verteilst du die Winkel, wenn `anzahl` mal 2 oder 5 ist?)
+2. **Fächer (mittel):** Neuer Export `anzahl := 1` in `waffe.gd`. Bei `3` fliegen drei Messer auf einmal: eines genau aufs Ziel, die anderen 15 Grad links und rechts daneben. (Tipp: `richtung.rotated(deg_to_rad(15))`. Und was machst du bei `2`, wo es keine Mitte gibt, oder bei `5`?)
 3. **Durchschlag (mittel):** Das Messer soll durch zwei Gegner fliegen und erst am dritten hängen bleiben. Gib dem Messer eine Variable `durchschlag` und zähl sie bei jedem Treffer herunter. Brauchst du `is_queued_for_deletion()` dann noch? Kann es passieren, dass ein Messer **denselben** Gegner zweimal trifft?
 4. **Rückstoß (mittel):** Ein getroffener Gegner soll ein paar Pixel zurückgeschubst werden. Dafür braucht `treffer` die Flugrichtung des Messers als zweiten Parameter. Der Schaden bleibt gleich, die Waffe fühlt sich aber stärker an. Warum? (Mehr davon in Kapitel 8.)

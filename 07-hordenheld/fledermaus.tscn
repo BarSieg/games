@@ -4,6 +4,7 @@
 
 [node name="Fledermaus" unique_id=1601739021 instance=ExtResource("1_cqr5a")]
 tempo = 50.0
+leben = 1
 
 [node name="Bild" parent="." index="0" unique_id=172911976]
 frame = 120

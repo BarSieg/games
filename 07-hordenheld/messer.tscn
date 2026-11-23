@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://g2wf66m766eh"]
+
+[ext_resource type="Script" uid="uid://cvc25hoyhs76m" path="res://messer.gd" id="1_kv3xk"]
+[ext_resource type="Texture2D" uid="uid://bnbym1pdxbtwp" path="res://kenney/tiny_dungeon/tilemap_packed.png" id="1_v5ewp"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_s017u"]
+radius = 4.0
+
+[node name="Messer" type="Area2D" unique_id=319490342]
+collision_layer = 4
+collision_mask = 2
+monitorable = false
+script = ExtResource("1_kv3xk")
+
+[node name="Bild" type="Sprite2D" parent="." unique_id=576503879]
+texture = ExtResource("1_v5ewp")
+hframes = 12
+vframes = 11
+frame = 103
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=550010500]
+shape = SubResource("CircleShape2D_s017u")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

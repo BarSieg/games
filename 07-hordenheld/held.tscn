@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://c1xvj17nx46o2" path="res://held.gd" id="1_7usdt"]
 [ext_resource type="Texture2D" uid="uid://bnbym1pdxbtwp" path="res://kenney/tiny_dungeon/tilemap_packed.png" id="2_xw2dj"]
+[ext_resource type="Script" uid="uid://bjow78u0c4lti" path="res://waffe.gd" id="3_q6bl5"]
+[ext_resource type="PackedScene" uid="uid://g2wf66m766eh" path="res://messer.tscn" id="4_kdfus"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_s017u"]
 radius = 5.0
@@ -51,3 +53,8 @@ theme_override_styles/background = SubResource("StyleBoxFlat_s017u")
 theme_override_styles/fill = SubResource("StyleBoxFlat_0orc7")
 value = 100.0
 show_percentage = false
+
+[node name="Waffe" type="Node2D" parent="." unique_id=2000039890]
+script = ExtResource("3_q6bl5")
+geschoss_szene = ExtResource("4_kdfus")
+anzahl = 2

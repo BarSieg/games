@@ -6,6 +6,7 @@ const MAX_ABSTAND = 300.0        # ist ein Gegner so viele Pixel hinter dem Held
 const TELEPORT_ABSTAND = 250.0   # springt er so viele Pixel vor den Held
 
 @export var tempo := 30.0   # Pixel pro Sekunde, langsamer als der Held
+@export var leben := 2      # so viele Treffer hält er aus
 
 var held: Node2D
 # Jeder Gegner fängt an einer anderen Stelle der Wackel-Welle an. Sonst wackeln alle im Gleichtakt.
@@ -29,3 +30,11 @@ func _physics_process(delta: float) -> void:
 	$Bild.flip_h = richtung.x < 0
 	lauf_zeit += delta
 	$Bild.rotation = sin(lauf_zeit * WACKELN) * WACKEL_WINKEL
+
+
+func treffer(schaden: int, stoss: Vector2 = Vector2.ZERO) -> void:
+	leben -= schaden
+	if leben <= 0:
+		queue_free()
+	else:
+		position += stoss
