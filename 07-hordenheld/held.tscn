@@ -17,6 +17,10 @@ bg_color = Color(0.101240985, 0.101241, 0.10124094, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0orc7"]
 bg_color = Color(0.88235295, 0.12156863, 0.24313726, 1)
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_uaosu"]
+resource_local_to_scene = true
+radius = 40.0
+
 [node name="Held" type="CharacterBody2D" unique_id=2076376353 groups=["held"]]
 collision_mask = 0
 motion_mode = 1
@@ -57,4 +61,13 @@ show_percentage = false
 [node name="Waffe" type="Node2D" parent="." unique_id=2000039890]
 script = ExtResource("3_q6bl5")
 geschoss_szene = ExtResource("4_kdfus")
-anzahl = 2
+
+[node name="Magnet" type="Area2D" parent="." unique_id=1351138087]
+collision_layer = 0
+collision_mask = 8
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Magnet" unique_id=1255743532]
+shape = SubResource("CircleShape2D_uaosu")
+
+[connection signal="area_entered" from="Magnet" to="." method="_on_magnet_area_entered"]

@@ -6,13 +6,16 @@
 [ext_resource type="Script" uid="uid://dd4ioptlc12k4" path="res://spawner.gd" id="4_8bs7t"]
 [ext_resource type="PackedScene" uid="uid://6aojfxxsf1th" path="res://fledermaus.tscn" id="5_8bs7t"]
 [ext_resource type="PackedScene" uid="uid://1yhvps2ygvpb" path="res://gegner.tscn" id="5_gb4j4"]
-[ext_resource type="FontFile" uid="uid://bkaclb4h3km7" path="res://kenney/Kenney Pixel.ttf" id="6_16niv"]
+[ext_resource type="Script" uid="uid://byc1qn0hapn15" path="res://erfahrung.gd" id="7_16niv"]
 [ext_resource type="Script" uid="uid://cm2yimy5yc6uw" path="res://info.gd" id="7_rf10p"]
+[ext_resource type="LabelSettings" uid="uid://dyx3fx3jicmgl" path="res://schrift.tres" id="8_16niv"]
+[ext_resource type="Script" uid="uid://dj57bqsgr3nrl" path="res://level_up.gd" id="10_rf10p"]
 
-[sub_resource type="LabelSettings" id="LabelSettings_s017u"]
-font = ExtResource("6_16niv")
-font_color = Color(0, 0, 0, 1)
-outline_size = 4
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s017u"]
+bg_color = Color(0.026721502, 0.026721502, 0.026721483, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0orc7"]
+bg_color = Color(0.2, 0.5, 1, 1)
 
 [node name="Welt" type="Node2D" unique_id=1926768728]
 y_sort_enabled = true
@@ -36,9 +39,65 @@ gegner_szenen = Array[PackedScene]([ExtResource("5_gb4j4"), ExtResource("5_8bs7t
 
 [node name="Anzeige" type="CanvasLayer" parent="." unique_id=82657305]
 
+[node name="Erfahrung" type="ProgressBar" parent="Anzeige" unique_id=1054689779]
+offset_right = 384.0
+offset_bottom = 3.0
+theme_override_styles/background = SubResource("StyleBoxFlat_s017u")
+theme_override_styles/fill = SubResource("StyleBoxFlat_0orc7")
+show_percentage = false
+script = ExtResource("7_16niv")
+
 [node name="Info" type="Label" parent="Anzeige" unique_id=35335002]
 offset_left = 4.0
+offset_top = 3.0
 offset_right = 44.0
-offset_bottom = 23.0
-label_settings = SubResource("LabelSettings_s017u")
+offset_bottom = 26.0
+label_settings = ExtResource("8_16niv")
 script = ExtResource("7_rf10p")
+
+[node name="LevelUp" type="CanvasLayer" parent="." unique_id=536431968]
+process_mode = 3
+layer = 10
+script = ExtResource("10_rf10p")
+
+[node name="Abdunkeln" type="ColorRect" parent="LevelUp" unique_id=2835329]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.07058824, 0.07058824, 0.07058824, 0.5882353)
+
+[node name="Kasten" type="VBoxContainer" parent="LevelUp" unique_id=2113978592]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 6
+
+[node name="Titel" type="Label" parent="LevelUp/Kasten" unique_id=1762551303]
+layout_mode = 2
+label_settings = ExtResource("8_16niv")
+horizontal_alignment = 1
+
+[node name="Wahl1" type="Label" parent="LevelUp/Kasten" unique_id=826850936]
+layout_mode = 2
+label_settings = ExtResource("8_16niv")
+horizontal_alignment = 1
+
+[node name="Wahl2" type="Label" parent="LevelUp/Kasten" unique_id=483983653]
+layout_mode = 2
+label_settings = ExtResource("8_16niv")
+horizontal_alignment = 1
+
+[node name="Wahl3" type="Label" parent="LevelUp/Kasten" unique_id=1517574817]
+layout_mode = 2
+label_settings = ExtResource("8_16niv")
+horizontal_alignment = 1

@@ -1,0 +1,8 @@
+[gd_resource type="LabelSettings" format=3 uid="uid://dyx3fx3jicmgl"]
+
+[ext_resource type="FontFile" uid="uid://bkaclb4h3km7" path="res://kenney/Kenney Pixel.ttf" id="1_pa2yn"]
+
+[resource]
+font = ExtResource("1_pa2yn")
+font_color = Color(0, 0, 0, 1)
+outline_size = 4

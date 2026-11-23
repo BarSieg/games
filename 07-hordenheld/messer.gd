@@ -7,7 +7,7 @@ const SCHUB = 3.0          # schubst den Gegner so viele Pixel weg
 var richtung := Vector2.RIGHT   # setzt die Waffe, bevor das Messer in die Welt kommt
 var schaden := 1                # das auch
 var zeit := LEBENSDAUER
-var durchschlag := 3            # so viele Gegner trifft ein Messer höchstens
+var durchschlag := 1            # so viele Gegner trifft ein Messer höchstens
 
 
 func _ready() -> void:

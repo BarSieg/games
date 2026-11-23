@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://ctwuj5ndn5ltn" path="res://gegner.gd" id="1_co84x"]
 [ext_resource type="Texture2D" uid="uid://bnbym1pdxbtwp" path="res://kenney/tiny_dungeon/tilemap_packed.png" id="1_v5qxm"]
+[ext_resource type="PackedScene" uid="uid://cjutsfn8y4if3" path="res://edelstein.tscn" id="2_tvgt1"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_s017u"]
 radius = 6.0
@@ -11,6 +12,7 @@ collision_layer = 2
 collision_mask = 2
 motion_mode = 1
 script = ExtResource("1_co84x")
+beute_szene = ExtResource("2_tvgt1")
 
 [node name="Bild" type="Sprite2D" parent="." unique_id=172911976]
 texture = ExtResource("1_v5qxm")

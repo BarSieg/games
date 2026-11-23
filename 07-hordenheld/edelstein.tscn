@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://cjutsfn8y4if3"]
+
+[ext_resource type="Script" uid="uid://6i0jxwo6ys7g" path="res://edelstein.gd" id="1_ifvod"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_s017u"]
+radius = 3.0
+
+[node name="Edelstein" type="Area2D" unique_id=1766816293]
+collision_layer = 8
+collision_mask = 0
+monitoring = false
+script = ExtResource("1_ifvod")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=560156977]
+shape = SubResource("CircleShape2D_s017u")
