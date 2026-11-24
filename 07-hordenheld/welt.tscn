@@ -4,14 +4,22 @@
 [ext_resource type="Texture2D" uid="uid://bmmj62uic71c2" path="res://kenney/tiny_town/tilemap_packed.png" id="2_3bccv"]
 [ext_resource type="PackedScene" uid="uid://drc8wjs0mbt43" path="res://held.tscn" id="3_4agmm"]
 [ext_resource type="Script" uid="uid://dd4ioptlc12k4" path="res://spawner.gd" id="4_8bs7t"]
-[ext_resource type="PackedScene" uid="uid://6aojfxxsf1th" path="res://fledermaus.tscn" id="5_8bs7t"]
-[ext_resource type="PackedScene" uid="uid://1yhvps2ygvpb" path="res://gegner.tscn" id="5_gb4j4"]
+[ext_resource type="Script" uid="uid://ckcs81n8prvvj" path="res://welle.gd" id="5_64qx1"]
+[ext_resource type="Resource" uid="uid://nj44dxm5y3be" path="res://wellen/welle_1.tres" id="6_886hs"]
 [ext_resource type="Script" uid="uid://byc1qn0hapn15" path="res://erfahrung.gd" id="7_16niv"]
+[ext_resource type="Resource" uid="uid://bd1gh27545oeh" path="res://wellen/welle_2.tres" id="7_i7xpl"]
 [ext_resource type="Script" uid="uid://cm2yimy5yc6uw" path="res://info.gd" id="7_rf10p"]
 [ext_resource type="LabelSettings" uid="uid://dyx3fx3jicmgl" path="res://schrift.tres" id="8_16niv"]
+[ext_resource type="Resource" uid="uid://cn5coyd83phlp" path="res://wellen/welle_3.tres" id="8_ac2op"]
+[ext_resource type="Resource" uid="uid://cy0x8f1bvh6qm" path="res://wellen/welle_4.tres" id="9_rqgnt"]
 [ext_resource type="Script" uid="uid://dj57bqsgr3nrl" path="res://level_up.gd" id="10_rf10p"]
+[ext_resource type="Resource" uid="uid://c8vnauup4jnom" path="res://wellen/welle_5.tres" id="10_w1uhv"]
+[ext_resource type="Resource" uid="uid://p5ytri1ani70" path="res://wellen/welle_6.tres" id="11_cqg7f"]
 [ext_resource type="Script" uid="uid://da8gfrrqycdoc" path="res://werkzeug.gd" id="11_x3g4k"]
+[ext_resource type="Resource" uid="uid://c5oo7up2bbbqu" path="res://wellen/welle_7.tres" id="12_2c76u"]
 [ext_resource type="Script" uid="uid://bm17u04x7ngbt" path="res://zahlen.gd" id="12_we0m5"]
+[ext_resource type="Script" uid="uid://bqwjj6k77h4m4" path="res://uhr.gd" id="16_vxi10"]
+[ext_resource type="Script" uid="uid://dedddoe3sbd5q" path="res://ende.gd" id="18_ig1nu"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s017u"]
 bg_color = Color(0.026721502, 0.026721502, 0.026721483, 1)
@@ -37,7 +45,7 @@ position = Vector2(-2, 1)
 [node name="Horde" type="Node2D" parent="." unique_id=415058297]
 y_sort_enabled = true
 script = ExtResource("4_8bs7t")
-gegner_szenen = Array[PackedScene]([ExtResource("5_gb4j4"), ExtResource("5_8bs7t")])
+wellen = Array[ExtResource("5_64qx1")]([ExtResource("6_886hs"), ExtResource("7_i7xpl"), ExtResource("8_ac2op"), ExtResource("9_rqgnt"), ExtResource("10_w1uhv"), ExtResource("11_cqg7f"), ExtResource("12_2c76u")])
 
 [node name="Anzeige" type="CanvasLayer" parent="." unique_id=82657305]
 
@@ -56,6 +64,19 @@ offset_right = 44.0
 offset_bottom = 26.0
 label_settings = ExtResource("8_16niv")
 script = ExtResource("7_rf10p")
+
+[node name="Uhr" type="Label" parent="Anzeige" unique_id=1777701633 groups=["uhr"]]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_top = 16.0
+offset_right = 20.0
+offset_bottom = 39.0
+grow_horizontal = 2
+label_settings = ExtResource("8_16niv")
+horizontal_alignment = 1
+script = ExtResource("16_vxi10")
 
 [node name="LevelUp" type="CanvasLayer" parent="." unique_id=536431968]
 process_mode = 3
@@ -107,6 +128,49 @@ horizontal_alignment = 1
 [node name="Beschreibung" type="Label" parent="LevelUp/Kasten" unique_id=1898146330]
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
+label_settings = ExtResource("8_16niv")
+horizontal_alignment = 1
+
+[node name="Ende" type="CanvasLayer" parent="." unique_id=1529072845]
+process_mode = 3
+layer = 10
+script = ExtResource("18_ig1nu")
+
+[node name="Abdunkeln" type="ColorRect" parent="Ende" unique_id=809088778]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.07058824, 0.07058824, 0.07058824, 0.5882353)
+
+[node name="Kasten" type="VBoxContainer" parent="Ende" unique_id=198318282]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 6
+
+[node name="Titel" type="Label" parent="Ende/Kasten" unique_id=1569468253]
+layout_mode = 2
+label_settings = ExtResource("8_16niv")
+horizontal_alignment = 1
+
+[node name="Werte" type="Label" parent="Ende/Kasten" unique_id=1560006545]
+layout_mode = 2
+label_settings = ExtResource("8_16niv")
+horizontal_alignment = 1
+
+[node name="Hinweis" type="Label" parent="Ende/Kasten" unique_id=574166578]
+layout_mode = 2
+text = "OK: nochmal"
 label_settings = ExtResource("8_16niv")
 horizontal_alignment = 1
 

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="Welle" format=3 uid="uid://cn5coyd83phlp"]
+
+[ext_resource type="PackedScene" uid="uid://42q0poeuxo24" path="res://zyklop.tscn" id="1_ooyoh"]
+[ext_resource type="Script" uid="uid://ckcs81n8prvvj" path="res://welle.gd" id="1_phvmh"]
+[ext_resource type="PackedScene" uid="uid://1yhvps2ygvpb" path="res://gegner.tscn" id="2_xy7cs"]
+[ext_resource type="PackedScene" uid="uid://6aojfxxsf1th" path="res://fledermaus.tscn" id="3_mh4n1"]
+
+[resource]
+script = ExtResource("1_phvmh")
+start = 60
+gegner = Array[PackedScene]([ExtResource("2_xy7cs"), ExtResource("3_mh4n1")])
+takt = 0.35
+elite = ExtResource("1_ooyoh")
+metadata/_custom_type_script = "uid://ckcs81n8prvvj"

@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://cr2swd4qiju7w"]
+
+[ext_resource type="PackedScene" uid="uid://1yhvps2ygvpb" path="res://gegner.tscn" id="1_vibwl"]
+
+[node name="Geist" unique_id=1601739021 instance=ExtResource("1_vibwl")]
+modulate = Color(1, 1, 1, 0.7058824)
+tempo = 35.0
+leben = 5
+erfahrung = 2
+
+[node name="Bild" parent="." index="0" unique_id=172911976]
+frame = 121

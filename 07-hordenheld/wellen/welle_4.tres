@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="Welle" format=3 uid="uid://cy0x8f1bvh6qm"]
+
+[ext_resource type="Script" uid="uid://ckcs81n8prvvj" path="res://welle.gd" id="1_55crb"]
+[ext_resource type="PackedScene" uid="uid://6aojfxxsf1th" path="res://fledermaus.tscn" id="1_ld53r"]
+
+[resource]
+script = ExtResource("1_55crb")
+start = 90
+gegner = Array[PackedScene]([ExtResource("1_ld53r")])
+takt = 0.25
+metadata/_custom_type_script = "uid://ckcs81n8prvvj"

@@ -1,7 +1,7 @@
 extends Node
 
 # Werkzeuge zum Messen und Testen. Nur auf der Tastatur:
-# F1 = 100 Gegner mehr, F2 = Testmodus an/aus, F3 = Grenze suchen
+# F1 = 100 Gegner mehr, F2 = Testmodus an/aus, F3 = Grenze suchen, F4 = Uhr 30 Sekunden vor
 
 const MONITORE = ["Gegner", "Messer", "Edelsteine"]
 const GRUPPEN = ["gegner", "messer", "beute"]
@@ -49,3 +49,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			held.testmodus = not held.testmodus
 		KEY_F3:
 			max_spawn = true
+		KEY_F4:
+			var uhr: Uhr = get_tree().get_first_node_in_group("uhr")
+			uhr.zeit += 30.0

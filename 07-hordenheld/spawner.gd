@@ -1,9 +1,6 @@
 extends Node2D
 
 const ABSTAND = 20.0   # so weit vom Bildrand spawnen die Gegner
-const START_TAKT = 1.0  # am Anfang eine Sekunde zwischen zwei Gegnern
-const MIN_TAKT = 0.1    # schneller wird es nicht: zehn Gegner pro Sekunde
-const SCHNELLER = 0.97  # nach jedem Gegner wird der Takt 3 % kürzer
 const PLATZ = 12.0       # so viel Abstand will jeder Gegner zu jedem anderen
 const KAESTCHEN = 12.0   # so groß ist ein Kästchen im Raster, nie kleiner als PLATZ
 const SCHIEBEN = 0.15    # so viel von der Überlappung wird pro Schritt weggeschoben
@@ -11,20 +8,30 @@ const SCHUBBEGRENZUNG = 6.0   # nicht mehr als das, sonst schieben sich die Gegn
 # das eigene Kästchen, rechts daneben und die drei darunter
 const HALBE_NACHBARN = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1)]
 
-@export var gegner_szenen: Array[PackedScene]
+@export var wellen: Array[Welle] = []
 
-var takt := START_TAKT
-var warten := START_TAKT
+var uhr: Uhr
+var welle_nr := 0   # die wievielte Welle gerade läuft, von 0 an gezählt
+var warten := 0.0
 var schritt := 0   # für halbe Arbeit
 
 
+func _ready() -> void:
+	uhr = get_tree().get_first_node_in_group("uhr")
+
+
 func _process(delta: float) -> void:
+	# Ist die nächste Welle dran?
+	if welle_nr + 1 < wellen.size() and uhr.zeit >= wellen[welle_nr + 1].start:
+		welle_nr += 1
+		if wellen[welle_nr].elite != null:
+			einsetzen(wellen[welle_nr].elite.instantiate())
+
 	warten -= delta
 	# while statt if: Ist der Takt kürzer als ein Bild, kommen mehrere Gegner im selben Bild
 	while warten <= 0:
 		neuer_gegner()
-		takt = maxf(MIN_TAKT, takt * SCHNELLER)
-		warten += takt
+		warten += wellen[welle_nr].takt
 
 
 func _physics_process(_delta: float) -> void:
@@ -81,8 +88,12 @@ func platz_machen() -> void:
 
 
 func neuer_gegner() -> void:
-	var gegner := gegner_szenen[randi() % gegner_szenen.size()].instantiate()
+	var szenen := wellen[welle_nr].gegner
+	einsetzen(szenen[randi() % szenen.size()].instantiate())
 
+
+# Setzt einen Gegner an eine zufällige Stelle knapp hinter dem Bildrand
+func einsetzen(gegner: Node2D) -> void:
 	# Eine zufällige Richtung von der Bildmitte aus
 	var alpha := Vector2.from_angle(randf() * TAU)
 

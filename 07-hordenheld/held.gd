@@ -3,6 +3,7 @@ extends CharacterBody2D
 
 signal erfahrung_geaendert(erfahrung: int, ziel: int)
 signal level_auf(level: int)
+signal gestorben
 
 const STARTTEMPO = 70.0        # Pixel pro Sekunde
 const WACKELN = 15.0      # so schnell wackelt er beim Laufen hin und her
@@ -74,7 +75,7 @@ func _physics_process(delta: float) -> void:
 	if treffer > 0 and not testmodus:
 		leben -= treffer * SCHADEN * delta
 		if leben <= 0:
-			get_tree().reload_current_scene()
+			gestorben.emit()
 	$Bild.modulate = Color(1, 0.4, 0.4) if treffer > 0 else Color.WHITE
 
 	# Je mehr Gegner beißen, desto mehr bebt es

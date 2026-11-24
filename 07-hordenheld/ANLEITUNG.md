@@ -16,8 +16,8 @@ Gespielt wird mit dem Controller. Die Tastatur geht natürlich auch.
 5. Upgrades als Daten: mehrere Waffen mit Stufen ✔
 6. Hunderte Gegner: Der Profiler zeigt, was bremst ✔
 7. Die Horde wird billiger: Gedränge ohne teure Physik ✔
-8. Game Feel: Wackeln, Blitzen, Zahlen ← *du bist hier*
-9. Die Uhr: Wellen, Elite-Gegner, Sieg und Game Over
+8. Game Feel: Wackeln, Blitzen, Zahlen ✔
+9. Die Uhr: Wellen, Elite-Gegner, Sieg und Game Over ← *du bist hier*
 10. Titelbild, Musik und Web-Export
 
 ---
@@ -2024,3 +2024,278 @@ Fertig? Committen und Bescheid geben.
 3. Offset funktioniert gar nicht. Der wird für den Beben verwendet. Kein Beben - kein Offset. Die Position funktionert gut, weil die Kamerageschwindigkeit bereits begrenzt ist.
 
 ---
+
+## Kapitel 9: Die Uhr: Wellen, Elite-Gegner, Sieg und Game Over
+
+Bis jetzt ist der Hordenheld eine Spielwiese ohne Ende: Die Gegner kommen schneller und schneller, und wer stirbt, steht sofort wieder am Anfang. In diesem Kapitel wird daraus ein richtiges Spiel mit einem Ziel: **Überlebe fünf Minuten.**
+
+Dafür kommen dazu:
+- **Eine Uhr**, die von 5:00 herunterzählt.
+- **Wellen:** Wer wann kommt und wie schnell, steht in Dateien, genau wie die Upgrades in Kapitel 5.
+- **Zwei neue Gegner:** ein langsamer Geist, der viel aushält, und ein riesiger Zyklop als **Elite-Gegner**, der zu Beginn mancher Wellen auftaucht.
+- **Ein Ende:** "Gewonnen!", wenn die Uhr abläuft, und "Game Over", wenn der Held stirbt. Mit OK geht es von vorn los. ⏱️
+
+### 9.1 Die Uhr
+
+Die Uhr ist ein **Label** in der `Anzeige`, also neben dem Info-Text. In `welt.tscn`: Rechtsklick auf `Anzeige` → **Add Child Node** → **Label**, Name `Uhr`. Im Inspector:
+- **Horizontal Alignment**: Center
+- **Label Settings**: deine `schrift.tres`
+- **Layout** → **Anchors Preset**: **Center Top**
+- **Layout** → **Transform** → **Position**: y auf `16`, damit die Uhr unter dem Info-Text steht und nicht darauf
+- **Node** → **Groups**: Gruppe `uhr`
+
+Dazu ein neues Skript `uhr.gd`:
+
+```gdscript
+class_name Uhr
+extends Label
+
+signal abgelaufen
+
+const SPIELZEIT = 300.0   # so viele Sekunden muss der Held überleben
+
+var zeit := 0.0
+var vorbei := false
+
+
+func _process(delta: float) -> void:
+	if vorbei:
+		return
+	zeit += delta
+	if zeit >= SPIELZEIT:
+		zeit = SPIELZEIT
+		vorbei = true
+		abgelaufen.emit()
+	text = als_text(SPIELZEIT - zeit)
+
+
+func als_text(sekunden: float) -> String:
+	var ganz := ceili(sekunden)
+	return "%d:%02d" % [floori(ganz / 60.0), ganz % 60]
+```
+
+- **`class_name Uhr`:** Wie bei `Held` kann jetzt jedes andere Skript `var uhr: Uhr` schreiben, und Godot kennt `zeit` und `als_text()`.
+- **`zeit`** zählt in `_process()` hoch. Weil die Uhr nicht `process_mode = Always` hat, bleibt sie stehen, solange das Level-Up-Menü das Spiel anhält. Die Zeit im Menü zählt nicht.
+- **`vorbei`** sorgt dafür, dass `abgelaufen` genau einmal kommt.
+- **`als_text()`** macht aus Sekunden eine Uhrzeit. `ceili()` rundet auf: Bei 4,3 Sekunden Rest steht `0:05`, und `0:00` erscheint erst, wenn die Zeit wirklich um ist. `floori(ganz / 60.0)` sind die ganzen Minuten, `ganz % 60` die Sekunden, die übrig bleiben. `%02d` schreibt eine Zahl immer zweistellig, also `4:05` statt `4:5`.
+
+Die Uhr zählt die **Restzeit** herunter. Das macht mehr Druck als eine Zeit, die nur hochzählt. 😬
+
+### 9.2 Wellen als Daten
+
+Bis jetzt hat die Horde nur zwei Gegnerarten gekannt und ist immer schneller geworden. Jetzt soll das Spiel einen Plan haben: erst nur Spinnen, dann Fledermäuse, dann Geister, ab und zu ein Zyklop. So ein Plan gehört nicht in den Code, sondern in Daten, die man im Inspector ändern kann. Wie bei den Upgrades in Kapitel 5 baust du dafür eine eigene **Resource**.
+
+Neues Skript `welle.gd`:
+
+```gdscript
+class_name Welle
+extends Resource
+
+@export var start := 0                        # ab dieser Sekunde gilt die Welle
+@export var gegner: Array[PackedScene] = []   # aus diesen wird zufällig gewählt
+@export var takt := 1.0                       # so viele Sekunden zwischen zwei Gegnern
+@export var elite: PackedScene                # kommt einmal am Anfang der Welle, darf leer bleiben
+```
+
+Eine Welle gilt von ihrem `start` bis zum `start` der nächsten.
+
+### 9.3 Zwei neue Gegner
+
+Beide baust du wie die Fledermaus: Rechtsklick auf `gegner.tscn` → **New Inherited Scene**, dann speichern.
+
+**Der Geist** (`geist.tscn`, oberster Knoten heißt `Geist`):
+- **Tempo** `35`, **Leben** `5`, **Erfahrung** `2`
+- **Bild** → **Frame**: `121`
+- Oberster Knoten → **CanvasItem** → **Visibility** → **Modulate**: Alpha (das **A**) auf etwa `180`, damit er durchscheint. Ein Geist eben. 👻
+
+Das `modulate` vom obersten Knoten stört den Treffer-Blitz nicht. Der Blitz setzt das `modulate` vom `Bild`. Godot multipliziert beide, also blitzt der Geist weiß und bleibt trotzdem durchsichtig.
+
+**Der Zyklop** (`zyklop.tscn`, oberster Knoten heißt `Zyklop`):
+- **Tempo** `20`, **Leben** `40`, **Erfahrung** `25`
+- **Bild** → **Frame**: `109`, **Transform** → **Scale**: `2, 2`
+- **CollisionShape2D** → **Position**: y auf `4`
+
+Bleibt noch die Kollisionsform. Die muss doppelt so groß werden, Radius 12 statt 6. **Achtung, Falle:** Die Form ist eine Resource, und alle Gegner teilen sich dieselbe. Änderst du hier einfach den Radius, werden *alle* Spinnen, Fledermäuse und Geister doppelt so dick. Darum erst: **CollisionShape2D** → **Shape** → auf den Pfeil neben der Form → **Make Unique**. Jetzt hat der Zyklop seine eigene Form, und du kannst den **Radius** auf `12` stellen.
+
+Den Zyklop trifft man viel leichter, und mit 40 Leben braucht er eine Weile. Dafür lässt er einen Edelstein mit 25 Erfahrung fallen.
+
+> **Eine Vereinfachung:** Die Horde schiebt alle Gegner auf 12 Pixel Abstand, auch den Zyklop. Kleine Gegner laufen darum ein Stück in ihn hinein. Das sieht man kaum, weil er so groß ist. Für jeden Gegner einen eigenen Abstand zu rechnen würde das Raster aus Kapitel 7 komplizierter machen, ohne dass das Spiel besser wird.
+
+### 9.4 Der Plan für fünf Minuten
+
+Leg einen Ordner `wellen` an. Darin für jede Welle: Rechtsklick → **Create New** → **Resource** → **Welle**, Name wie in der Tabelle. Dann im Inspector ausfüllen:
+
+| Datei | Start | Gegner | Takt | Elite |
+|---|---|---|---|---|
+| `welle_1.tres` | 0 | Spinne | 1.0 | |
+| `welle_2.tres` | 30 | Spinne | 0.5 | |
+| `welle_3.tres` | 60 | Spinne, Fledermaus | 0.35 | Zyklop |
+| `welle_4.tres` | 90 | Fledermaus | 0.25 | |
+| `welle_5.tres` | 120 | Spinne, Geist | 0.25 | Zyklop |
+| `welle_6.tres` | 180 | Spinne, Fledermaus, Geist | 0.15 | Zyklop |
+| `welle_7.tres` | 240 | Spinne, Fledermaus, Geist | 0.08 | Zyklop |
+
+"Spinne" ist `gegner.tscn`. Bei **Gegner** fügst du mit **Add Element** einen Platz hinzu und ziehst die Szene aus dem FileSystem hinein.
+
+Die Wellen 4 und 5 haben denselben Takt, und trotzdem fühlt sich 5 anders an: Ein Geist hält fünf Treffer aus, eine Fledermaus nur einen. Wie schwer eine Welle ist, hängt nicht nur am Takt.
+
+Welle 7 bringt über 12 Gegner pro Sekunde, so viele wie noch nie. Dass das Spiel das schafft, hast du dir in Kapitel 7 verdient.
+
+### 9.5 Die Horde liest die Wellen
+
+In `spawner.gd` fliegen `START_TAKT`, `MIN_TAKT` und `SCHNELLER` raus, und auch `gegner_szenen` und `takt`. Wie schnell es geht, steht jetzt in den Wellen. Stattdessen:
+
+```gdscript
+@export var wellen: Array[Welle] = []
+
+var uhr: Uhr
+var welle_nr := 0   # die wievielte Welle gerade läuft, von 0 an gezählt
+var warten := 0.0
+var schritt := 0   # für halbe Arbeit
+
+
+func _ready() -> void:
+	uhr = get_tree().get_first_node_in_group("uhr")
+
+
+func _process(delta: float) -> void:
+	# Ist die nächste Welle dran?
+	if welle_nr + 1 < wellen.size() and uhr.zeit >= wellen[welle_nr + 1].start:
+		welle_nr += 1
+		if wellen[welle_nr].elite != null:
+			einsetzen(wellen[welle_nr].elite.instantiate())
+
+	warten -= delta
+	# while statt if: Ist der Takt kürzer als ein Bild, kommen mehrere Gegner im selben Bild
+	while warten <= 0:
+		neuer_gegner()
+		warten += wellen[welle_nr].takt
+```
+
+- **Die Horde schaut nur auf die nächste Welle.** Die Wellen stehen nach Startzeit sortiert in der Liste. Ist die Uhr am `start` der nächsten vorbei, ist die dran. Gibt es keine nächste mehr, bleibt die letzte Welle, bis die Uhr abläuft.
+- **Der Elite-Gegner** kommt genau einmal, im selben Moment, in dem die Welle wechselt.
+- **`warten := 0.0`:** Der erste Gegner kommt sofort, danach im Takt der Welle.
+
+`neuer_gegner()` teilt sich in zwei Teile. Der erste sucht aus, *welcher* Gegner kommt, der zweite, *wo*. Den zweiten Teil braucht auch der Elite-Gegner:
+
+```gdscript
+func neuer_gegner() -> void:
+	var szenen := wellen[welle_nr].gegner
+	einsetzen(szenen[randi() % szenen.size()].instantiate())
+
+
+# Setzt einen Gegner an eine zufällige Stelle knapp hinter dem Bildrand
+func einsetzen(gegner: Node2D) -> void:
+	# Eine zufällige Richtung von der Bildmitte aus
+	var alpha := Vector2.from_angle(randf() * TAU)
+```
+
+Ab `# Eine zufällige Richtung` bleibt alles, wie es war, bis zum `add_child(gegner)`. Dein Werkzeug ruft weiter `neuer_gegner()` auf. F1 und F3 bringen jetzt also Gegner aus der Welle, die gerade läuft.
+
+Zum Schluss: `Horde` auswählen und bei **Wellen** im Inspector die sieben Dateien der Reihe nach hineinziehen.
+
+### 9.6 Game Over und Sieg
+
+Bis jetzt lädt der Held die Szene selbst neu, wenn er stirbt. Das ist nicht seine Aufgabe. Er meldet nur noch, dass er gestorben ist, und um das Ende kümmert sich jemand anders.
+
+In `held.gd` ein neues Signal zu den anderen:
+
+```gdscript
+signal gestorben
+```
+
+und in `_physics_process()` wird aus `get_tree().reload_current_scene()`:
+
+```gdscript
+		if leben <= 0:
+			gestorben.emit()
+```
+
+**Der Ende-Bildschirm** sieht aus wie das Level-Up-Menü: dunkler Hintergrund, Text in der Mitte. Darum kopierst du es: Rechtsklick auf `LevelUp` → **Duplicate**, Name `Ende`. Dann:
+- Beim `Ende` das Skript entfernen (Rechtsklick → **Detach Script**). Es bekommt gleich ein eigenes.
+- In `Kasten`: `Wahl3` und `Beschreibung` löschen. `Wahl1` umbenennen in `Werte`, `Wahl2` in `Hinweis`. Beim `Hinweis` als **Text** `OK: nochmal` eintragen.
+- `Titel` bleibt.
+
+**Process Mode** steht schon auf **Always**, weil du `LevelUp` kopiert hast. Das ist wichtig: Der Ende-Bildschirm hält das Spiel an und muss trotzdem merken, dass OK gedrückt wird.
+
+Dazu das Skript `ende.gd` an den Knoten `Ende`:
+
+```gdscript
+extends CanvasLayer
+
+var held: Held
+var uhr: Uhr
+
+
+func _ready() -> void:
+	hide()
+	held = get_tree().get_first_node_in_group("held")
+	uhr = get_tree().get_first_node_in_group("uhr")
+	held.gestorben.connect(zeigen.bind("Game Over"))
+	uhr.abgelaufen.connect(zeigen.bind("Gewonnen!"))
+
+
+func zeigen(titel: String) -> void:
+	$Kasten/Titel.text = titel
+	$Kasten/Werte.text = "Überlebt: %s   Level: %d" % [uhr.als_text(uhr.zeit), held.level]
+	show()
+	get_tree().paused = true
+
+
+func _process(_delta: float) -> void:
+	if visible and Input.is_action_just_pressed("ok"):
+		get_tree().paused = false
+		get_tree().reload_current_scene()
+```
+
+- **`bind()`** ist neu. `zeigen()` will einen Titel, aber die Signale `gestorben` und `abgelaufen` bringen keinen mit. `zeigen.bind("Game Over")` heißt: Ruf `zeigen()` auf und gib dabei immer `"Game Over"` mit. So hängen zwei Signale an derselben Funktion, und jedes bringt seinen eigenen Titel mit. Du hast `bind()` schon einmal benutzt, im Werkzeug für die Monitore.
+- **`uhr.als_text(uhr.zeit)`:** Die Uhr zeigt, was übrig ist. Hier steht, wie lange der Held durchgehalten hat. Deshalb ist `als_text()` eine eigene Funktion, damit beide Stellen sie benutzen können.
+- **`paused = false` vor dem Neuladen:** `reload_current_scene()` baut die Szene neu, aber der Pausen-Schalter gehört zum ganzen Baum und bleibt, wie er ist. Ohne die Zeile stünde das neue Spiel still.
+
+### 9.7 Ein Werkzeug für die Zeit
+
+Fünf Minuten warten, um Welle 7 zu testen, das macht niemand gern. Darum bekommt das Werkzeug eine Taste mehr. In `werkzeug.gd` in die Liste oben:
+
+```gdscript
+# F1 = 100 Gegner mehr, F2 = Testmodus an/aus, F3 = Grenze suchen, F4 = Uhr 30 Sekunden vor
+```
+
+und in das `match`:
+
+```gdscript
+		KEY_F4:
+			var uhr: Uhr = get_tree().get_first_node_in_group("uhr")
+			uhr.zeit += 30.0
+```
+
+Mit F2 und dann zehnmal F4 bist du in fünf Sekunden beim Sieg.
+
+### 9.8 Ausprobieren
+
+**F5**:
+- Oben steht `5:00` und zählt herunter. Im Level-Up-Menü bleibt die Uhr stehen.
+- Erst kommen nur Spinnen, bei `4:00` Fledermäuse und der erste Zyklop. Er ist groß, langsam und hält viel aus.
+- Bei `3:00` kommen die Geister. Man sieht durch sie hindurch, und beim Treffer blitzen sie trotzdem.
+- Lass dich fressen: "Game Over", die Zeit, die du geschafft hast, dein Level. Das Spiel steht still. **OK** startet neu.
+- **F2**, dann **F4** ein paarmal: Die Wellen wechseln schnell durch. Bei `0:00` steht "Gewonnen!".
+- Und dann das Wichtigste: Spiel es ohne Testmodus einmal ganz durch. Schaffst du die fünf Minuten?
+
+### 9.9 Was ist neu?
+
+- **Eine Uhr mit Signal:** Wer wissen will, wann die Zeit um ist, verbindet sich mit `abgelaufen`.
+- **Zeit als Text:** `ceili()`, `floori()`, `%` und `%02d` für eine Uhrzeit wie `4:05`.
+- **Wellen als Resource:** Ein Plan, den man im Inspector ändert statt im Code. Dasselbe Muster wie die Upgrades.
+- **Elite-Gegner:** derselbe Gegner, nur größer und stärker, mit eigenen Werten in einer geerbten Szene.
+- **Make Unique:** Eine Resource, die sich viele teilen, nur für einen Knoten ändern.
+- **Zwei `modulate`, die sich multiplizieren:** eins für den Geist, eins für den Blitz.
+- **`Callable.bind()`:** Ein Signal ruft eine Funktion auf und gibt dabei einen festen Wert mit.
+- **Wer stirbt, meldet es nur:** Der Held sendet `gestorben`, um das Ende kümmert sich der Ende-Bildschirm.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 9
+
+1. **Rote Steine (leicht):** Ein Zyklop lässt einen Stein mit Wert 25 fallen, der genauso grün aussieht wie ein Stein mit Wert 3. Gib Steinen ab Wert 10 eine dritte Farbe, zum Beispiel Rot. 💎
+2. **Wie viele hast du erwischt? (leicht):** Zähl, wie viele Gegner der Held besiegt hat, und zeig es auf dem Ende-Bildschirm unter der Zeit. Überleg vorher: Wo stirbt ein Gegner, und wer sollte die Zahl kennen? 💀
+3. **Der Rekord (mittel):** Merk dir die beste Zeit über einen Neustart hinaus, auch wenn das Spiel ganz geschlossen wird. Steht ein neuer Rekord auf dem Ende-Bildschirm, soll man es sehen. Tipp: `ConfigFile` und ein Pfad, der mit `user://` anfängt. 🏆
+4. **Das große Finale (schwer):** Wenn die Uhr abläuft, steht bis jetzt sofort "Gewonnen!" da. Schöner: Erst sterben alle Gegner, und zwar wie eine Welle, die vom Held nach außen läuft. Wer nah dran ist, stirbt zuerst, wer weit weg ist, zuletzt. Erst danach kommt der Ende-Bildschirm. Tipp: `get_tree().create_timer()` und die Entfernung zum Held. Und denk daran: Sobald der Ende-Bildschirm das Spiel anhält, passiert in der Welt nichts mehr. 🌊
