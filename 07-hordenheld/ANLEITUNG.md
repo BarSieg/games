@@ -15,8 +15,8 @@ Gespielt wird mit dem Controller. Die Tastatur geht natürlich auch.
 4. Edelsteine, Erfahrung und Level-Up ✔
 5. Upgrades als Daten: mehrere Waffen mit Stufen ✔
 6. Hunderte Gegner: Der Profiler zeigt, was bremst ✔
-7. Die Horde wird billiger: Gedränge ohne teure Physik ← *du bist hier*
-8. Game Feel: Wackeln, Blitzen, Zahlen
+7. Die Horde wird billiger: Gedränge ohne teure Physik ✔
+8. Game Feel: Wackeln, Blitzen, Zahlen ← *du bist hier*
 9. Die Uhr: Wellen, Elite-Gegner, Sieg und Game Over
 10. Titelbild, Musik und Web-Export
 
@@ -1754,7 +1754,266 @@ Fertig? Committen und Bescheid geben.
 F3 liefert 1430 nach dem Umbau
 1. 1051 mit Positionabfragen
 2. Mit KAESTCHEN = 48 bricht alles zusammen schon bei 696 Gegner -> möglichst kleine Kästchen lohnen sich
-Mit KAESTCHEN = 6 braucht es 1420 Gegner um Das Limit zu erreichen, die Gegner kommen aber noch dichter aneinander.
-3. Bei dem Wert 0.05 wirkt Schieben gar nicht, alle laufen ineinnader.
-Bei dem Wert 0.5 gehen die Gegner weiter auseinander, aber neben dem Helden sind mehr von denen und sie springen hin und her.
-Bei dem Wert 1.0 Springen alle hin und her.
+Mit KAESTCHEN = 6 braucht es 1420 Gegner um Das Limit zu erreichen, die Gegner kommen aber noch dichter aneinander. Der Grund ist dass bei kleinen Kästchen Gegner näher als gewünschte 12 Pixel kommen können ohne die benachbarte Kästchen zu belegen.
+3. Bei dem Wert 0.05 wirkt Schieben gar nicht, alle laufen ineinnader. Die Spinnen laufen 0,5 Pixel pro Frame, konstant, der Schub ist aber nur 0,6 Pixel pro Frame und nicht konstant. Die Fledermäuse mit der Geschwindigkeiten 0,83 Pixel pro Frame setzten sich gegen so einen Schub einfach durch.
+Bei dem Wert 0.5 gehen die Gegner weiter auseinander, aber neben dem Helden sind mehr von denen und sie springen hin und her. Der Grund ist wenn sie dichter aneinander kommen bekommt jeder mehrere Nachbarn und jeder macht einen Schub. 
+Bei dem Wert 1.0 Springen alle hin und her. Hier kann schon ein einziger Gegner um 12 Pixel schieben und dabei wird ein Gegner einfach durch einen anderen durchgeschoben...
+4. Spart schon ordentlich, das Ende ist bei 1538 Gegnern. Doppelter Schub wirkt zu holprig, also habe ich den Schub ein wenig verkleinert. Die Paare werden nicht verloren, sie werden nur jedes zweites Bild gerechnet. Theoretisch kann es dazu kommen dass ein Monster in einem "weißen" Schritt auf ein "schwarzes" Feld geschoben wird und deswegen in nächstem Bild auch dran kommt.
+
+---
+
+## Kapitel 8: Game Feel: Wackeln, Blitzen, Zahlen
+
+Bis jetzt *funktioniert* das Spiel. Ein Messer trifft, ein Gegner verschwindet, die Zahl im Info-Text steigt. Aber es fühlt sich noch nicht nach etwas an. Ob ein Treffer Spaß macht, hängt an Kleinigkeiten: Der Gegner leuchtet kurz auf, eine Zahl springt heraus, das Bild bebt, der Controller brummt in der Hand. Das nennt man **Game Feel**, und die vielen kleinen Effekte dafür heißen unter Spieleentwicklern liebevoll **Juice**, Saft.
+
+Jeder einzelne Effekt ist klein. Zusammen machen sie aus "funktioniert" ein "fühlt sich gut an". In diesem Spiel gilt dabei eine Regel aus den letzten beiden Kapiteln: **Jeder Effekt passiert tausendmal.** Er muss also billig sein. 🧃
+
+### 8.1 Der Treffer-Blitz
+
+Ein normaler Gegner hält zwei Messer aus. Beim ersten Treffer passiert bis jetzt sichtbar nichts. Ab jetzt leuchtet er kurz weiß auf.
+
+Dafür nimmst du `modulate`. Das kennst du vom Held, der rot wird. `modulate` **multipliziert** jede Farbe im Bild: Rot mit Rot, Grün mit Grün, Blau mit Blau. `Color.WHITE` ist `(1, 1, 1)`, also bleibt alles, wie es ist. Mit `(0.5, 0.5, 0.5)` wird alles halb so hell.
+
+Der Trick: Werte über 1 gehen auch. `Color(4, 4, 4)` macht jede Farbe viermal so hell. Heller als ganz hell geht nicht, also wird fast alles weiß. Nur der schwarze Rand bleibt schwarz, denn 0 × 4 ist immer noch 0. Heraus kommt eine weiße Figur mit dunklem Rand, genau der Blitz, den man aus vielen Spielen kennt.
+
+In `gegner.gd` zwei neue Konstanten zu den anderen:
+
+```gdscript
+const BLITZ_DAUER = 0.1      # so lange leuchtet ein Gegner nach einem Treffer
+const BLITZ_FARBE = Color(4, 4, 4)   # mehr als 1: heller als das Bild selbst, fast weiß
+```
+
+eine neue Variable unter `var held`:
+
+```gdscript
+var blitz := 0.0   # wie lange er noch leuchtet
+```
+
+in `treffer()` beim `else` eine Zeile dazu:
+
+```gdscript
+	else:
+		position += stoss
+		blitz = BLITZ_DAUER
+```
+
+und ganz unten in `_physics_process()`:
+
+```gdscript
+	if blitz > 0.0:
+		blitz -= delta
+		$Bild.modulate = BLITZ_FARBE if blitz > 0.0 else Color.WHITE
+```
+
+Die Farbe wird nur gesetzt, solange der Blitz läuft, und einmal am Ende zurück auf Weiß. Die anderen 990 Gegner prüfen nur `blitz > 0.0` und sind fertig. Billiger geht es nicht.
+
+### 8.2 Sterben mit Schwung
+
+Bis jetzt ist ein Gegner im selben Bild weg, in dem er stirbt. Das ist ehrlich, aber hart. Schöner ist es, wenn er kurz aufleuchtet und zusammenschrumpft.
+
+Dafür darf er aber noch nicht weg sein. Eine Konstante dazu:
+
+```gdscript
+const STERBE_DAUER = 0.2     # so lange schrumpft ein Gegner, bevor er verschwindet
+```
+
+Und in `sterben()` wird aus dem `queue_free()` am Ende:
+
+```gdscript
+	# Noch nicht weg: kurz aufleuchten und zusammenschrumpfen
+	remove_from_group("gegner")   # die Waffen zielen nicht mehr auf ihn
+	collision_layer = 0           # nichts trifft ihn mehr, er tut dem Held nicht mehr weh
+	set_physics_process(false)    # er läuft nicht mehr und flattert nicht mehr
+	$Bild.modulate = BLITZ_FARBE
+	var tween := create_tween()
+	tween.tween_property($Bild, "scale", Vector2.ZERO, STERBE_DAUER)
+	tween.tween_callback(queue_free)
+```
+
+Ein toter Gegner, der noch 0,2 Sekunden herumsteht, muss aus dem Spiel sein, ohne dass er verschwindet:
+
+- **`remove_from_group("gegner")`:** Die Messer-Waffe sucht ihr Ziel in der Gruppe `gegner`. Ohne diese Zeile würde sie weiter auf Leichen werfen. Auch der Info-Text und dein F3 zählen ihn nicht mehr.
+- **`collision_layer = 0`:** Er ist nicht mehr auf Ebene 2. Messer, Glutring, Äxte und die Trefferzone des Helds finden ihn nicht mehr.
+- **`set_physics_process(false)`:** Sein `_physics_process()` läuft nicht mehr. Sonst würde er weiterlaufen, der Blitz würde das Weiß zurücksetzen, und die Fledermaus würde beim Flattern das `scale.x` vom Schrumpfen überschreiben.
+- **Den Tween** kennst du aus dem Kerkerheld: Er schrumpft das Bild in 0,2 Sekunden auf nichts. `tween_callback(queue_free)` kommt danach dran, erst dann ist der Gegner wirklich weg.
+
+Die Horde schiebt ihn in der Zeit übrigens noch herum, er ist ja noch ihr Kind. Das stört nicht, im Gegenteil: Die Lebenden drängen ihn schon beiseite.
+
+### 8.3 Schadenszahlen: tausend Zahlen, ein Knoten
+
+Jetzt sollen Zahlen aus den Gegnern springen. Der erste Gedanke: Bei jedem Treffer ein `Label` bauen, nach oben schweben lassen, wegräumen. Das geht, aber denk an Kapitel 7: Knoten sind teuer. Mit Glutring und Äxten gibt es Hunderte Treffer pro Sekunde. Das wären Hunderte Labels, die gebaut und wieder weggeräumt werden.
+
+Darum machst du es wie die Horde: **Ein einziger Knoten zeichnet alle Zahlen.** Eine Zahl ist kein Knoten, sondern nur ein Eintrag in drei Listen: wo sie ist, welcher Wert, wann sie entstanden ist. Das Zeichnen mit `_draw()` kennst du vom Glutring und von den Edelsteinen.
+
+**Der Knoten:** In `welt.tscn` ein **Node2D** als Kind von `Welt`, Name `Zahlen`. Im Inspector:
+- **Node** → **Groups**: Gruppe `zahlen` dazu, damit die Gegner ihn finden.
+- **CanvasItem** → **Ordering** → **Z Index**: `10`. Die `Welt` sortiert ihre Kinder nach der Höhe auf dem Bildschirm, damit untere Figuren vor oberen stehen. Die Zahlen sollen aber immer ganz vorne sein. Ein höherer Z Index gewinnt immer gegen das Sortieren.
+
+Dazu ein neues Skript `zahlen.gd`:
+
+```gdscript
+extends Node2D
+
+# Alle Schadenszahlen auf einmal, gezeichnet von einem einzigen Knoten.
+# Jede Zahl ist nur ein Eintrag in drei Listen: wo, welcher Wert, wann entstanden.
+
+const DAUER = 0.6        # so lange ist eine Zahl zu sehen
+const STEIGEN = 20.0     # so viele Pixel steigt sie in der Zeit nach oben
+const HOECHSTENS = 300   # mehr Zahlen gleichzeitig nicht, sonst sieht man nichts mehr
+const GROESSE = 16       # Schriftgröße
+const BREITE = 40.0      # in so einem breiten Kasten wird die Zahl mittig geschrieben
+
+var orte := PackedVector2Array()
+var werte := PackedInt32Array()
+var geburt := PackedFloat32Array()
+var zeit := 0.0
+var schrift: Font
+
+
+func _ready() -> void:
+	schrift = load("res://schrift.tres").font
+
+
+func zeigen(ort: Vector2, wert: int) -> void:
+	if orte.size() >= HOECHSTENS:
+		weg_mit_der_aeltesten()
+	orte.append(ort + Vector2(randf_range(-4, 4), -8))
+	werte.append(wert)
+	geburt.append(zeit)
+
+
+func weg_mit_der_aeltesten() -> void:
+	orte.remove_at(0)
+	werte.remove_at(0)
+	geburt.remove_at(0)
+
+
+func _process(delta: float) -> void:
+	zeit += delta
+	# Neue Zahlen kommen hinten dazu, also stehen die ältesten immer vorne
+	while geburt.size() > 0 and zeit - geburt[0] > DAUER:
+		weg_mit_der_aeltesten()
+	queue_redraw()
+
+
+func _draw() -> void:
+	for i in orte.size():
+		var alter := (zeit - geburt[i]) / DAUER   # 0 = neu, 1 = gleich weg
+		var ort := orte[i] + Vector2(-BREITE / 2, -STEIGEN * alter)
+		var farbe := Color(1, 1, 1, 1.0 - alter * alter)
+		var rand := Color(0, 0, 0, farbe.a)
+		draw_string_outline(schrift, ort, str(werte[i]), HORIZONTAL_ALIGNMENT_CENTER, BREITE, GROESSE, 4, rand)
+		draw_string(schrift, ort, str(werte[i]), HORIZONTAL_ALIGNMENT_CENTER, BREITE, GROESSE, farbe)
+```
+
+Was darin steckt:
+
+- **`schrift`:** Die Kenney-Schrift steckt schon in deiner `schrift.tres`, den LabelSettings für Info-Text und Menü. `load(...).font` holt sie da heraus. So sehen die Zahlen aus wie der Rest.
+- **Die drei Listen** gehören zusammen: `orte[5]`, `werte[5]` und `geburt[5]` sind dieselbe Zahl. Darum muss jede Änderung immer alle drei treffen. Deshalb gibt es `weg_mit_der_aeltesten()`, damit man keine vergisst.
+- **Die ältesten stehen vorne.** Jede Zahl lebt gleich lange, und neue kommen immer hinten dazu. Also muss `_process()` nicht alle durchsuchen, sondern nur vorne schauen: Ist die erste zu alt, weg damit, nächste prüfen. Ist die erste noch jung, sind es alle dahinter auch.
+- **`alter`** geht von 0 bis 1. Daraus wird alles andere: Die Zahl steigt um `STEIGEN * alter` Pixel und wird durchsichtiger. `1.0 - alter * alter` hält sie erst lange kräftig und lässt sie am Ende schnell verblassen. Mit `1.0 - alter` würde sie gleichmäßig blasser und man sähe sie schlechter.
+- **`draw_string_outline()`** malt erst einen schwarzen Rand, `draw_string()` dann die weiße Zahl darauf. So liest man sie auf Gras und auf Gegnern.
+- **`BREITE`:** Mittig schreiben geht nur in einem Kasten mit Breite. Der Kasten fängt `BREITE / 2` links vom Ort an, so landet die Mitte genau über dem Gegner.
+- **`randf_range(-4, 4)`:** Trifft der Glutring zehn Gegner nebeneinander, stehen die Zahlen leicht versetzt und nicht als ein Brei.
+- **`HOECHSTENS`:** Wird es zu voll, fliegt die älteste raus. Das hält die Kosten nach oben fest, egal was los ist.
+
+**Die Gegner melden ihre Treffer.** In `gegner.gd` eine Variable unter `var held`:
+
+```gdscript
+var zahlen: Node2D
+```
+
+in `_ready()`:
+
+```gdscript
+	zahlen = get_tree().get_first_node_in_group("zahlen")
+```
+
+und in `treffer()` direkt nach `leben -= schaden`:
+
+```gdscript
+	zahlen.zeigen(global_position, schaden)
+```
+
+Die Zahl kommt vor dem `if`, damit auch der tödliche Treffer seine Zahl bekommt.
+
+### 8.4 Das Bild bebt, der Controller brummt
+
+Bis jetzt wird der Held rot, wenn ihn Gegner beißen. Das sieht man, aber man spürt es nicht. Jetzt bebt das Bild, und der Controller brummt in der Hand. Je mehr Gegner beißen, desto stärker.
+
+In `held.gd` drei Konstanten zu den anderen:
+
+```gdscript
+const BEBEN_PRO_GEGNER = 0.25   # so viel Beben bringt jeder Gegner, der den Held berührt
+const BEBEN_TEMPO = 3.0         # so schnell steigt und fällt das Beben, pro Sekunde
+const BEBEN_PIXEL = 4.0         # so weit wackelt das Bild bei vollem Beben
+```
+
+eine Variable unter `stufen`:
+
+```gdscript
+var beben := 0.0   # 0 = ruhig, 1 = volles Beben
+```
+
+und ganz unten in `_physics_process()`, nach der Zeile mit `modulate`:
+
+```gdscript
+	# Je mehr Gegner beißen, desto mehr bebt es
+	var ziel := 0.0 if testmodus else minf(treffer * BEBEN_PRO_GEGNER, 1.0)
+	beben = move_toward(beben, ziel, BEBEN_TEMPO * delta)
+	var staerke := beben * beben   # zum Quadrat: wenig Beben bleibt fast ruhig, viel Beben wird heftig
+	$Camera2D.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * staerke * BEBEN_PIXEL
+	if staerke > 0.0:
+		Input.start_joy_vibration(0, staerke, staerke * staerke, 0.1)
+```
+
+Schritt für Schritt:
+
+- **`ziel`:** Ein Gegner bringt ein Viertel, ab vier Gegnern ist es das volle Beben. `minf` hält es bei höchstens 1. Im Testmodus bebt nichts, sonst wackelt dir beim Messen das Bild.
+- **`move_toward()`:** `beben` springt nicht sofort aufs Ziel, sondern läuft hin, höchstens `BEBEN_TEMPO` pro Sekunde. Beißt keiner mehr, ist das Ziel 0, und das Beben klingt in einer Drittelsekunde aus.
+- **Zum Quadrat:** Ein Gegner gibt `beben` 0,25, die `staerke` ist dann nur 0,06, kaum ein Zittern. Vier Gegner geben 1 × 1 = 1, volles Beben. Das Quadrat macht kleine Werte sehr klein und lässt große groß. So bebt es nur, wenn es wirklich gefährlich wird. Das ist ein bekannter Trick für Bildschirmwackeln: Wer bei jedem kleinen Treffer heftig wackelt, nervt nach zehn Sekunden.
+- **`offset`** verschiebt nur das Bild der Kamera, nicht die Kamera selbst. Ihre Position und das weiche Folgen bleiben, wie sie sind. Jeden Schritt kommt ein neuer zufälliger Versatz, das ergibt das Zittern.
+- **`Input.start_joy_vibration()`** lässt den Controller brummen: welcher Controller (`0` ist der erste), der **schwache** Motor (hohes Surren), der **starke** Motor (tiefes Rumpeln), wie viele Sekunden. Der starke bekommt noch einmal das Quadrat, er setzt also erst bei richtig viel Gefahr ein.
+- **0,1 Sekunden** sind kurz, aber jeder Schritt startet das Brummen neu. Hört das Beben auf, startet keiner mehr neu, und nach 0,1 Sekunden ist Ruhe. Darum muss man es nie ausschalten. Ist kein Controller angeschlossen, passiert einfach nichts.
+
+> **Wackeln ist nicht für jeden schön.** Manchen Leuten wird von Bildschirmwackeln schlecht, andere mögen kein Brummen. Gute Spiele haben dafür einen Schalter in den Optionen. Den bekommt der Hordenheld später. Bis dahin schaltet `BEBEN_PIXEL = 0` das Wackeln aus.
+
+### 8.5 Was kostet der Saft?
+
+Gemessen wie in Kapitel 7, 1000 Gegner, alle Waffen voll ausgebaut, Zeit pro Schritt im Schnitt:
+
+| | Zeit pro Schritt |
+|---|---|
+| Kapitel 7 | 9,2 ms |
+| Kapitel 8, mit Blitz, Schrumpfen, Zahlen und Beben | **10 ms** |
+
+Alles zusammen kostet weniger als eine Millisekunde, bei mehreren Hundert Zahlen gleichzeitig. Die Anzeige `Physik` sprang in meinen Messungen sogar etwas weniger hoch als vorher. Ein Teil der Arbeit beim Sterben verteilt sich jetzt auf die 0,2 Sekunden, statt alles im selben Schritt zu passieren.
+
+### 8.6 Ausprobieren
+
+**F5**:
+- Ein normaler Gegner blitzt beim ersten Messer weiß auf, beim zweiten schrumpft er weg.
+- Über jedem Treffer springt eine Zahl hoch und verblasst. Mit dem Glutring regnet es Einsen.
+- Lass dich von ein, zwei Gegnern beißen: Kaum ein Zittern. Steh mitten in der Horde: Das Bild bebt, und der Controller brummt. Geh raus: Nach einer Drittelsekunde ist Ruhe.
+- **F2** (Testmodus): kein Beben, kein Brummen.
+- Ein toter Gegner tut nicht mehr weh, und die Messer fliegen nicht mehr auf ihn.
+- 1000 Gegner mit F1: `Physik` bleibt fast wie vorher.
+
+### 8.7 Was ist neu?
+
+- **Game Feel und Juice:** viele kleine Rückmeldungen, die aus "funktioniert" ein "fühlt sich gut an" machen.
+- **`modulate` über 1:** Farben heller als das Bild selbst, für den weißen Treffer-Blitz.
+- **Sterben in Ruhe:** `remove_from_group()`, `collision_layer = 0` und `set_physics_process(false)` nehmen einen Knoten aus dem Spiel, ohne dass er verschwindet. Der Tween räumt ihn danach weg.
+- **Ein Knoten zeichnet alles:** `draw_string()` und `draw_string_outline()`, mehrere Listen, die zusammengehören.
+- **Die ältesten stehen vorne:** Wenn alle gleich lange leben, muss man nur vorne aufräumen.
+- **`Camera2D.offset`** für Bildschirmwackeln, **zum Quadrat** für ein Beben, das nur bei Gefahr heftig wird.
+- **`Input.start_joy_vibration()`:** Brummen mit schwachem und starkem Motor, kurz und immer wieder neu gestartet.
+
+Fertig? Committen und Bescheid geben.
+
+### Übungsaufgaben zu Kapitel 8
+
+1. **Die Fledermaus quetscht sich (leicht):** Wenn ein Ballon breiter wird, wird er auch flacher. Lass beim Flattern `$Bild.scale.y` genau andersherum gehen wie `scale.x`: Wird die Fledermaus breiter, wird sie flacher. Probier, wie stark es sein darf, bevor es albern aussieht. Das nennt man **Squash and Stretch**, Quetschen und Strecken. 🦇
+2. **Wie viele Zahlen verträgt das Auge? (leicht):** Stell `HOECHSTENS` auf `30`, dann auf `3000`, und spiel jeweils mit dem Glutring. Wann sieht man mehr, wann weniger? Schau auf `Physik` und auf die FPS. Warum ändert sich `Physik` kaum, selbst bei 3000 Zahlen? Tipp: In welchen Funktionen arbeiten die Zahlen? Im Profiler findest du sie unter `zahlen.gd`. 🔢
+3. **Die Kamera schaut voraus (mittel):** Wer nach rechts läuft, will sehen, was rechts kommt. Schieb die Kamera ein Stück in die Laufrichtung, zum Beispiel 30 Pixel, und zwar weich, nicht mit einem Sprung. Tipp: `lerp()`. Aber nimm dafür nicht `offset`. Warum nicht? 🎥
+4. **Kritische Treffer (schwer):** Jeder zehnte Treffer soll doppelten Schaden machen. Seine Zahl soll gelb und größer sein, damit man es sieht. Dafür braucht `zeigen()` einen dritten Wert, und die Zahlen brauchen eine vierte Liste. Pass auf, dass die vierte Liste überall mitkommt, wo die anderen drei sich ändern. 💥

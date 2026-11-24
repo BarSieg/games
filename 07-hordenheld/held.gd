@@ -9,6 +9,9 @@ const WACKELN = 15.0      # so schnell wackelt er beim Laufen hin und her
 const WACKEL_WINKEL = 0.15   # so weit, in Radiant (0.15 sind etwa 9 Grad)
 const MAX_LEBEN = 100.0
 const SCHADEN = 10.0      # so viel Leben kostet ein Gegner pro Sekunde, solange er den Held berührt
+const BEBEN_PRO_GEGNER = 0.25   # so viel Beben bringt jeder Gegner, der den Held berührt
+const BEBEN_TEMPO = 3.0         # so schnell steigt und fällt das Beben, pro Sekunde
+const BEBEN_PIXEL = 4.0         # so weit wackelt das Bild bei vollem Beben
 
 @export var upgrades: Array[Upgrade] = []
 
@@ -22,6 +25,7 @@ var leben := MAX_LEBEN:
 		leben = clampf(wert, 0, MAX_LEBEN)
 		$Lebensbalken.value = leben
 var stufen: Dictionary[Upgrade, int] = {}   # wie oft welches Upgrade schon gewählt wurde
+var beben := 0.0   # 0 = ruhig, 1 = volles Beben
 
 # zum Testen
 var testmodus := false   # schaltet das Werkzeug um
@@ -70,6 +74,13 @@ func _physics_process(delta: float) -> void:
 		if leben <= 0:
 			get_tree().reload_current_scene()
 	$Bild.modulate = Color(1, 0.4, 0.4) if treffer > 0 else Color.WHITE
+	# Je mehr Gegner beißen, desto mehr bebt es
+	var ziel := 0.0 if testmodus else minf(treffer * BEBEN_PRO_GEGNER, 1.0)
+	beben = move_toward(beben, ziel, BEBEN_TEMPO * delta)
+	var staerke := beben * beben   # zum Quadrat: wenig Beben bleibt fast ruhig, viel Beben wird heftig
+	$Camera2D.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * staerke * BEBEN_PIXEL
+	if staerke > 0.0:
+		Input.start_joy_vibration(0, staerke, staerke * staerke, 0.1)
 
 
 func erfahrung_dazu(wert: int) -> void:

@@ -7,6 +7,7 @@ const SCHNELLER = 0.97  # nach jedem Gegner wird der Takt 3 % kürzer
 const PLATZ = 12.0       # so viel Abstand will jeder Gegner zu jedem anderen
 const KAESTCHEN = 12.0   # so groß ist ein Kästchen im Raster, nie kleiner als PLATZ
 const SCHIEBEN = 0.15    # so viel von der Überlappung wird pro Schritt weggeschoben
+const SCHUBBEGRENZUNG = 6.0   # nicht mehr als das, sonst schieben sich die Gegner durcheinander
 # das eigene Kästchen, rechts daneben und die drei darunter
 const HALBE_NACHBARN = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1)]
 
@@ -76,7 +77,7 @@ func platz_machen() -> void:
 
 	# 4. Alle auf einmal verschieben
 	for i in gegner.size():
-		gegner[i].position += schub[i]
+		gegner[i].position += schub[i].limit_length(SCHUBBEGRENZUNG)
 
 
 func neuer_gegner() -> void:

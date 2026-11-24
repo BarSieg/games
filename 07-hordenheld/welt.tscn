@@ -11,6 +11,7 @@
 [ext_resource type="LabelSettings" uid="uid://dyx3fx3jicmgl" path="res://schrift.tres" id="8_16niv"]
 [ext_resource type="Script" uid="uid://dj57bqsgr3nrl" path="res://level_up.gd" id="10_rf10p"]
 [ext_resource type="Script" uid="uid://da8gfrrqycdoc" path="res://werkzeug.gd" id="11_x3g4k"]
+[ext_resource type="Script" uid="uid://bm17u04x7ngbt" path="res://zahlen.gd" id="12_we0m5"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s017u"]
 bg_color = Color(0.026721502, 0.026721502, 0.026721483, 1)
@@ -111,3 +112,7 @@ horizontal_alignment = 1
 
 [node name="Werkzeug" type="Node2D" parent="." unique_id=1649398573]
 script = ExtResource("11_x3g4k")
+
+[node name="Zahlen" type="Node2D" parent="." unique_id=1264724132 groups=["zahlen"]]
+z_index = 10
+script = ExtResource("12_we0m5")
