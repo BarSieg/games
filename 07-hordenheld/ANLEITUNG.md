@@ -2017,3 +2017,10 @@ Fertig? Committen und Bescheid geben.
 2. **Wie viele Zahlen verträgt das Auge? (leicht):** Stell `HOECHSTENS` auf `30`, dann auf `3000`, und spiel jeweils mit dem Glutring. Wann sieht man mehr, wann weniger? Schau auf `Physik` und auf die FPS. Warum ändert sich `Physik` kaum, selbst bei 3000 Zahlen? Tipp: In welchen Funktionen arbeiten die Zahlen? Im Profiler findest du sie unter `zahlen.gd`. 🔢
 3. **Die Kamera schaut voraus (mittel):** Wer nach rechts läuft, will sehen, was rechts kommt. Schieb die Kamera ein Stück in die Laufrichtung, zum Beispiel 30 Pixel, und zwar weich, nicht mit einem Sprung. Tipp: `lerp()`. Aber nimm dafür nicht `offset`. Warum nicht? 🎥
 4. **Kritische Treffer (schwer):** Jeder zehnte Treffer soll doppelten Schaden machen. Seine Zahl soll gelb und größer sein, damit man es sieht. Dafür braucht `zeigen()` einen dritten Wert, und die Zahlen brauchen eine vierte Liste. Pass auf, dass die vierte Liste überall mitkommt, wo die anderen drei sich ändern. 💥
+
+### Antworten zu Kapitel 8
+
+2. 3000 ist unmöglich zu erreichen, etwa 50 Zahlen sehe ich. Physik betrifft es kaum, weil alle Aufwände linear und auch begrenzt sind. Außerdem, wird es in einer anderen Funktion berechnet: _process() und nicht in _physics_process()
+3. Offset funktioniert gar nicht. Der wird für den Beben verwendet. Kein Beben - kein Offset. Die Position funktionert gut, weil die Kamerageschwindigkeit bereits begrenzt ist.
+
+---

@@ -12,6 +12,7 @@ const SCHADEN = 10.0      # so viel Leben kostet ein Gegner pro Sekunde, solange
 const BEBEN_PRO_GEGNER = 0.25   # so viel Beben bringt jeder Gegner, der den Held berührt
 const BEBEN_TEMPO = 3.0         # so schnell steigt und fällt das Beben, pro Sekunde
 const BEBEN_PIXEL = 4.0         # so weit wackelt das Bild bei vollem Beben
+const KAMERA_VORAUSSCHAU = 64   # so viel weiter sieht man in die Richtung, in die der Held läuft
 
 @export var upgrades: Array[Upgrade] = []
 
@@ -66,6 +67,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		lauf_zeit = 0.0
 		$Bild.rotation = 0.0
+	$Camera2D.position = richtung * KAMERA_VORAUSSCHAU
 
 	# Wie viele Gegner berühren mich gerade?
 	var treffer: int = $Trefferzone.get_overlapping_bodies().size()
@@ -74,6 +76,7 @@ func _physics_process(delta: float) -> void:
 		if leben <= 0:
 			get_tree().reload_current_scene()
 	$Bild.modulate = Color(1, 0.4, 0.4) if treffer > 0 else Color.WHITE
+
 	# Je mehr Gegner beißen, desto mehr bebt es
 	var ziel := 0.0 if testmodus else minf(treffer * BEBEN_PRO_GEGNER, 1.0)
 	beben = move_toward(beben, ziel, BEBEN_TEMPO * delta)

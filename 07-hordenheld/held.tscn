@@ -50,6 +50,7 @@ shape = SubResource("CircleShape2D_s017u")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=15103216]
 position_smoothing_enabled = true
+position_smoothing_speed = 4.0
 
 [node name="Trefferzone" type="Area2D" parent="." unique_id=456692263]
 collision_layer = 0

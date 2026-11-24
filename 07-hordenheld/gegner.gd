@@ -42,8 +42,10 @@ func _physics_process(delta: float) -> void:
 	lauf_zeit += delta
 	if flattern:
 		$Bild.scale.x = 1.0 + sin(lauf_zeit * FLUEGELSCHLAG) * FLUEGEL_BREITE
+		$Bild.scale.y = 1.0 - sin(lauf_zeit * FLUEGELSCHLAG) * FLUEGEL_BREITE / 2
 	else:
 		$Bild.rotation = sin(lauf_zeit * WACKELN) * WACKEL_WINKEL
+
 	if blitz > 0.0:
 		blitz -= delta
 		$Bild.modulate = BLITZ_FARBE if blitz > 0.0 else Color.WHITE
@@ -52,8 +54,11 @@ func _physics_process(delta: float) -> void:
 func treffer(schaden: int, stoss: Vector2 = Vector2.ZERO) -> void:
 	if leben <= 0:
 		return   # schon tot, wartet nur noch aufs Wegräumen
+	var krit := randf() < 0.1
+	if krit:
+		schaden *= 2
 	leben -= schaden
-	zahlen.zeigen(global_position, schaden)
+	zahlen.zeigen(global_position, schaden, krit)
 	if leben <= 0:
 		sterben()
 	else:
@@ -67,6 +72,7 @@ func sterben() -> void:
 	beute.position = global_position
 	# call_deferred: erst am Ende des Bildes einfügen, siehe unten
 	get_tree().current_scene.add_child.call_deferred(beute)
+
 	# Noch nicht weg: kurz aufleuchten und zusammenschrumpfen
 	remove_from_group("gegner")   # die Waffen zielen nicht mehr auf ihn
 	collision_layer = 0           # nichts trifft ihn mehr, er tut dem Held nicht mehr weh
