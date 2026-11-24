@@ -10,6 +10,6 @@ beschreibung = "Brennt Gegner rund um dich, jede Stufe größer"
 max_stufe = 4
 knoten = "Glutring/CollisionShape2D"
 eigenschaft = "shape:radius"
-mal = 1.25
+mal = 1.15
 neue_waffe = ExtResource("1_sqhid")
 metadata/_custom_type_script = "uid://dixocy4w1i0s3"

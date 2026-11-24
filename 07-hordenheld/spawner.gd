@@ -14,6 +14,7 @@ var uhr: Uhr
 var welle_nr := 0   # die wievielte Welle gerade läuft, von 0 an gezählt
 var warten := 0.0
 var schritt := 0   # für halbe Arbeit
+var leben_mal = 1.0
 
 
 func _ready() -> void:
@@ -24,6 +25,7 @@ func _process(delta: float) -> void:
 	# Ist die nächste Welle dran?
 	if welle_nr + 1 < wellen.size() and uhr.zeit >= wellen[welle_nr + 1].start:
 		welle_nr += 1
+		leben_mal = wellen[welle_nr].leben_mal
 		if wellen[welle_nr].elite != null:
 			einsetzen(wellen[welle_nr].elite.instantiate())
 
@@ -117,4 +119,5 @@ func einsetzen(gegner: Node2D) -> void:
 
 	# Den näheren Schnittpunkt nehmen, plus ABSTAND hinter den Bildschirmrand
 	gegner.position = get_viewport().get_camera_2d().get_screen_center_position() + (minf(tx, ty) + ABSTAND) * alpha
+	gegner.leben = ceili(gegner.leben * leben_mal)
 	add_child(gegner)

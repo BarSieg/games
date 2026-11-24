@@ -7,8 +7,9 @@ radius = 12.0
 
 [node name="Zyklop" unique_id=1601739021 instance=ExtResource("1_f2xl8")]
 tempo = 20.0
-leben = 40
+leben = 80
 erfahrung = 25
+rueckstoss = 0.0
 
 [node name="Bild" parent="." index="0" unique_id=172911976]
 scale = Vector2(2, 2)

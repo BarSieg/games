@@ -12,6 +12,7 @@ collision_layer = 4
 collision_mask = 2
 monitorable = false
 script = ExtResource("1_lut7t")
+takt = 1.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=151249780]
 shape = SubResource("CircleShape2D_s017u")

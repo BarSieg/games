@@ -10,5 +10,6 @@ script = ExtResource("1_0wlrv")
 start = 120
 gegner = Array[PackedScene]([ExtResource("2_ak6up"), ExtResource("3_nyy44")])
 takt = 0.25
+leben_mal = 2.0
 elite = ExtResource("1_k50kf")
 metadata/_custom_type_script = "uid://ckcs81n8prvvj"

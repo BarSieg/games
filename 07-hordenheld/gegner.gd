@@ -15,6 +15,7 @@ const STERBE_DAUER = 0.2     # so lange schrumpft ein Gegner, bevor er verschwin
 @export var leben := 2      # so viele Treffer hält er aus
 @export var beute_szene: PackedScene   # das bleibt liegen, wenn er stirbt
 @export var erfahrung := 1             # so viel ist die Beute wert
+@export var rueckstoss := 1.0
 
 var held: Node2D
 var zahlen: Node2D
@@ -62,7 +63,7 @@ func treffer(schaden: int, stoss: Vector2 = Vector2.ZERO) -> void:
 	if leben <= 0:
 		sterben()
 	else:
-		position += stoss
+		position += stoss * rueckstoss
 		blitz = BLITZ_DAUER
 
 

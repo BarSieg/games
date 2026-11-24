@@ -2,7 +2,7 @@ extends Area2D
 
 const TEMPO = 200.0        # Pixel pro Sekunde
 const LEBENSDAUER = 1.5    # Sekunden, dann ist das Messer weg, auch wenn es nichts getroffen hat
-const SCHUB = 3.0          # schubst den Gegner so viele Pixel weg
+const SCHUB = 2.0          # schubst den Gegner so viele Pixel weg
 
 var richtung := Vector2.RIGHT   # setzt die Waffe, bevor das Messer in die Welt kommt
 var schaden := 1                # das auch
