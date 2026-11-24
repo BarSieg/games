@@ -9,6 +9,7 @@ const FLUEGEL_BREITE = 0.3   # so stark wird das Bild schmaler und breiter (0.3 
 const BLITZ_DAUER = 0.1      # so lange leuchtet ein Gegner nach einem Treffer
 const BLITZ_FARBE = Color(4, 4, 4)   # mehr als 1: heller als das Bild selbst, fast weiß
 const STERBE_DAUER = 0.2     # so lange schrumpft ein Gegner, bevor er verschwindet
+const EXPLOSIONSTEMPO = 150  # Pixel pro Sekunde
 
 @export var flattern := false   # an: flattern statt wackeln
 @export var tempo := 30.0   # Pixel pro Sekunde, langsamer als der Held
@@ -68,6 +69,7 @@ func treffer(schaden: int, stoss: Vector2 = Vector2.ZERO) -> void:
 
 
 func sterben() -> void:
+	$"..".kills += 1
 	var beute := beute_szene.instantiate()
 	beute.wert = erfahrung
 	beute.position = global_position
@@ -82,3 +84,19 @@ func sterben() -> void:
 	var tween := create_tween()
 	tween.tween_property($Bild, "scale", Vector2.ZERO, STERBE_DAUER)
 	tween.tween_callback(queue_free)
+
+
+func platt() -> void:
+	$Bild.modulate = BLITZ_FARBE
+	var tween := create_tween()
+	tween.tween_property($Bild, "scale:y", 0, STERBE_DAUER)
+	tween.tween_callback(queue_free)
+
+func explodieren() -> void:
+	if not is_in_group("gegner"):
+		return   # stirbt sowieso schon
+	set_physics_process(false)   # stehen bleiben: kein Laufen, kein Teleportieren
+	collision_layer = 0          # tut dem Held nichts mehr, keine Waffe trifft ihn mehr
+	remove_from_group("gegner")  # kein Messer zielt mehr auf ihn
+	$Bild.modulate = Color.WHITE
+	get_tree().create_timer((held.global_position - global_position).length() / EXPLOSIONSTEMPO, false, false).timeout.connect(platt)

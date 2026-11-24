@@ -24,6 +24,12 @@ const FARBEN_2 = {   # grün, für Steine ab wert 3
 	"+": Color(0.9, 1.0, 0.75),   # Glanz
 }
 
+const FARBEN_3 = {   # rot, für Steine ab wert 10
+	"o": Color(0.3, 0.05, 0.1),   # dunkler Rand
+	"#": Color(1.0, 0.2, 0.5),   # rot
+	"+": Color(1.0, 0.75, 0.9),   # Glanz
+}
+
 var wert := 1             # so viel Erfahrung bringt er, setzt der Gegner
 var ziel: Node2D = null   # wohin er fliegt, setzt der Magnet
 var tempo := -60.0        # negativ: erst ein kleiner Hüpfer weg vom Held, dann hin
@@ -32,7 +38,7 @@ var tempo := -60.0        # negativ: erst ein kleiner Hüpfer weg vom Held, dann
 func _draw() -> void:
 	# Die Mitte vom Bild soll auf der Position vom Stein liegen
 	var mitte := Vector2i(BILD[0].length(), BILD.size()) / 2
-	var farben: Dictionary = FARBEN_1 if wert < 3 else FARBEN_2
+	var farben: Dictionary = FARBEN_1 if wert < 3 else (FARBEN_2 if wert < 10 else FARBEN_3)
 	for y in BILD.size():
 		for x in BILD[y].length():
 			var zeichen: String = BILD[y][x]

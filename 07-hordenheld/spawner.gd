@@ -15,10 +15,12 @@ var welle_nr := 0   # die wievielte Welle gerade läuft, von 0 an gezählt
 var warten := 0.0
 var schritt := 0   # für halbe Arbeit
 var leben_mal = 1.0
+var kills = 0
 
 
 func _ready() -> void:
 	uhr = get_tree().get_first_node_in_group("uhr")
+	uhr.abgelaufen.connect(explosion)
 
 
 func _process(delta: float) -> void:
@@ -121,3 +123,11 @@ func einsetzen(gegner: Node2D) -> void:
 	gegner.position = get_viewport().get_camera_2d().get_screen_center_position() + (minf(tx, ty) + ABSTAND) * alpha
 	gegner.leben = ceili(gegner.leben * leben_mal)
 	add_child(gegner)
+
+
+# Explodiere alle Gegner am Ende der Runde
+func explosion() -> void:
+	set_process(false)
+	set_physics_process(false)
+	for monster in get_children():
+		monster.explodieren()

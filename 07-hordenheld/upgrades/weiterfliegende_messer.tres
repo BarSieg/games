@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_lnvdf")
 titel = "Weiter werfen"
-beschreibung = "Messer fliegen 30cm weiter"
+beschreibung = "Wirft schon auf Gegner, die weiter weg sind"
 max_stufe = 3
 knoten = "Waffe"
 eigenschaft = "reichweite"
