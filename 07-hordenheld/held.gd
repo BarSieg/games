@@ -4,6 +4,7 @@ extends CharacterBody2D
 signal erfahrung_geaendert(erfahrung: int, ziel: int)
 signal level_auf(level: int)
 signal gestorben
+signal pause
 
 const STARTTEMPO = 70.0        # Pixel pro Sekunde
 const WACKELN = 15.0      # so schnell wackelt er beim Laufen hin und her
@@ -62,11 +63,11 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if feiert:
 		return   # wer feiert, läuft nicht mehr
-
+	if Input.is_action_just_pressed("pause"):
+		pause.emit()
 	var richtung := Input.get_vector("links", "rechts", "hoch", "runter")
 	velocity = richtung * tempo
 	move_and_slide()
-
 	if richtung.x != 0:
 		$Bild.flip_h = richtung.x < 0
 	# Ein Bild pro Figur reicht: Beim Laufen wackelt sie hin und her
@@ -92,8 +93,8 @@ func _physics_process(delta: float) -> void:
 	var staerke := beben * beben   # zum Quadrat: wenig Beben bleibt fast ruhig, viel Beben wird heftig
 	if Optionen.beben:
 		$Camera2D.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * staerke * BEBEN_PIXEL
-	if staerke > 0.0 and Optionen.brummen:
-		Input.start_joy_vibration(0, staerke, staerke * staerke, 0.1)
+	if staerke > 0.0:
+		Optionen.brummen_lassen(staerke, staerke * staerke, 0.1)
 
 
 # Die Zeit ist um: stehen bleiben und vor Freude hüpfen

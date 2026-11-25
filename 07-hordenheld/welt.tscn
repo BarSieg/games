@@ -20,12 +20,22 @@
 [ext_resource type="Script" uid="uid://bm17u04x7ngbt" path="res://zahlen.gd" id="12_we0m5"]
 [ext_resource type="Script" uid="uid://bqwjj6k77h4m4" path="res://uhr.gd" id="16_vxi10"]
 [ext_resource type="Script" uid="uid://dedddoe3sbd5q" path="res://ende.gd" id="18_ig1nu"]
+[ext_resource type="Script" uid="uid://dcb3nh5k5j1uf" path="res://pause.gd" id="19_886hs"]
+[ext_resource type="AudioStream" uid="uid://byh57wd8oxjb8" path="res://fanfare.wav" id="19_ac2op"]
+[ext_resource type="FontFile" uid="uid://bkaclb4h3km7" path="res://kenney/Kenney Pixel.ttf" id="20_i7xpl"]
+[ext_resource type="AudioStream" uid="uid://dg5awv4clxvnp" path="res://plopp.wav" id="24_rqgnt"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s017u"]
 bg_color = Color(0.026721502, 0.026721502, 0.026721483, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0orc7"]
 bg_color = Color(0.2, 0.5, 1, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_ac2op"]
+font = ExtResource("20_i7xpl")
+font_size = 32
+font_color = Color(0, 0, 0, 1)
+outline_size = 4
 
 [node name="Welt" type="Node2D" unique_id=1926768728]
 y_sort_enabled = true
@@ -174,9 +184,62 @@ text = "OK: nochmal   Start: Titelbild"
 label_settings = ExtResource("8_16niv")
 horizontal_alignment = 1
 
+[node name="Fanfare" type="AudioStreamPlayer" parent="Ende" unique_id=1957966205]
+stream = ExtResource("19_ac2op")
+bus = &"Musik"
+
+[node name="Pause" type="CanvasLayer" parent="." unique_id=1203284443]
+process_mode = 3
+layer = 10
+script = ExtResource("19_886hs")
+
+[node name="Abdunkeln" type="ColorRect" parent="Pause" unique_id=1637203347]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.07058824, 0.07058824, 0.07058824, 0.5882353)
+
+[node name="Titel" type="Label" parent="Pause" unique_id=1464459775]
+offset_top = 50.0
+offset_right = 384.0
+offset_bottom = 74.0
+text = "P A U S E"
+label_settings = SubResource("LabelSettings_ac2op")
+horizontal_alignment = 1
+
+[node name="Kasten" type="VBoxContainer" parent="Pause" unique_id=1685725403]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -70.0
+offset_top = -24.0
+offset_right = 70.0
+offset_bottom = 59.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 6
+
+[node name="Menue" type="Label" parent="Pause/Kasten" unique_id=1070396109]
+layout_mode = 2
+text = "Weiter
+Musik
+Beben
+Brummen
+Zum Titelbild"
+label_settings = ExtResource("8_16niv")
+horizontal_alignment = 1
+
 [node name="Werkzeug" type="Node2D" parent="." unique_id=1649398573]
 script = ExtResource("11_x3g4k")
 
 [node name="Zahlen" type="Node2D" parent="." unique_id=1264724132 groups=["zahlen"]]
 z_index = 10
 script = ExtResource("12_we0m5")
+
+[node name="Plopp" type="AudioStreamPlayer" parent="." unique_id=682707092 groups=["plopp"]]
+stream = ExtResource("24_rqgnt")
+max_polyphony = 4

@@ -36,6 +36,7 @@ func zeigen(titel: String) -> void:
 	Musik.stoppen()
 	var kills: int = $"../Horde".kills
 	if titel == GEWONNEN:
+		$Fanfare.play()
 		if kills > rekord:
 			rekord = kills
 			speichern()

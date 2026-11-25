@@ -23,11 +23,13 @@ var zahlen: Node2D
 var blitz := 0.0   # wie lange er noch leuchtet
 # Jeder Gegner fängt an einer anderen Stelle der Wackel-Welle an. Sonst wackeln alle im Gleichtakt.
 var lauf_zeit := randf() * TAU
+var plopp: AudioStreamPlayer
 
 
 func _ready() -> void:
 	held = get_tree().get_first_node_in_group("held")
 	zahlen = get_tree().get_first_node_in_group("zahlen")
+	plopp = get_tree().get_first_node_in_group("plopp")
 
 
 func _physics_process(delta: float) -> void:
@@ -54,6 +56,7 @@ func _physics_process(delta: float) -> void:
 
 
 func treffer(schaden: int, stoss: Vector2 = Vector2.ZERO) -> void:
+	plopp.play()
 	if leben <= 0:
 		return   # schon tot, wartet nur noch aufs Wegräumen
 	var krit := randf() < 0.1
@@ -88,6 +91,7 @@ func sterben() -> void:
 
 func platt() -> void:
 	$Bild.modulate = BLITZ_FARBE
+	plopp.play()
 	var tween := create_tween()
 	tween.tween_property($Bild, "scale:y", 0, STERBE_DAUER)
 	tween.tween_callback(queue_free)

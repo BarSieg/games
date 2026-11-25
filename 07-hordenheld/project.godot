@@ -13,6 +13,8 @@ config_version=5
 config/name="Hordenheld"
 run/main_scene="uid://cnwcclmpbgijo"
 config/features=PackedStringArray("4.7", "GL Compatibility")
+boot_splash/bg_color=Color(0.7411765, 0.42352942, 0.2901961, 1)
+boot_splash/image="uid://dyxukvg7573nu"
 config/icon="uid://dyxukvg7573nu"
 boot_splash/icon="res://icon.svg"
 

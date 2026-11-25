@@ -10,15 +10,20 @@ const ERKLAERUNG = {
 	"Brummen": "Der Controller brummt, wenn Gegner dich beißen.",
 	"Vollbild": "Im Fenster oder auf dem ganzen Bildschirm.",
 }
+const DATEI = "user://hordenheld.cfg"
 
 var eintraege: Array[String] = ["Spielen", "Musik", "Beben", "Brummen", "Vollbild"]
 var auswahl := 0
+var rekord := 0
 
 
 func _ready() -> void:
 	Musik.spielen(Musik.TITEL)
 	if OS.has_feature("web"):
 		eintraege.erase("Vollbild")   # im Browser gibt es dafür F11
+	rekord_laden()
+	$Rekord.text = "Rekord: %d Monster" % rekord
+	$Rekord.visible = rekord > 0
 	anzeigen()
 
 
@@ -50,7 +55,7 @@ func aendern(schritt: int) -> void:
 		"Brummen":
 			Optionen.brummen = not Optionen.brummen
 			if Optionen.brummen:
-				Input.start_joy_vibration(0, 0.5, 0.5, 0.2)   # kurz brummen, damit man merkt, wie es sich anfühlt
+				Optionen.brummen_lassen(0.5, 0.5, 0.2)   # kurz brummen, damit man merkt, wie es sich anfühlt
 		"Vollbild":
 			Optionen.vollbild = not Optionen.vollbild
 	Optionen.speichern()
@@ -72,3 +77,10 @@ func anzeigen() -> void:
 		text += "\n"
 	$Menue.text = text
 	$Hinweis.text = ERKLAERUNG[eintraege[auswahl]]
+
+
+func rekord_laden() -> void:
+	var datei := ConfigFile.new()
+	if datei.load(DATEI) != OK:
+		return
+	rekord = datei.get_value("hordenheld", "kills", 0)

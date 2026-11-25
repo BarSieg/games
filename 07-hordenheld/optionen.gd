@@ -44,3 +44,21 @@ func anwenden() -> void:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	else:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+
+
+# Den Controller brummen lassen, wenn es eingeschaltet ist. schwach und stark: 0 bis 1, dauer in Sekunden.
+func brummen_lassen(schwach: float, stark: float, dauer: float) -> void:
+	if not brummen:
+		return
+	if not OS.has_feature("web"):
+		Input.start_joy_vibration(0, schwach, stark, dauer)
+		return
+	# Im Browser kann Godot das nicht. Darum fragen wir den Browser selbst, in seiner Sprache: JavaScript.
+	JavaScriptBridge.eval("""
+		for (const pad of navigator.getGamepads()) {
+			if (pad && pad.vibrationActuator) {
+				pad.vibrationActuator.playEffect("dual-rumble",
+					{duration: %d, weakMagnitude: %f, strongMagnitude: %f});
+			}
+		}
+	""" % [dauer * 1000, schwach, stark])

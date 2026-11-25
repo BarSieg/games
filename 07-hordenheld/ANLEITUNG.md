@@ -2864,7 +2864,57 @@ Bei mir sind **F1 bis F4** im Browser beim Spiel angekommen, auch **F3**, mit de
 
 Vergleich mit dem Editor: F3 schafft dort bei dir über 1500 Gegner. Wie viele sind es im Browser? Schreib die Zahl in deine Antworten. Und überleg: Reicht das für Welle 7, oder sollte die Web-Version weniger Gegner schicken?
 
-### 10.13 Ausprobieren
+### 10.13 Brummen im Browser
+
+Im Browser brummt der Controller nicht. Das liegt nicht an deinem Code: Godot 4.7 hat für den Browser schlicht keinen Code zum Vibrieren. Ich habe im Export nachgeschaut, `index.js` fragt den Browser nur nach Knöpfen und Sticks. `Input.start_joy_vibration()` tut dort einfach nichts.
+
+Der Browser selbst kann es aber, zumindest Chrome und Edge. Godot bietet dafür eine Hintertür: **`JavaScriptBridge.eval()`** führt ein Stück JavaScript im Browser aus, also in der Sprache, in der du Ballwechsel bis Weltraumsteine geschrieben hast.
+
+Damit Held und Titelbild das nicht beide wissen müssen, kommt es an eine Stelle: in die Optionen. Die wissen sowieso schon, ob Brummen an ist. In `optionen.gd` ganz unten:
+
+```gdscript
+# Den Controller brummen lassen, wenn es eingeschaltet ist. schwach und stark: 0 bis 1, dauer in Sekunden.
+func brummen_lassen(schwach: float, stark: float, dauer: float) -> void:
+	if not brummen:
+		return
+	if not OS.has_feature("web"):
+		Input.start_joy_vibration(0, schwach, stark, dauer)
+		return
+	# Im Browser kann Godot das nicht. Darum fragen wir den Browser selbst, in seiner Sprache: JavaScript.
+	JavaScriptBridge.eval("""
+		for (const pad of navigator.getGamepads()) {
+			if (pad && pad.vibrationActuator) {
+				pad.vibrationActuator.playEffect("dual-rumble",
+					{duration: %d, weakMagnitude: %f, strongMagnitude: %f});
+			}
+		}
+	""" % [dauer * 1000, schwach, stark])
+```
+
+In `held.gd` werden die beiden Brumm-Zeilen aus 10.8 zu:
+
+```gdscript
+	if staerke > 0.0:
+		Optionen.brummen_lassen(staerke, staerke * staerke, 0.1)
+```
+
+Und in `titel.gd`, beim Einschalten:
+
+```gdscript
+				Optionen.brummen_lassen(0.5, 0.5, 0.2)   # kurz brummen, damit man merkt, wie es sich anfühlt
+```
+
+- **`"""` drei Anführungszeichen:** ein Text über mehrere Zeilen. Das JavaScript steht so lesbar da, wie man es auch in einer `.js`-Datei schreiben würde.
+- **`%d` und `%f`:** Die Werte kommen mit `%` in den Text, wie bei der Uhr. Der Browser will die Dauer in Millisekunden, darum `dauer * 1000`.
+- **Was das JavaScript macht:** `navigator.getGamepads()` liefert alle Controller, die der Browser kennt. Leere Plätze sind `null`, darum `pad &&`. Hat ein Controller einen `vibrationActuator`, also einen Motor, spielt er einen Effekt: `"dual-rumble"` heißt zwei Motoren, ein schwacher und ein starker. Das ist dasselbe wie die beiden Zahlen bei `start_joy_vibration()`.
+- **Warum alle Controller?** Godot zählt die Controller anders als der Browser. Controller 0 bei Godot muss nicht Platz 0 im Browser sein. Bei einem Spiel für einen Spieler ist „alle“ einfach und richtig.
+- **`stop_joy_vibration()` in `feiern()`** wirkt im Browser auch nicht. Das macht nichts: Jedes Brummen dauert nur 0,1 Sekunden und hört von selbst auf.
+- **Erst drücken, dann brummen:** Der Browser zeigt der Seite einen Controller erst, wenn auf ihm ein Knopf gedrückt wurde. Wer nur mit der Tastatur ins Titelbild kommt, bekommt kein Brummen, bis er einmal den Controller benutzt.
+- **Nicht jeder Browser kann das.** Chrome und Edge ja. Firefox konnte es zuletzt nicht, dort passiert einfach nichts, ohne Fehler.
+
+Ich habe das im Browser ausprobiert: Es gibt keine Fehler, und das JavaScript läuft. Einen Controller hatte ich nicht, **ob es wirklich brummt, merkst nur du**.
+
+### 10.14 Ausprobieren
 
 - [ ] **F5:** Das Titelbild mit Musik. Hoch und runter wandert der Pfeil, unten steht die passende Erklärung.
 - [ ] Musik leiser und lauter: Man hört es sofort. Auf 0 ist sie weg.
@@ -2880,9 +2930,10 @@ Vergleich mit dem Editor: F3 schafft dort bei dir über 1500 Gegner. Wie viele s
 - [ ] Die Äxte schubsen die Gegner von dir weg, egal von welcher Seite sie kommen.
 - [ ] **F2**, **F4** bis `3:00`: Ein Ring aus 40 Spinnen zieht sich um dich zusammen. Bei `2:00` und `1:00` kommen größere Ringe, und die Gegner sind schneller.
 - [ ] Im Browser: Musik nach dem ersten Tastendruck, kein "Vollbild" im Menü, kein F1, oben links nur das Level.
+- [ ] Im Browser mit Controller: Lass dich beißen, der Controller brummt. Brummen aus: Ruhe.
 - [ ] Die Startseite zeigt den Hordenheld, und ein Klick startet ihn.
 
-### 10.14 Was ist neu?
+### 10.15 Was ist neu?
 
 - **Ein Tween für immer:** `set_loops()` ohne Zahl. Er darf nur nicht 0 Sekunden lang sein.
 - **Ein Tween in der Pause:** `set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)`.
@@ -2891,6 +2942,7 @@ Vergleich mit dem Editor: F3 schafft dort bei dir über 1500 Gegner. Wie viele s
 - **Einmal schreiben statt zweimal:** `aufstellen()` macht für jeden neuen Gegner dasselbe, egal woher er kommt.
 - **Ein Kreis aus Winkeln:** `Vector2.from_angle(TAU * i / anzahl)` verteilt Dinge gleichmäßig rundherum.
 - **Musik hängt an den Daten:** Die letzte Welle bringt den Endspurt, egal wie viele Wellen es gibt.
+- **`JavaScriptBridge.eval()`:** Was Godot im Browser nicht kann, fragt man den Browser selbst, in JavaScript.
 - **`OS.is_debug_build()`:** Werkzeuge und Messwerte nur für dich.
 - **Ein Titelbild als Hauptszene:** *Main Scene* in den Project Settings. **F5** startet dort, **F6** die offene Szene.
 
@@ -2903,3 +2955,10 @@ Fertig! Committen und Bescheid geben. 🎉
 3. **Eine Fanfare zum Sieg (mittel):** Nach dem Sieg ist es still. Kopier `fanfare.py` aus dem Kerkerheld, lass es laufen und spiel `fanfare.wav` ab, wenn die Horde zerplatzt ist. Wo baust du den AudioStreamPlayer ein, damit er auch in der Pause spielt? Und auf welchen Bus gehört er: `Musik` oder `Master`? 🎺
 4. **Tausend Treffer, ein Geräusch (schwer):** Jeder Treffer soll ein kurzes "Plopp" machen. Ein AudioStreamPlayer in jedem Gegner wäre einfach, aber dann spielen bei 50 Treffern pro Sekunde 50 Geräusche auf einmal, und das klingt wie ein Rauschen. Bau **einen** Player in die Welt und gib ihm bei **Max Polyphony** zum Beispiel 4. Was passiert, wenn ein fünftes Plopp kommt, während noch vier laufen? Ein kurzes Geräusch kannst du dir mit einem kleinen Python-Skript bauen, so wie `fanfare.py`. Miss danach mit F3: Kostet das Plopp etwas? 🔊
 5. **Für alle (leicht, freiwillig):** Lad den Hordenheld auf 🆓 **itch.io** hoch, wie den Kerkerheld (Kapitel 14, Übung 5). Diesmal ohne Touch-Knöpfe, also schreib dazu: "Mit Controller oder Tastatur." 🎮
+
+### Antworten zu Kapitel 10
+Im Browser hat F3 bei 1300+ Gegner gestoppt
+1. Nein, auf dem Titelbild kann man keine neue Rekorde aufstellen.
+2. Im Level-Up passiert nichts, weil der Knoten vom Helden nicht läuft, der den Pausenbildschirm einschalten kann. Beim Ende feiert der Held schon und kommt nicht bis zur bearbeitung der "pause" Taste: return steht ganz am Anfang von _physics_process.
+3. Es hängt gut im "ende" Knoten, der läuft ja weiter. Der Bus soll Musik sein, damit die Lautstärke stimmt.
+4. Godot Hilfe sinngemäß: die älteren Plopps werden abgebrochen, wenn neue kommen. Gemessen habe ich nichts, plopp.wav ist nur 3KB groß. 
