@@ -15,12 +15,14 @@ var welle_nr := 0   # die wievielte Welle gerade läuft, von 0 an gezählt
 var warten := 0.0
 var schritt := 0   # für halbe Arbeit
 var leben_mal := 1.0
+var tempo_mal := 1.0
 var kills := 0
 
 
 func _ready() -> void:
 	uhr = get_tree().get_first_node_in_group("uhr")
 	uhr.abgelaufen.connect(explosion)
+	Musik.spielen(Musik.KAMPF)
 
 
 func _process(delta: float) -> void:
@@ -28,8 +30,12 @@ func _process(delta: float) -> void:
 	if welle_nr + 1 < wellen.size() and uhr.zeit >= wellen[welle_nr + 1].start:
 		welle_nr += 1
 		leben_mal = wellen[welle_nr].leben_mal
+		tempo_mal = wellen[welle_nr].tempo_mal
+		if welle_nr == wellen.size() - 1:
+			Musik.spielen(Musik.ENDSPURT)   # die letzte Welle: Endspurt
 		if wellen[welle_nr].elite != null:
 			einsetzen(wellen[welle_nr].elite.instantiate())
+		einkesseln(wellen[welle_nr].kessel)
 
 	warten -= delta
 	# while statt if: Ist der Takt kürzer als ein Bild, kommen mehrere Gegner im selben Bild
@@ -120,8 +126,25 @@ func einsetzen(gegner: Node2D) -> void:
 		ty = -by / alpha.y   # oben
 
 	# Den näheren Schnittpunkt nehmen, plus ABSTAND hinter den Bildschirmrand
-	gegner.position = get_viewport().get_camera_2d().get_screen_center_position() + (minf(tx, ty) + ABSTAND) * alpha
+	aufstellen(gegner, get_viewport().get_camera_2d().get_screen_center_position() + (minf(tx, ty) + ABSTAND) * alpha)
+
+
+
+# Ein Ring aus Gegnern rund um den Held, überall knapp hinter dem Bildrand
+func einkesseln(anzahl: int) -> void:
+	var held: Node2D = get_tree().get_first_node_in_group("held")
+	var radius := get_viewport_rect().size.length() / 2 + ABSTAND   # die halbe Bildschirmdiagonale reicht bis in jede Ecke
+	# nur die erste Sorte der Welle: Fledermäuse wären viel früher da, und der Ring hätte Lücken
+	var szene := wellen[welle_nr].gegner[0]
+	for i in anzahl:
+		aufstellen(szene.instantiate(), held.global_position + Vector2.from_angle(TAU * i / anzahl) * radius)
+
+
+# Der Gegner kommt an seinen Platz, mit den Werten der Welle
+func aufstellen(gegner: Node2D, ort: Vector2) -> void:
+	gegner.position = ort
 	gegner.leben = ceili(gegner.leben * leben_mal)
+	gegner.tempo *= tempo_mal
 	add_child(gegner)
 
 

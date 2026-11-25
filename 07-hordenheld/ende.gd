@@ -3,6 +3,7 @@ extends CanvasLayer
 const GEWONNEN = "Gewonnen!"
 const VERLOREN = "Game Over"
 const DATEI = "user://hordenheld.cfg"
+const TITEL = "res://titel.tscn"
 
 var held: Held
 var uhr: Uhr
@@ -32,6 +33,7 @@ func laden() -> void:
 
 
 func zeigen(titel: String) -> void:
+	Musik.stoppen()
 	var kills: int = $"../Horde".kills
 	if titel == GEWONNEN:
 		if kills > rekord:
@@ -45,6 +47,11 @@ func zeigen(titel: String) -> void:
 
 
 func _process(_delta: float) -> void:
-	if visible and Input.is_action_just_pressed("ok"):
+	if not visible:
+		return
+	if Input.is_action_just_pressed("ok"):
 		get_tree().paused = false
 		get_tree().reload_current_scene()
+	elif Input.is_action_just_pressed("pause"):
+		get_tree().paused = false
+		get_tree().change_scene_to_file(TITEL)

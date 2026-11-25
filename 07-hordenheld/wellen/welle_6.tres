@@ -13,4 +13,6 @@ gegner = Array[PackedScene]([ExtResource("2_kb64r"), ExtResource("3_t6nsd"), Ext
 takt = 0.15
 leben_mal = 3.0
 elite = ExtResource("1_tu8mc")
+tempo_mal = 1.1
+kessel = 60
 metadata/_custom_type_script = "uid://ckcs81n8prvvj"

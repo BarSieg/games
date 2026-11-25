@@ -170,7 +170,7 @@ horizontal_alignment = 1
 
 [node name="Hinweis" type="Label" parent="Ende/Kasten" unique_id=574166578]
 layout_mode = 2
-text = "OK: nochmal"
+text = "OK: nochmal   Start: Titelbild"
 label_settings = ExtResource("8_16niv")
 horizontal_alignment = 1
 

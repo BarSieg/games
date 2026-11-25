@@ -1,8 +1,9 @@
 extends Node2D
 
-var drehtempo := PI 
+const SCHUB = 3.0   # schubst den Gegner so viele Pixel weg
+
+var drehtempo := PI
 var schaden := 2
-const SCHUB = 3.0  # schubst den Gegner so viele Pixel weg
 
 
 func _physics_process(delta: float) -> void:
@@ -12,7 +13,7 @@ func _physics_process(delta: float) -> void:
 
 
 func treffer(body: Node2D, richtung: Vector2) -> void:
-	body.treffer(schaden, richtung.normalized() * SCHUB)
+	body.treffer(schaden, richtung * SCHUB)
 
 
 func _on_axt_2_body_entered(body: Node2D) -> void:

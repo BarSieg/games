@@ -2314,21 +2314,23 @@ Zwei Kleinigkeiten aus deinem Ausbalancieren und dem Finale.
 
 **Die Äxte schubsen in die falsche Richtung.** In `aexte.gd` gibst du `-$Axt/Bild.position` als Richtung mit. Das ist die Position des Bildes **in der Axt**, und die ist immer `(56, 0)`, egal wie weit sich die Äxte gerade gedreht haben. Die erste Axt schubst also immer nach links, die zweite immer nach rechts. Steht ein Gegner links vom Held, schiebt die zweite Axt ihn sogar **zum** Held hin.
 
-Was du willst: vom Held weg, zum Gegner hin. Das ist einfach die Richtung von den Äxten (sie sitzen genau auf dem Held) zum Gegner:
+Was du willst: weg vom Held, in die Richtung, in die die Axt gerade zeigt. Und was ändert sich, während sich die Äxte drehen? Nur `rotation`. Die Axt weiß also schon alles: Die erste sitzt bei Winkel `rotation`, die zweite genau gegenüber, bei `rotation + PI`.
 
 ```gdscript
-func treffer(body: Node2D) -> void:
-	var weg := global_position.direction_to(body.global_position)   # vom Held zum Gegner: nach außen
-	body.treffer(schaden, weg * SCHUB)
+func treffer(body: Node2D, richtung: Vector2) -> void:
+	body.treffer(schaden, richtung * SCHUB)
 
 
 func _on_axt_2_body_entered(body: Node2D) -> void:
-	treffer(body)
+	treffer(body, Vector2.from_angle(rotation + PI))
 
 
 func _on_axt_body_entered(body: Node2D) -> void:
-	treffer(body)
+	treffer(body, Vector2.from_angle(rotation))
 ```
+
+- **`Vector2.from_angle()`** liefert schon einen Vektor der Länge 1. Ein `normalized()` ist nicht nötig.
+- **Warum geht `rotation` und nicht `global_rotation`?** `rotation` ist der Winkel relativ zum Eltern-Knoten, also zum Held. Der Held selbst dreht sich nie, nur sein Bild wackelt. Darum ist beides dasselbe. Würde sich der Held einmal drehen, bräuchtest du `global_rotation`.
 
 **Der Timer im Ende-Bildschirm läuft in der Pause weiter.** In `ende.gd` steht `create_timer(2.0)`. Ohne zweites Argument zählt ein Timer auch dann weiter, wenn das Spiel pausiert. Fliegen nach dem Sieg noch Edelsteine heran und bringen ein Level-Up, steht das Level-Up-Menü da, und mittendrin erscheint "Gewonnen!" darüber. Mit `false` wartet der Timer, bis du gewählt hast:
 
@@ -2572,11 +2574,11 @@ func anwenden() -> void:
 Neue Szene: **Scene → New Scene → User Interface**. Die Wurzel ist ein `Control`, nenne sie `Titel`. Speichern als `titel.tscn`. Darunter:
 
 1. **ColorRect** `Hintergrund`: Oben in der Leiste **Anchor Preset → Full Rect**. **Color** ein dunkles Grün, zum Beispiel `171f17`.
-2. **Label** `Spielname`: Text `HORDENHELD`. **Anchor Preset → Top Wide**, dann **Offset Top** 16 und **Offset Bottom** 64. **Horizontal Alignment** Center. Bei **Label Settings** → **New LabelSettings**, dann darin:
+2. **Label** `Spielname`: Text `HORDENHELD`. **Anchor Preset → Top Wide**, dann unter **Layout → Transform**: **Position** y 16, **Size** y 48. **Horizontal Alignment** Center. Bei **Label Settings** → **New LabelSettings**, dann darin:
    - **Font:** `kenney/Kenney Pixel.ttf`, **Size** 48, **Color** goldgelb (`ffd94d`)
    - **Outline:** **Size** 8, **Color** dunkelrot (`590d0d`)
 3. **Label** `Menue`: **Position** (140, 80), **Size** (120, 80). **Label Settings** → **Load** → `schrift.tres`.
-4. **Label** `Hinweis`: **Anchor Preset → Bottom Wide**, dann **Offset Left** 16, **Offset Right** -16, **Offset Top** -40, **Offset Bottom** -12. **Horizontal Alignment** Center, **Autowrap Mode** Word (Smart), **Label Settings** `schrift.tres`.
+4. **Label** `Hinweis`: **Anchor Preset → Bottom Wide**, dann unter **Layout → Transform**: **Position** (16, 176), **Size** (352, 28). **Horizontal Alignment** Center, **Autowrap Mode** Word (Smart), **Label Settings** `schrift.tres`.
 
 Skript an die Wurzel, `titel.gd`:
 
@@ -2737,7 +2739,90 @@ func _process(_delta: float) -> void:
 - **Warum `has_custom_monitor`?** `queue_free()` entfernt den Knoten, und dabei wird `_exit_tree()` trotzdem aufgerufen. Einen Monitor zu entfernen, den es nicht gibt, ist ein Fehler. Also erst fragen.
 - **Für DOOM:** Genau so baut man Cheats und Debug-Menüs ein, die nur die Entwickler haben. Die meisten großen Spiele haben eine Konsole voller solcher Befehle, die im fertigen Spiel abgeschaltet ist.
 
-### 10.10 Ab ins Web
+### 10.10 Die Horde holt auf
+
+Bei deinem Test mit F4 hast du die letzte Minute ganz ohne Upgrades überlebt, einfach indem du um den Klumpen herumgelaufen bist. Der Grund ist das Tempo: Ein normaler Gegner läuft 30 Pixel pro Sekunde, du 70. Wer einmal hinter dir ist, holt dich nie wieder ein. Gefährlich sind nur die, die vor dir auftauchen, und denen weichst du aus. Mehr Gegner oder dickere Gegner ändern daran nichts.
+
+Ich habe die letzte Minute mit einem Bot nachgespielt, der stur im Kreis läuft, nur mit dem Messer. Ausweichen kann er nicht, die Zahlen taugen also nur zum Vergleichen. Schaden in 60 Sekunden:
+
+| Was | enger Kreis | weiter Kreis |
+|---|---|---|
+| so wie bisher | 379 | 215 |
+| alle Gegner 1,3× schneller | 2166 | 881 |
+| alle 15 s ein Ring aus 60 Gegnern | 903 | 534 |
+| beides, mit den Werten unten | 2782 | 1265 |
+
+Also zwei neue Werte für die Wellen. **Tempo:** Die späten Wellen laufen schneller. **Kessel:** Eine Welle kann mit einem Ring aus Gegnern rund um den Held beginnen. Dann hilft Weglaufen nicht mehr, man muss durch.
+
+In `welle.gd`, unter `leben_mal`:
+
+```gdscript
+@export var tempo_mal := 1.0                  # so viel mal schneller laufen die Gegner
+@export var kessel := 0                       # so viele Gegner kommen am Anfang im Ring um den Held
+```
+
+In `spawner.gd` bei den Variablen:
+
+```gdscript
+var tempo_mal := 1.0
+```
+
+In `_process()`, wo die nächste Welle anfängt, unter `leben_mal = ...`:
+
+```gdscript
+		tempo_mal = wellen[welle_nr].tempo_mal
+```
+
+Und am Ende dieses `if`-Blocks, unter dem Elite-Gegner:
+
+```gdscript
+		einkesseln(wellen[welle_nr].kessel)
+```
+
+In `einsetzen()` werden die letzten drei Zeilen (`position`, `leben`, `add_child`) zu einer einzigen:
+
+```gdscript
+	aufstellen(gegner, get_viewport().get_camera_2d().get_screen_center_position() + (minf(tx, ty) + ABSTAND) * alpha)
+```
+
+Und zwei neue Funktionen unter `einsetzen()`:
+
+```gdscript
+# Ein Ring aus Gegnern rund um den Held, überall knapp hinter dem Bildrand
+func einkesseln(anzahl: int) -> void:
+	var held: Node2D = get_tree().get_first_node_in_group("held")
+	var radius := get_viewport_rect().size.length() / 2 + ABSTAND   # die halbe Bildschirmdiagonale reicht bis in jede Ecke
+	# nur die erste Sorte der Welle: Fledermäuse wären viel früher da, und der Ring hätte Lücken
+	var szene := wellen[welle_nr].gegner[0]
+	for i in anzahl:
+		aufstellen(szene.instantiate(), held.global_position + Vector2.from_angle(TAU * i / anzahl) * radius)
+
+
+# Der Gegner kommt an seinen Platz, mit den Werten der Welle
+func aufstellen(gegner: Node2D, ort: Vector2) -> void:
+	gegner.position = ort
+	gegner.leben = ceili(gegner.leben * leben_mal)
+	gegner.tempo *= tempo_mal
+	add_child(gegner)
+```
+
+Zuletzt die Werte in den Wellen, im Inspector:
+
+| Welle | Tempo mal | Kessel |
+|---|---|---|
+| 5 | 1.1 | 40 |
+| 6 | 1.2 | 60 |
+| 7 | 1.3 | 80 |
+
+- **`aufstellen()`:** Zwei Stellen brauchen jetzt dieselben Zeilen: Position, Leben, Tempo, `add_child`. Statt sie zweimal zu schreiben, gibt es eine Funktion. Bekommen die Wellen später noch einen Wert, zum Beispiel `schaden_mal`, änderst du nur eine Stelle.
+- **`size.length() / 2`:** Die Länge des Vektors (384, 216) ist die Bildschirmdiagonale. Die Hälfte davon reicht von der Mitte bis in jede Ecke. Ein Kreis mit diesem Radius liegt also überall außerhalb des Bildes. Weil die Kamera ein Stück vorausschaut, kann der Ring in einer Ecke kurz zu sehen sein. Das stört nicht, es warnt sogar.
+- **`TAU * i / anzahl`:** verteilt die Gegner gleichmäßig auf den ganzen Kreis. `TAU` ist eine volle Umdrehung.
+- **Der Zyklop wird auch schneller.** Er kommt über `einsetzen()`, und damit über `aufstellen()`. In Welle 7 läuft er 26 statt 20.
+- **„Flinke Füße“ lohnt sich jetzt.** Fledermäuse fliegen in Welle 7 mit 65 Pixeln pro Sekunde, fast so schnell wie du. Mit drei Stufen läufst du 93 und bist ihnen wieder davon.
+
+Die Werte sind nur mit dem Bot gemessen, nicht gespielt. Ob die fünf Minuten jetzt richtig schwer sind, zeigt nur ein ganzer Durchlauf mit Upgrades. Ist es zu viel, dreh im Inspector an `tempo_mal` und `kessel`, Code musst du dafür nicht ändern.
+
+### 10.11 Ab ins Web
 
 Wie beim Kerkerheld (Kapitel 14.8):
 
@@ -2766,7 +2851,7 @@ Dann `http://localhost:8000/07-hordenheld/web/` öffnen.
 
 Die Beschreibung darfst du natürlich selbst schreiben. In `07-hordenheld/README.md` kommt das "_In Arbeit._" weg, dazu ein **Im Browser** bei *Starten* und bei der Steuerung **Start: zurück zum Titelbild**. Unter die Lizenzen gehört noch: "Musik: mit `musik.py` selbst erzeugt". Und in `games/README.md` wandert der Hordenheld von "In Arbeit" in die Spieltabelle.
 
-### 10.11 Wie viele schafft der Browser?
+### 10.12 Wie viele schafft der Browser?
 
 Der ganze Hordenheld dreht sich um eine Frage: Wie viele Gegner gehen, bevor es ruckelt? Im Browser ist die Antwort eine andere. Dort läuft Godot als **WebAssembly**, und das ist langsamer als ein echtes Programm. Außerdem hast du ohne Threads exportiert, also macht ein einziger Prozessorkern alles.
 
@@ -2779,7 +2864,7 @@ Bei mir sind **F1 bis F4** im Browser beim Spiel angekommen, auch **F3**, mit de
 
 Vergleich mit dem Editor: F3 schafft dort bei dir über 1500 Gegner. Wie viele sind es im Browser? Schreib die Zahl in deine Antworten. Und überleg: Reicht das für Welle 7, oder sollte die Web-Version weniger Gegner schicken?
 
-### 10.12 Ausprobieren
+### 10.13 Ausprobieren
 
 - [ ] **F5:** Das Titelbild mit Musik. Hoch und runter wandert der Pfeil, unten steht die passende Erklärung.
 - [ ] Musik leiser und lauter: Man hört es sofort. Auf 0 ist sie weg.
@@ -2793,15 +2878,18 @@ Vergleich mit dem Editor: F3 schafft dort bei dir über 1500 Gegner. Wie viele s
 - [ ] **Start** auf dem Ende-Bildschirm: zurück zum Titelbild, mit Titelmusik.
 - [ ] Game Over und sofort **OK**: Die Kampfmusik ist wieder da.
 - [ ] Die Äxte schubsen die Gegner von dir weg, egal von welcher Seite sie kommen.
+- [ ] **F2**, **F4** bis `3:00`: Ein Ring aus 40 Spinnen zieht sich um dich zusammen. Bei `2:00` und `1:00` kommen größere Ringe, und die Gegner sind schneller.
 - [ ] Im Browser: Musik nach dem ersten Tastendruck, kein "Vollbild" im Menü, kein F1, oben links nur das Level.
 - [ ] Die Startseite zeigt den Hordenheld, und ein Klick startet ihn.
 
-### 10.13 Was ist neu?
+### 10.14 Was ist neu?
 
 - **Ein Tween für immer:** `set_loops()` ohne Zahl. Er darf nur nicht 0 Sekunden lang sein.
 - **Ein Tween in der Pause:** `set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)`.
 - **Jeder hört selbst aufs Signal:** Spawner, Ende-Bildschirm und Held verbinden sich mit `abgelaufen`, ohne voneinander zu wissen.
 - **Wünschen statt nachschauen:** `ziel` merkt sich, was laufen soll. Das ist sicherer als zu fragen, was gerade läuft.
+- **Einmal schreiben statt zweimal:** `aufstellen()` macht für jeden neuen Gegner dasselbe, egal woher er kommt.
+- **Ein Kreis aus Winkeln:** `Vector2.from_angle(TAU * i / anzahl)` verteilt Dinge gleichmäßig rundherum.
 - **Musik hängt an den Daten:** Die letzte Welle bringt den Endspurt, egal wie viele Wellen es gibt.
 - **`OS.is_debug_build()`:** Werkzeuge und Messwerte nur für dich.
 - **Ein Titelbild als Hauptszene:** *Main Scene* in den Project Settings. **F5** startet dort, **F6** die offene Szene.

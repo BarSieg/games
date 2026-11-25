@@ -11,9 +11,19 @@ config_version=5
 [application]
 
 config/name="Hordenheld"
-run/main_scene="uid://c0otbldfkav1j"
+run/main_scene="uid://cnwcclmpbgijo"
 config/features=PackedStringArray("4.7", "GL Compatibility")
-config/icon="res://icon.svg"
+config/icon="uid://dyxukvg7573nu"
+boot_splash/icon="res://icon.svg"
+
+[audio]
+
+buses/default_bus_layout="uid://bjdraqy5lqcte"
+
+[autoload]
+
+Optionen="*uid://cf6nckobow2vf"
+Musik="*uid://bsf3o6o43jfeo"
 
 [display]
 

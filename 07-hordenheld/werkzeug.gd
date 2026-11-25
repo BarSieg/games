@@ -14,6 +14,9 @@ var max_gegner := 1
 
 
 func _ready() -> void:
+	if not OS.is_debug_build():
+		queue_free()   # im fertigen Spiel gibt es kein Werkzeug
+		return
 	for i in MONITORE.size():
 		Performance.add_custom_monitor("Hordenheld/" + MONITORE[i], get_tree().get_node_count_in_group.bind(GRUPPEN[i]))
 
@@ -34,7 +37,8 @@ func _physics_process(delta: float) -> void:
 
 func _exit_tree() -> void:
 	for monitor in MONITORE:
-		Performance.remove_custom_monitor("Hordenheld/" + monitor)
+		if Performance.has_custom_monitor("Hordenheld/" + monitor):
+			Performance.remove_custom_monitor("Hordenheld/" + monitor)
 
 
 func _unhandled_input(event: InputEvent) -> void:

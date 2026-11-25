@@ -14,6 +14,7 @@ const BEBEN_PRO_GEGNER = 0.25   # so viel Beben bringt jeder Gegner, der den Hel
 const BEBEN_TEMPO = 3.0         # so schnell steigt und fällt das Beben, pro Sekunde
 const BEBEN_PIXEL = 4.0         # so weit wackelt das Bild bei vollem Beben
 const KAMERA_VORAUSSCHAU = 64   # so viel weiter sieht man in die Richtung, in die der Held läuft
+const HUEPFER = 6.0             # so hoch hüpft er vor Freude, in Pixeln
 
 @export var upgrades: Array[Upgrade] = []
 
@@ -28,6 +29,7 @@ var leben := MAX_LEBEN:
 		$Lebensbalken.value = leben
 var stufen: Dictionary[Upgrade, int] = {}   # wie oft welches Upgrade schon gewählt wurde
 var beben := 0.0   # 0 = ruhig, 1 = volles Beben
+var feiert := false
 
 # zum Testen
 var testmodus := false   # schaltet das Werkzeug um
@@ -52,9 +54,15 @@ func _ready() -> void:
 	# Schritt 3: die Waffen wieder wegräumen
 	for waffe in neue_waffen:
 		waffe.free()
+	# Der Held muss auch wissen, dass er gewonnw hat
+	var uhr: Uhr = get_tree().get_first_node_in_group("uhr")
+	uhr.abgelaufen.connect(feiern)
 
 
 func _physics_process(delta: float) -> void:
+	if feiert:
+		return   # wer feiert, läuft nicht mehr
+
 	var richtung := Input.get_vector("links", "rechts", "hoch", "runter")
 	velocity = richtung * tempo
 	move_and_slide()
@@ -82,9 +90,26 @@ func _physics_process(delta: float) -> void:
 	var ziel := 0.0 if testmodus else minf(treffer * BEBEN_PRO_GEGNER, 1.0)
 	beben = move_toward(beben, ziel, BEBEN_TEMPO * delta)
 	var staerke := beben * beben   # zum Quadrat: wenig Beben bleibt fast ruhig, viel Beben wird heftig
-	$Camera2D.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * staerke * BEBEN_PIXEL
-	if staerke > 0.0:
+	if Optionen.beben:
+		$Camera2D.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * staerke * BEBEN_PIXEL
+	if staerke > 0.0 and Optionen.brummen:
 		Input.start_joy_vibration(0, staerke, staerke * staerke, 0.1)
+
+
+# Die Zeit ist um: stehen bleiben und vor Freude hüpfen
+func feiern() -> void:
+	feiert = true
+	$Camera2D.position = Vector2.ZERO   # nicht mehr vorausschauen, der Held rückt in die Mitte
+	$Camera2D.offset = Vector2.ZERO     # kein Beben mehr
+	Input.stop_joy_vibration(0)
+	$Bild.rotation = 0.0
+	$Bild.modulate = Color.WHITE
+	var tween := create_tween().set_loops()   # ohne Zahl: für immer
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)   # hüpft auch hinter dem Ende-Bildschirm weiter
+	tween.tween_property($Bild, "position:y", -HUEPFER, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property($Bild, "position:y", 0.0, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_callback(func() -> void: $Bild.flip_h = not $Bild.flip_h)   # bei jedem Hüpfer in die andere Richtung
+	tween.tween_interval(0.1)
 
 
 func erfahrung_dazu(wert: int) -> void:
