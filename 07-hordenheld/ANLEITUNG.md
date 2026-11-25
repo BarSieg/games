@@ -17,8 +17,8 @@ Gespielt wird mit dem Controller. Die Tastatur geht natürlich auch.
 6. Hunderte Gegner: Der Profiler zeigt, was bremst ✔
 7. Die Horde wird billiger: Gedränge ohne teure Physik ✔
 8. Game Feel: Wackeln, Blitzen, Zahlen ✔
-9. Die Uhr: Wellen, Elite-Gegner, Sieg und Game Over ← *du bist hier*
-10. Titelbild, Musik und Web-Export
+9. Die Uhr: Wellen, Elite-Gegner, Sieg und Game Over ✔
+10. Titelbild, Musik und Web-Export ← *du bist hier*
 
 ---
 
@@ -2299,3 +2299,519 @@ Fertig? Committen und Bescheid geben.
 2. **Wie viele hast du erwischt? (leicht):** Zähl, wie viele Gegner der Held besiegt hat, und zeig es auf dem Ende-Bildschirm unter der Zeit. Überleg vorher: Wo stirbt ein Gegner, und wer sollte die Zahl kennen? 💀
 3. **Der Rekord (mittel):** Merk dir die beste Zeit über einen Neustart hinaus, auch wenn das Spiel ganz geschlossen wird. Steht ein neuer Rekord auf dem Ende-Bildschirm, soll man es sehen. Tipp: `ConfigFile` und ein Pfad, der mit `user://` anfängt. 🏆
 4. **Das große Finale (schwer):** Wenn die Uhr abläuft, steht bis jetzt sofort "Gewonnen!" da. Schöner: Erst sterben alle Gegner, und zwar wie eine Welle, die vom Held nach außen läuft. Wer nah dran ist, stirbt zuerst, wer weit weg ist, zuletzt. Erst danach kommt der Ende-Bildschirm. Tipp: `get_tree().create_timer()` und die Entfernung zum Held. Und denk daran: Sobald der Ende-Bildschirm das Spiel anhält, passiert in der Welt nichts mehr. 🌊
+
+---
+
+## Kapitel 10: Titelbild, Musik und Web-Export
+
+Das letzte Kapitel. Bisher startet der Hordenheld mitten auf der Wiese, es ist still, und wer gewinnt, will sofort weiterlaufen. Jetzt bekommt er ein Titelbild mit Optionen, drei Musikstücke und einen Platz auf der Startseite. Und er lernt endlich, seinen Sieg zu feiern.
+
+Titelbild, Optionen, Musik und Web-Export kennst du vom Kerkerheld. Darum geht es hier zügig. Neu sind ein **Tween, der in der Pause weiterläuft**, **Musik, die zur Welle passt**, und **`OS.is_debug_build()`**: Deine Messwerkzeuge bleiben zu Hause, wenn das Spiel ins Netz geht.
+
+### 10.1 Noch etwas aus Kapitel 9
+
+Zwei Kleinigkeiten aus deinem Ausbalancieren und dem Finale.
+
+**Die Äxte schubsen in die falsche Richtung.** In `aexte.gd` gibst du `-$Axt/Bild.position` als Richtung mit. Das ist die Position des Bildes **in der Axt**, und die ist immer `(56, 0)`, egal wie weit sich die Äxte gerade gedreht haben. Die erste Axt schubst also immer nach links, die zweite immer nach rechts. Steht ein Gegner links vom Held, schiebt die zweite Axt ihn sogar **zum** Held hin.
+
+Was du willst: vom Held weg, zum Gegner hin. Das ist einfach die Richtung von den Äxten (sie sitzen genau auf dem Held) zum Gegner:
+
+```gdscript
+func treffer(body: Node2D) -> void:
+	var weg := global_position.direction_to(body.global_position)   # vom Held zum Gegner: nach außen
+	body.treffer(schaden, weg * SCHUB)
+
+
+func _on_axt_2_body_entered(body: Node2D) -> void:
+	treffer(body)
+
+
+func _on_axt_body_entered(body: Node2D) -> void:
+	treffer(body)
+```
+
+**Der Timer im Ende-Bildschirm läuft in der Pause weiter.** In `ende.gd` steht `create_timer(2.0)`. Ohne zweites Argument zählt ein Timer auch dann weiter, wenn das Spiel pausiert. Fliegen nach dem Sieg noch Edelsteine heran und bringen ein Level-Up, steht das Level-Up-Menü da, und mittendrin erscheint "Gewonnen!" darüber. Mit `false` wartet der Timer, bis du gewählt hast:
+
+```gdscript
+		await get_tree().create_timer(2.0, false).timeout   # Explosion abwarten
+```
+
+### 10.2 Der Held feiert
+
+Die Zeit ist um, die Horde zerplatzt, und der Held? Läuft weiter, als wäre nichts. Ab jetzt bleibt er stehen und hüpft vor Freude.
+
+In `held.gd` oben bei den Konstanten:
+
+```gdscript
+const HUEPFER = 6.0             # so hoch hüpft er vor Freude, in Pixeln
+```
+
+Bei den Variablen:
+
+```gdscript
+var feiert := false
+```
+
+Am Ende von `_ready()`, unter Schritt 3:
+
+```gdscript
+
+	var uhr: Uhr = get_tree().get_first_node_in_group("uhr")
+	uhr.abgelaufen.connect(feiern)
+```
+
+Ganz oben in `_physics_process()`:
+
+```gdscript
+	if feiert:
+		return   # wer feiert, läuft nicht mehr
+
+```
+
+Und ganz unten eine neue Funktion:
+
+```gdscript
+# Die Zeit ist um: stehen bleiben und vor Freude hüpfen
+func feiern() -> void:
+	feiert = true
+	$Camera2D.position = Vector2.ZERO   # nicht mehr vorausschauen, der Held rückt in die Mitte
+	$Camera2D.offset = Vector2.ZERO     # kein Beben mehr
+	Input.stop_joy_vibration(0)
+	$Bild.rotation = 0.0
+	$Bild.modulate = Color.WHITE
+	var tween := create_tween().set_loops()   # ohne Zahl: für immer
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)   # hüpft auch hinter dem Ende-Bildschirm weiter
+	tween.tween_property($Bild, "position:y", -HUEPFER, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property($Bild, "position:y", 0.0, 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_callback(func() -> void: $Bild.flip_h = not $Bild.flip_h)   # bei jedem Hüpfer in die andere Richtung
+	tween.tween_interval(0.1)
+```
+
+- **Der Held hört selbst auf die Uhr.** Die Uhr weiß nichts vom Held, der Ende-Bildschirm auch nicht. Jeder, den das Ende angeht, verbindet sich mit `abgelaufen`: der Spawner fürs Finale, der Ende-Bildschirm für "Gewonnen!", jetzt der Held fürs Feiern. Das ist der Vorteil von Signalen. Wer neu dazukommt, muss niemand anderen ändern.
+- **`return` ganz oben:** Danach passiert in `_physics_process()` nichts mehr. Kein Laufen, keine Bisse, kein Beben. Darum setzt `feiern()` die Kamera und das Brummen einmal von Hand zurück, sonst bliebe alles so stehen, wie es im letzten Moment war.
+- **`set_loops()`:** Ein Tween läuft normalerweise einmal ab. Mit einer Zahl läuft er so oft, ohne Zahl für immer. Ein Tween für immer darf aber nicht 0 Sekunden lang sein, sonst würde er in einem einzigen Bild unendlich oft laufen. Godot bricht dann mit einer Fehlermeldung ab.
+- **`TWEEN_PAUSE_PROCESS`:** Ein Tween hält normalerweise an, wenn das Spiel pausiert. Sobald der Ende-Bildschirm kommt, würde der Held mitten im Sprung in der Luft hängen bleiben. So hüpft er hinter dem abgedunkelten Bild weiter.
+- **`set_trans()` und `set_ease()`:** wie beim Hüpfheld. Hoch wird er langsamer, runter schneller. So sieht ein Sprung aus, als ob ihn etwas nach unten zieht.
+- **`func() -> void: ...` in einer Zeile:** eine Funktion ohne Namen, direkt da, wo sie gebraucht wird. Du kennst sie von `filter()` und `any()` im Kerkerheld.
+
+### 10.3 Ein Skript komponiert
+
+Im Projektordner liegt schon `musik.py`. Es funktioniert genauso wie das aus dem Kerkerheld, nur mit drei neuen Stücken. **Mach das als Erstes, noch vor allem anderen**, sonst meckert `musik.gd` über Dateien, die es noch nicht gibt (Kerkerheld, Kapitel 14.10). Im Ordner `07-hordenheld`:
+
+```bash
+python musik.py
+```
+
+```
+musik_titel.wav: 8 Takte, 19.2 s, 826 KB
+musik_kampf.wav: 8 Takte, 14.5 s, 626 KB
+musik_endspurt.wav: 8 Takte, 12.0 s, 516 KB
+```
+
+- **`musik_titel`:** mutig, aber noch ruhig, mit einer Begleitung, die Akkorde zerlegt.
+- **`musik_kampf`:** treibend, für die ersten vier Minuten.
+- **`musik_endspurt`:** schneller und mit mehr Trommel, für die letzte Welle.
+
+Neu im Skript ist nur eine kleine Hilfe: `acht("E2", "G2", ...)` schreibt für jeden Akkord einen ganzen Takt Bass in Achteln, tief und hoch im Wechsel. Das spart viel Tipparbeit. Schau dir an, was sie macht, bevor du die Stücke umschreibst.
+
+Ich kann nichts hören. Die Stücke sind also nach Notenlehre geschrieben, nicht nach Gehör. Gefällt dir ein Takt nicht, schreib ihn um. Wie das geht, steht oben im Skript.
+
+### 10.4 Ein eigener Bus und der Musik-Autoload
+
+**Der Bus:** Unten im Editor auf **Audio** → **Add Bus** → Doppelklick auf den Namen → `Musik`. Unten am Bus steht `Master`, so soll es sein.
+
+**Der Autoload:** Neues Skript `musik.gd`. Fast wie im Kerkerheld, mit einem Unterschied, der weiter unten erklärt wird:
+
+```gdscript
+extends AudioStreamPlayer
+
+# Die Hintergrundmusik. Ein Autoload, darum spielt sie über jeden Szenenwechsel hinweg weiter.
+
+const TITEL = preload("res://musik_titel.wav")
+const KAMPF = preload("res://musik_kampf.wav")
+const ENDSPURT = preload("res://musik_endspurt.wav")
+const BLENDE = 0.6     # so lange dauert das Aus- und Einblenden, in Sekunden
+const LEISE = -40.0    # in dB: so gut wie nichts mehr zu hören
+
+var blende: Tween
+var ziel: AudioStream   # was gerade laufen soll, null = Ruhe
+
+
+func _ready() -> void:
+	bus = &"Musik"
+	# Level-Up und Ende-Bildschirm pausieren das Spiel. Die Musik soll trotzdem weiterspielen.
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
+
+# Ein Stück spielen. Soll es schon laufen, passiert nichts. Sonst wird das alte aus- und das neue eingeblendet.
+func spielen(stueck: AudioStream) -> void:
+	if ziel == stueck:
+		return
+	ziel = stueck
+	if blende:
+		blende.kill()
+	blende = create_tween()
+	if playing:
+		blende.tween_property(self, "volume_db", LEISE, BLENDE)
+	else:
+		volume_db = LEISE
+	blende.tween_callback(wechseln.bind(stueck))
+	blende.tween_property(self, "volume_db", 0.0, BLENDE)
+
+
+func wechseln(stueck: AudioStream) -> void:
+	stream = stueck
+	play()
+
+
+# Ausblenden und Ruhe
+func stoppen() -> void:
+	ziel = null
+	if blende:
+		blende.kill()
+	blende = create_tween()
+	blende.tween_property(self, "volume_db", LEISE, BLENDE)
+	blende.tween_callback(stop)
+```
+
+*Project Settings → Globals → Autoload*: `res://musik.gd`, Name **`Musik`**.
+
+**Warum `ziel` statt `stream == stueck and playing` wie im Kerkerheld?** Beim Hordenheld kann man nach Game Over sofort **OK** drücken. Stell dir vor, du stirbst in den ersten vier Minuten:
+1. Der Ende-Bildschirm ruft `stoppen()`. Die Kampfmusik blendet aus, das dauert 0,6 Sekunden.
+2. Du drückst gleich **OK**, das Spiel startet neu, und der Spawner wünscht sich `KAMPF`.
+3. Die alte Abfrage sagt: Kampfmusik ist drin und läuft noch, also nichts zu tun.
+4. Eine Zehntelsekunde später ist das Ausblenden fertig, `stop()` wird aufgerufen, und die ganze Runde bleibt still.
+
+`ziel` merkt sich, was laufen **soll**, nicht was gerade zufällig noch klingt. Nach `stoppen()` ist es `null`, und der nächste Wunsch wird auf jeden Fall erfüllt.
+
+### 10.5 Wer bestellt welche Musik?
+
+**Im Kampf:** In `spawner.gd`, in `_ready()`, unter dem `connect`:
+
+```gdscript
+	Musik.spielen(Musik.KAMPF)
+```
+
+**Im Endspurt:** Die letzte Welle kennt nur der Spawner. In `_process()`, unter `leben_mal = ...`:
+
+```gdscript
+		if welle_nr == wellen.size() - 1:
+			Musik.spielen(Musik.ENDSPURT)   # die letzte Welle: Endspurt
+```
+
+**Am Ende:** Ruhe, beim Sieg wie bei Game Over. In `ende.gd` als erste Zeile in `zeigen()`:
+
+```gdscript
+	Musik.stoppen()
+```
+
+- **`wellen.size() - 1` statt `6`:** Fügst du eine achte Welle hinzu, ist der Endspurt automatisch wieder die letzte.
+- **Warum nicht die Uhr?** Die wüsste auch, wann die letzte Minute anfängt. Aber wenn du die Wellen änderst, müsstest du an die Uhr denken. So hängt die Musik an der Welle, und die Welle steht im Inspector.
+
+### 10.6 Die Optionen
+
+Neues Skript `optionen.gd` (ohne Szene):
+
+```gdscript
+extends Node
+
+# Einstellungen, die für jedes Spiel gelten. Sie stehen in einer eigenen Datei.
+
+const DATEI = "user://optionen.cfg"
+
+var musik := 7          # 0 bis 10
+var beben := true       # wackelt das Bild, wenn Gegner beißen?
+var brummen := true     # brummt der Controller, wenn Gegner beißen?
+var vollbild := false
+
+
+func _ready() -> void:
+	laden()
+
+
+func laden() -> void:
+	var datei := ConfigFile.new()
+	datei.load(DATEI)   # Gibt es die Datei noch nicht, liefert get_value einfach die Ersatzwerte
+	musik = datei.get_value("optionen", "musik", 7)
+	beben = datei.get_value("optionen", "beben", true)
+	brummen = datei.get_value("optionen", "brummen", true)
+	vollbild = datei.get_value("optionen", "vollbild", false)
+	anwenden()
+
+
+func speichern() -> void:
+	var datei := ConfigFile.new()
+	datei.set_value("optionen", "musik", musik)
+	datei.set_value("optionen", "beben", beben)
+	datei.set_value("optionen", "brummen", brummen)
+	datei.set_value("optionen", "vollbild", vollbild)
+	datei.save(DATEI)
+	anwenden()
+
+
+# Was sich nicht von selbst einstellt, wird hier eingestellt. Beben und Brummen fragt der Held selbst.
+func anwenden() -> void:
+	# linear_to_db: 5 von 10 klingt so wirklich wie „halb so laut“
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Musik"), linear_to_db(musik / 10.0))
+	if OS.has_feature("web"):
+		return   # im Browser gibt es dafür F11
+	if vollbild:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+```
+
+*Autoload*: `res://optionen.gd`, Name **`Optionen`**. Schieb ihn mit den Pfeilen **über** `Musik`.
+
+- **Warum über `Musik`?** Autoloads werden von oben nach unten angelegt. `Optionen` stellt beim Laden den Bus `Musik` ein. Den Bus gibt es zwar schon vorher, aber so ist die Reihenfolge klar: erst die Einstellungen, dann die Musik.
+- **Warum eine eigene Datei?** Dein Rekord steht in `hordenheld.cfg`. Die Optionen könnten dazu, aber dann müssten sich zwei Skripte eine Datei teilen und dürften sich gegenseitig nichts überschreiben. Zwei Dateien sind einfacher.
+- **Musik steht am Anfang auf 7, nicht auf 10.** Im Spiel gibt es sonst noch keine Geräusche. Die Musik soll Platz lassen, falls du welche einbaust (Übung 4).
+
+### 10.7 Das Titelbild
+
+Neue Szene: **Scene → New Scene → User Interface**. Die Wurzel ist ein `Control`, nenne sie `Titel`. Speichern als `titel.tscn`. Darunter:
+
+1. **ColorRect** `Hintergrund`: Oben in der Leiste **Anchor Preset → Full Rect**. **Color** ein dunkles Grün, zum Beispiel `171f17`.
+2. **Label** `Spielname`: Text `HORDENHELD`. **Anchor Preset → Top Wide**, dann **Offset Top** 16 und **Offset Bottom** 64. **Horizontal Alignment** Center. Bei **Label Settings** → **New LabelSettings**, dann darin:
+   - **Font:** `kenney/Kenney Pixel.ttf`, **Size** 48, **Color** goldgelb (`ffd94d`)
+   - **Outline:** **Size** 8, **Color** dunkelrot (`590d0d`)
+3. **Label** `Menue`: **Position** (140, 80), **Size** (120, 80). **Label Settings** → **Load** → `schrift.tres`.
+4. **Label** `Hinweis`: **Anchor Preset → Bottom Wide**, dann **Offset Left** 16, **Offset Right** -16, **Offset Top** -40, **Offset Bottom** -12. **Horizontal Alignment** Center, **Autowrap Mode** Word (Smart), **Label Settings** `schrift.tres`.
+
+Skript an die Wurzel, `titel.gd`:
+
+```gdscript
+extends Control
+
+# Das Titelbild, zugleich die Optionen. Hoch und runter wählt, links und rechts ändert, OK startet.
+
+const WELT = "res://welt.tscn"
+const ERKLAERUNG = {
+	"Spielen": "Überlebe fünf Minuten. Deine Waffen feuern von selbst.",
+	"Musik": "Links und rechts: leiser und lauter.",
+	"Beben": "Das Bild wackelt, wenn Gegner dich beißen.",
+	"Brummen": "Der Controller brummt, wenn Gegner dich beißen.",
+	"Vollbild": "Im Fenster oder auf dem ganzen Bildschirm.",
+}
+
+var eintraege: Array[String] = ["Spielen", "Musik", "Beben", "Brummen", "Vollbild"]
+var auswahl := 0
+
+
+func _ready() -> void:
+	Musik.spielen(Musik.TITEL)
+	if OS.has_feature("web"):
+		eintraege.erase("Vollbild")   # im Browser gibt es dafür F11
+	anzeigen()
+
+
+func _process(_delta: float) -> void:
+	if Input.is_action_just_pressed("hoch"):
+		auswahl = posmod(auswahl - 1, eintraege.size())
+	elif Input.is_action_just_pressed("runter"):
+		auswahl = posmod(auswahl + 1, eintraege.size())
+	elif Input.is_action_just_pressed("links"):
+		aendern(-1)
+	elif Input.is_action_just_pressed("rechts") or Input.is_action_just_pressed("ok"):
+		aendern(1)
+	else:
+		return   # nichts gedrückt, nichts neu zu schreiben
+	anzeigen()
+
+
+# Den ausgewählten Eintrag eins weiter (oder eins zurück) schalten
+func aendern(schritt: int) -> void:
+	match eintraege[auswahl]:
+		"Spielen":
+			if Input.is_action_just_pressed("ok"):
+				get_tree().change_scene_to_file(WELT)
+			return
+		"Musik":
+			Optionen.musik = clampi(Optionen.musik + schritt, 0, 10)
+		"Beben":
+			Optionen.beben = not Optionen.beben
+		"Brummen":
+			Optionen.brummen = not Optionen.brummen
+			if Optionen.brummen:
+				Input.start_joy_vibration(0, 0.5, 0.5, 0.2)   # kurz brummen, damit man merkt, wie es sich anfühlt
+		"Vollbild":
+			Optionen.vollbild = not Optionen.vollbild
+	Optionen.speichern()
+
+
+func anzeigen() -> void:
+	var werte := {
+		"Musik": str(Optionen.musik),
+		"Beben": "an" if Optionen.beben else "aus",
+		"Brummen": "an" if Optionen.brummen else "aus",
+		"Vollbild": "an" if Optionen.vollbild else "aus",
+	}
+	var text := ""
+	for i in eintraege.size():
+		var eintrag := eintraege[i]
+		text += ("> " if i == auswahl else "  ") + eintrag
+		if eintrag in werte:
+			text += ": " + werte[eintrag]
+		text += "\n"
+	$Menue.text = text
+	$Hinweis.text = ERKLAERUNG[eintraege[auswahl]]
+```
+
+Zuletzt: *Project Settings → Application → Run → Main Scene* → `titel.tscn`. Ab jetzt startet **F5** im Titelbild. **F6** startet weiter die Szene, die gerade offen ist. Zum Testen der Welt also `welt.tscn` öffnen und **F6** drücken.
+
+- **Titelbild und Optionen in einem:** Beim Kerkerheld war das ein eigener Bildschirm. Hier sind es nur vier Einstellungen, die passen unter "Spielen". Ein Bildschirm weniger, und man sieht sofort, was man einstellen kann.
+- **`eintraege.erase("Vollbild")`:** nimmt einen Eintrag aus der Liste. Darum ist `eintraege` eine `var`, keine `const`.
+- **Kurz brummen beim Einschalten:** Wer "Brummen: an" wählt, merkt so gleich, was gemeint ist.
+
+**Zurück zum Titelbild:** Bisher kommt man aus der Welt nicht mehr heraus. In `ende.gd` eine Konstante oben:
+
+```gdscript
+const TITEL = "res://titel.tscn"
+```
+
+Und `_process()` wird zu:
+
+```gdscript
+func _process(_delta: float) -> void:
+	if not visible:
+		return
+	if Input.is_action_just_pressed("ok"):
+		get_tree().paused = false
+		get_tree().reload_current_scene()
+	elif Input.is_action_just_pressed("pause"):
+		get_tree().paused = false
+		get_tree().change_scene_to_file(TITEL)
+```
+
+In `welt.tscn` bei `Ende/Kasten/Hinweis` der Text: `OK: nochmal   Start: Titelbild`. Die Aktion `pause` hast du schon in Kapitel 1 angelegt: **Esc** und der **Start**-Knopf.
+
+### 10.8 Beben und Brummen fragen
+
+In `held.gd`, in `_physics_process()`, die letzten Zeilen:
+
+```gdscript
+	if Optionen.beben:
+		$Camera2D.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * staerke * BEBEN_PIXEL
+	if staerke > 0.0 and Optionen.brummen:
+		Input.start_joy_vibration(0, staerke, staerke * staerke, 0.1)
+```
+
+- **Warum nicht `beben` gleich auf 0 lassen?** Man könnte auch `beben` gar nicht erst steigen lassen. Aber dann wäre mit "Beben: aus" auch das Brummen aus, denn das hängt an `staerke`. So rechnet der Held weiter, wie stark es beben **würde**, und fragt nur bei der Ausgabe nach.
+
+### 10.9 Das Werkzeug bleibt zu Hause
+
+F1 bis F4 sind für dich, nicht für jemanden, der den Hordenheld im Browser spielt. Wer zufällig **F1** drückt, hat sonst 100 Gegner mehr am Hals. Und die Messwerte oben links interessieren auch niemanden außer dir.
+
+Godot kennt zwei Arten von Export: **mit Debug** und **ohne**. Im Editor läuft das Spiel immer mit Debug. `OS.is_debug_build()` fragt, welches gerade läuft.
+
+In `werkzeug.gd`, ganz oben in `_ready()`:
+
+```gdscript
+	if not OS.is_debug_build():
+		queue_free()   # im fertigen Spiel gibt es kein Werkzeug
+		return
+```
+
+Und in `_exit_tree()`, weil die Monitore dann nie angelegt wurden:
+
+```gdscript
+func _exit_tree() -> void:
+	for monitor in MONITORE:
+		if Performance.has_custom_monitor("Hordenheld/" + monitor):
+			Performance.remove_custom_monitor("Hordenheld/" + monitor)
+```
+
+In `info.gd` wird `_process()` zu:
+
+```gdscript
+func _process(_delta: float) -> void:
+	text = "Level %d" % held.level
+	if not OS.is_debug_build():
+		return   # die Messwerte sind nur für dich
+	var physik := Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000
+	text += "   Gegner: %d   FPS: %d   Physik: %.1f ms" % [get_tree().get_node_count_in_group("gegner"), Engine.get_frames_per_second(), physik]
+	if held.testmodus:
+		text += "   TESTMODUS"
+```
+
+- **Warum `has_custom_monitor`?** `queue_free()` entfernt den Knoten, und dabei wird `_exit_tree()` trotzdem aufgerufen. Einen Monitor zu entfernen, den es nicht gibt, ist ein Fehler. Also erst fragen.
+- **Für DOOM:** Genau so baut man Cheats und Debug-Menüs ein, die nur die Entwickler haben. Die meisten großen Spiele haben eine Konsole voller solcher Befehle, die im fertigen Spiel abgeschaltet ist.
+
+### 10.10 Ab ins Web
+
+Wie beim Kerkerheld (Kapitel 14.8):
+
+1. In `07-hordenheld` einen Ordner **`web`** mit einer leeren **`.gdignore`** darin.
+2. *Project → Export → Add… → Web*: **Export Path** `web/index.html`, **Thread Support** aus.
+3. **Export Project**, **Export With Debug** ausschalten.
+4. Im Ordner `games`:
+
+```bash
+python -m http.server 8000
+```
+
+Dann `http://localhost:8000/07-hordenheld/web/` öffnen.
+
+- **Die Größe:** `index.pck`, also dein ganzes Spiel mit Musik, ist gut 500 KB groß. Godot packt die Musik beim Import zusammen. `index.wasm` ist wie immer die Engine, knapp 40 MB.
+- **Erst ein Tastendruck, dann Ton:** Wie beim Kerkerheld setzt die Titelmusik erst mit dem ersten Tastendruck ein. Das ist kein Fehler.
+- **Kein Vollbild im Menü:** Im Browser fehlt der Eintrag, dafür gibt es **F11**.
+- **Oben links steht nur das Level, und F1 bringt keine Gegner:** Das ist richtig so, siehe 10.9.
+
+**Auf die Startseite:** In `games/index.html` aus dem Hordenheld-Eintrag:
+
+```js
+  { num: '07', name: 'Hordenheld', folder: '07-hordenheld/web', color: '#e74c3c', highscoreKey: null,
+    desc: 'Fünf Minuten gegen Hunderte Gegner. Die Waffen feuern von selbst, du wählst die Upgrades.' },
+```
+
+Die Beschreibung darfst du natürlich selbst schreiben. In `07-hordenheld/README.md` kommt das "_In Arbeit._" weg, dazu ein **Im Browser** bei *Starten* und bei der Steuerung **Start: zurück zum Titelbild**. Unter die Lizenzen gehört noch: "Musik: mit `musik.py` selbst erzeugt". Und in `games/README.md` wandert der Hordenheld von "In Arbeit" in die Spieltabelle.
+
+### 10.11 Wie viele schafft der Browser?
+
+Der ganze Hordenheld dreht sich um eine Frage: Wie viele Gegner gehen, bevor es ruckelt? Im Browser ist die Antwort eine andere. Dort läuft Godot als **WebAssembly**, und das ist langsamer als ein echtes Programm. Außerdem hast du ohne Threads exportiert, also macht ein einziger Prozessorkern alles.
+
+Miss es selbst:
+1. Exportiere noch einmal, diesmal **mit** **Export With Debug**. Dann ist das Werkzeug dabei.
+2. Im Browser **Spielen**, dann **F2** und **F3**. Warte, bis keine Gegner mehr dazukommen, und lies oben links die Zahl ab.
+3. Danach wieder **ohne** Debug exportieren! Sonst hat jeder im Netz deine F-Tasten.
+
+Bei mir sind **F1 bis F4** im Browser beim Spiel angekommen, auch **F3**, mit dem der Browser sonst die Suche öffnet. Godot fängt die Tasten ab, solange man ins Spiel geklickt hat. Eine verlässliche Zahl habe ich nicht: Mein Browser lief im Hintergrund und hat das Spiel dabei stark gebremst. Darum bist du dran.
+
+Vergleich mit dem Editor: F3 schafft dort bei dir über 1500 Gegner. Wie viele sind es im Browser? Schreib die Zahl in deine Antworten. Und überleg: Reicht das für Welle 7, oder sollte die Web-Version weniger Gegner schicken?
+
+### 10.12 Ausprobieren
+
+- [ ] **F5:** Das Titelbild mit Musik. Hoch und runter wandert der Pfeil, unten steht die passende Erklärung.
+- [ ] Musik leiser und lauter: Man hört es sofort. Auf 0 ist sie weg.
+- [ ] Brummen ausschalten und wieder an: Beim Einschalten brummt der Controller kurz.
+- [ ] Vollbild an und aus.
+- [ ] Spiel beenden und neu starten: Alle Einstellungen sind noch da.
+- [ ] **Spielen:** Die Titelmusik blendet aus, die Kampfmusik ein. Beim Level-Up läuft sie weiter.
+- [ ] Beben aus: Das Bild steht still, auch wenn zehn Gegner beißen. Der Controller brummt trotzdem. Und umgekehrt.
+- [ ] **F2**, **F4** bis `1:00`: Der Endspurt beginnt.
+- [ ] Bei `0:00`: Stille, die Horde zerplatzt, der Held bleibt stehen und hüpft. Er hüpft auch hinter "Gewonnen!" weiter.
+- [ ] **Start** auf dem Ende-Bildschirm: zurück zum Titelbild, mit Titelmusik.
+- [ ] Game Over und sofort **OK**: Die Kampfmusik ist wieder da.
+- [ ] Die Äxte schubsen die Gegner von dir weg, egal von welcher Seite sie kommen.
+- [ ] Im Browser: Musik nach dem ersten Tastendruck, kein "Vollbild" im Menü, kein F1, oben links nur das Level.
+- [ ] Die Startseite zeigt den Hordenheld, und ein Klick startet ihn.
+
+### 10.13 Was ist neu?
+
+- **Ein Tween für immer:** `set_loops()` ohne Zahl. Er darf nur nicht 0 Sekunden lang sein.
+- **Ein Tween in der Pause:** `set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)`.
+- **Jeder hört selbst aufs Signal:** Spawner, Ende-Bildschirm und Held verbinden sich mit `abgelaufen`, ohne voneinander zu wissen.
+- **Wünschen statt nachschauen:** `ziel` merkt sich, was laufen soll. Das ist sicherer als zu fragen, was gerade läuft.
+- **Musik hängt an den Daten:** Die letzte Welle bringt den Endspurt, egal wie viele Wellen es gibt.
+- **`OS.is_debug_build()`:** Werkzeuge und Messwerte nur für dich.
+- **Ein Titelbild als Hauptszene:** *Main Scene* in den Project Settings. **F5** startet dort, **F6** die offene Szene.
+
+Fertig! Committen und Bescheid geben. 🎉
+
+### Übungsaufgaben zu Kapitel 10
+
+1. **Der Rekord im Titelbild (leicht):** Dein Rekord steht nur auf dem Ende-Bildschirm. Zeig ihn auch im Titelbild, zum Beispiel unter "HORDENHELD": "Rekord: 1234 Monster". Gibt es noch keinen, steht dort nichts. Das Laden kennst du schon aus `ende.gd`. Muss das Titelbild die Datei auch speichern können? 🏆
+2. **Eine Pause (mittel):** **Start** im Spiel hält alles an und zeigt ein kleines Menü: "Weiter", "Musik", "Beben", "Brummen", "Zum Titelbild". Tipp: Bau es wie den Ende-Bildschirm, ein CanvasLayer mit **Process Mode** Always. Was passiert, wenn du im Level-Up-Menü **Start** drückst? Und auf dem Ende-Bildschirm? Dort ist **Start** ja schon "Titelbild". ⏸️
+3. **Eine Fanfare zum Sieg (mittel):** Nach dem Sieg ist es still. Kopier `fanfare.py` aus dem Kerkerheld, lass es laufen und spiel `fanfare.wav` ab, wenn die Horde zerplatzt ist. Wo baust du den AudioStreamPlayer ein, damit er auch in der Pause spielt? Und auf welchen Bus gehört er: `Musik` oder `Master`? 🎺
+4. **Tausend Treffer, ein Geräusch (schwer):** Jeder Treffer soll ein kurzes "Plopp" machen. Ein AudioStreamPlayer in jedem Gegner wäre einfach, aber dann spielen bei 50 Treffern pro Sekunde 50 Geräusche auf einmal, und das klingt wie ein Rauschen. Bau **einen** Player in die Welt und gib ihm bei **Max Polyphony** zum Beispiel 4. Was passiert, wenn ein fünftes Plopp kommt, während noch vier laufen? Ein kurzes Geräusch kannst du dir mit einem kleinen Python-Skript bauen, so wie `fanfare.py`. Miss danach mit F3: Kostet das Plopp etwas? 🔊
+5. **Für alle (leicht, freiwillig):** Lad den Hordenheld auf 🆓 **itch.io** hoch, wie den Kerkerheld (Kapitel 14, Übung 5). Diesmal ohne Touch-Knöpfe, also schreib dazu: "Mit Controller oder Tastatur." 🎮

@@ -16,7 +16,7 @@ const EXPLOSIONSTEMPO = 150  # Pixel pro Sekunde
 @export var leben := 2      # so viele Treffer hält er aus
 @export var beute_szene: PackedScene   # das bleibt liegen, wenn er stirbt
 @export var erfahrung := 1             # so viel ist die Beute wert
-@export var rueckstoss := 1.0
+@export var rueckstoss := 1.0          # 0 = lässt sich nicht wegschubsen
 
 var held: Node2D
 var zahlen: Node2D
@@ -91,6 +91,7 @@ func platt() -> void:
 	var tween := create_tween()
 	tween.tween_property($Bild, "scale:y", 0, STERBE_DAUER)
 	tween.tween_callback(queue_free)
+
 
 func explodieren() -> void:
 	if not is_in_group("gegner"):

@@ -14,8 +14,8 @@ var uhr: Uhr
 var welle_nr := 0   # die wievielte Welle gerade läuft, von 0 an gezählt
 var warten := 0.0
 var schritt := 0   # für halbe Arbeit
-var leben_mal = 1.0
-var kills = 0
+var leben_mal := 1.0
+var kills := 0
 
 
 func _ready() -> void:

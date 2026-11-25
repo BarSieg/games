@@ -8,6 +8,7 @@ var held: Held
 var uhr: Uhr
 var rekord := 0
 
+
 func _ready() -> void:
 	hide()
 	held = get_tree().get_first_node_in_group("held")
@@ -22,6 +23,7 @@ func speichern() -> void:
 	datei.set_value("hordenheld", "kills", rekord)
 	datei.save(DATEI)
 
+
 func laden() -> void:
 	var datei := ConfigFile.new()
 	if datei.load(DATEI) != OK:
@@ -30,12 +32,12 @@ func laden() -> void:
 
 
 func zeigen(titel: String) -> void:
-	var kills : int = $"../Horde".kills
+	var kills: int = $"../Horde".kills
 	if titel == GEWONNEN:
 		if kills > rekord:
 			rekord = kills
 			speichern()
-		await get_tree().create_timer(2.0).timeout # explosion abwarten
+		await get_tree().create_timer(2.0, false).timeout   # Explosion abwarten
 	$Kasten/Titel.text = titel
 	$Kasten/Werte.text = "Überlebt: %s\nLevel: %d\nMonster getötet: %d\nRekord: %d Monster" % [uhr.als_text(uhr.zeit), held.level, kills, rekord]
 	show()

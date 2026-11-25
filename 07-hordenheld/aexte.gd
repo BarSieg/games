@@ -11,13 +11,13 @@ func _physics_process(delta: float) -> void:
 	$Axt2/Bild.rotation = rotation * 2
 
 
-func treffer(body: Node2D, richtung : Vector2) -> void:
+func treffer(body: Node2D, richtung: Vector2) -> void:
 	body.treffer(schaden, richtung.normalized() * SCHUB)
 
 
 func _on_axt_2_body_entered(body: Node2D) -> void:
-	treffer(body, -$Axt2/Bild.position)
+	treffer(body, Vector2.from_angle(rotation + PI))
 
 
 func _on_axt_body_entered(body: Node2D) -> void:
-	treffer(body,-$Axt/Bild.position)
+	treffer(body, Vector2.from_angle(rotation))
