@@ -55,7 +55,7 @@ func _ready() -> void:
 	# Schritt 3: die Waffen wieder wegräumen
 	for waffe in neue_waffen:
 		waffe.free()
-	# Der Held muss auch wissen, dass er gewonnw hat
+	# Der Held muss auch wissen, dass er gewonnen hat
 	var uhr: Uhr = get_tree().get_first_node_in_group("uhr")
 	uhr.abgelaufen.connect(feiern)
 
@@ -68,6 +68,7 @@ func _physics_process(delta: float) -> void:
 	var richtung := Input.get_vector("links", "rechts", "hoch", "runter")
 	velocity = richtung * tempo
 	move_and_slide()
+
 	if richtung.x != 0:
 		$Bild.flip_h = richtung.x < 0
 	# Ein Bild pro Figur reicht: Beim Laufen wackelt sie hin und her

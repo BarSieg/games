@@ -17,8 +17,9 @@ Alle Spiele laufen direkt im Browser, ohne Installation. Die ersten vier (00 bis
 | 04 | [Flatterfisch](04-flatterfisch/web/) | Ein Fisch zwischen Korallen | Das erste Spiel mit der Godot-Engine |
 | 05 | [Hüpfheld](05-huepfheld/web/) | Jump’n’Run: Laufen, springen, Gegner plattmachen | Bewegliche Gegner, Kamera, Tween Animation |
 | 06 | [Kerkerheld](06-kerkerheld/web/) | Ein Dungeon von oben, mit Rätseln, Händler und Boss | State Machines, Dialoge, Speichern und Laden, Übersetzen, Musik |
+| 07 | [Hordenheld](07-hordenheld/web/) | Fünf Minuten gegen Hunderte Gegner, die Waffen feuern von selbst | Profiler und Performance, Upgrades und Wellen als Daten, Game Feel, Ausbalancieren |
 
-**In Arbeit:** 07 · [Hordenheld](07-hordenheld/). Überleben gegen Hunderte Gegner auf einmal, im Stil von Vampire Survivors. Dabei geht es um Performance: wie ein Spiel flüssig bleibt, wenn sehr viel gleichzeitig passiert.
+**Als Nächstes:** 08 · Burgflucht. Durch die Gänge einer Burg, in der Ego-Perspektive, im Stil von Wolfenstein 3D. Zurück im Browser, in reinem JavaScript: Raycasting zeigt, wie 1992 aus einer flachen 2D-Karte ein 3D-Bild wurde. Das ist der erste Schritt in Richtung 3D und DOOM.
 
 Jeder Ordner hat eine eigene `README.md` mit Steuerung, Lernnotizen und Übungsaufgaben.
 

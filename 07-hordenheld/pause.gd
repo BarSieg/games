@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+# Das Pausenmenü. Start öffnet und schließt es, darin lassen sich die Optionen ändern.
+
 const TITEL = "res://titel.tscn"
 
 var eintraege: Array[String] = ["Weiter", "Musik", "Beben", "Brummen", "Zum Titelbild"]
@@ -7,14 +9,12 @@ var auswahl := 0
 var dauer := 0.0
 
 
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	hide()
-	var held = get_tree().get_first_node_in_group("held")
+	var held: Held = get_tree().get_first_node_in_group("held")
 	held.pause.connect(zeigen)
 
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	dauer += delta
 	$Titel.modulate.a = cos(dauer * 10)
@@ -54,7 +54,6 @@ func aendern(schritt: int) -> void:
 				Optionen.brummen_lassen(0.5, 0.5, 0.2)   # kurz brummen, damit man merkt, wie es sich anfühlt
 		"Zum Titelbild":
 			if Input.is_action_just_pressed("ok"):
-				#hide()
 				get_tree().paused = false
 				get_tree().change_scene_to_file(TITEL)
 			return

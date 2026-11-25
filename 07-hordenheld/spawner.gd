@@ -129,7 +129,6 @@ func einsetzen(gegner: Node2D) -> void:
 	aufstellen(gegner, get_viewport().get_camera_2d().get_screen_center_position() + (minf(tx, ty) + ABSTAND) * alpha)
 
 
-
 # Ein Ring aus Gegnern rund um den Held, überall knapp hinter dem Bildrand
 func einkesseln(anzahl: int) -> void:
 	var held: Node2D = get_tree().get_first_node_in_group("held")

@@ -18,7 +18,7 @@ Gespielt wird mit dem Controller. Die Tastatur geht natürlich auch.
 7. Die Horde wird billiger: Gedränge ohne teure Physik ✔
 8. Game Feel: Wackeln, Blitzen, Zahlen ✔
 9. Die Uhr: Wellen, Elite-Gegner, Sieg und Game Over ✔
-10. Titelbild, Musik und Web-Export ← *du bist hier*
+10. Titelbild, Musik und Web-Export ✔
 
 ---
 
